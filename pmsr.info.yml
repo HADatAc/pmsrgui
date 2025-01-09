@@ -1,0 +1,16 @@
+name: 'PMSR'
+description: 'Medical Simulation Landing Page Module'
+package: Semantic Tools
+type: module
+core_version_requirement: ^10
+version: '0.9'
+dependencies:
+  - drupal:rep
+  - drupal:sir
+  - drupal:std
+  - drupal:sem
+  - drupal:dpl
+libraries:
+  - pmsr/bootstrap
+  - pmsr/favicons
+  - rep/rep_js_css

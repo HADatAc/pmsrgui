@@ -1,0 +1,26 @@
+<?php
+
+use Drupal\Core\Render\AttachmentsInterface;
+
+/**
+ * Implements hook_page_attachments().
+ */
+function pmsr_page_attachments(array &$attachments) {
+  // Add the bootstrap library declared in the pmsr.libraries.yml file.
+  $attachments['#attached']['library'][] = 'pmsr/bootstrap';
+}
+
+
+/**
+ * Implements hook_block_view_alter().
+ */
+function pmsr_block_view_alter(array &$build, \Drupal\Core\Block\BlockPluginInterface $block) {
+  // Verifica se o bloco é o "block-hasco-barrio-page-title".
+  if ($block->getBaseId() === 'page_title_block') {
+    // Verifica se a rota atual é "pmsr.landing_page".
+    if (\Drupal::routeMatch()->getRouteName() === 'pmsr.landing_page') {
+      // Remove o conteúdo do bloco.
+      $build = [];
+    }
+  }
+}

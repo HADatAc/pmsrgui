@@ -1,0 +1,15 @@
+<?php
+
+/**
+ * Implements hook_theme().
+ */
+function pmsr_theme() {
+  return [
+    'landing_page' => [
+      'variables' => [
+        'buttons' => [],
+      ],
+      'template' => 'landing-page',
+    ],
+  ];
+}
