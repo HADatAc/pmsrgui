@@ -59,7 +59,7 @@ class LandingPageController extends ControllerBase {
                 </div>';
 
     // HTML FOR BUTTONS
-    $output .= '<div class="container text-center my-5">';
+    $output .= '<div class="container text-center my-3">';
     $output .= '<div class="row">';
 
     // Column 1

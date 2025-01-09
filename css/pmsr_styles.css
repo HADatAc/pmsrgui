@@ -56,3 +56,7 @@ footer {
   );
   opacity: 0.9;
 }
+
+.nav-link {
+  color: #fff;
+}
