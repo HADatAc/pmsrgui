@@ -15,7 +15,7 @@ class PmsrThemeNegotiator implements ThemeNegotiatorInterface {
    * Verifica se este negociador deve ser aplicado à rota atual.
    */
   public function applies(RouteMatchInterface $route_match) {
-    \Drupal::logger('pmsr')->log(RfcLogLevel::INFO, 'MeuThemeNegotiator => applies() chamado');
+    //\Drupal::logger('pmsr')->log(RfcLogLevel::INFO, 'MeuThemeNegotiator => applies() chamado');
     // Obtenha o nome da rota para decidir.
     $route_name = $route_match->getRouteName();
 

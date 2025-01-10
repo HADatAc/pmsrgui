@@ -1,0 +1,24 @@
+<?php
+
+/**
+ * IMPLEMENTS hook_install().
+ *
+ * Configure GLOBAL homepage
+ */
+function pmsr_install() {
+  // Define a rota personalizada como homepage.
+  \Drupal::configFactory()->getEditable('system.site')
+    ->set('page.front', '/pmsr')
+    ->save();
+}
+
+/**
+ * IMPLEMENTS hook_uninstall().
+ *
+ * Restore DEFAULT homepage
+ */
+function pmsr_uninstall() {
+  \Drupal::configFactory()->getEditable('system.site')
+    ->clear('page.front')
+    ->save();
+}
