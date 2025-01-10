@@ -34,10 +34,10 @@ class LandingPageController extends ControllerBase {
       <div class="col-2 d-flex align-items-center">
         <img class="px-5" height="150" src="'.$logo_url.'" />
       </div>
-      <div class="col-9 d-flex align-items-center">
+      <div class="col-8 d-flex align-items-center">
         <h2 class="text-white">Repositório Médico Português</h2>
       </div>
-      <div class="col-1 d-flex align-items-center">
+      <div class="col-2 d-flex align-items-center text-align-center">
         <a class="nav-link" href="user/login">Login / Sign Up</a>
       </div>
     ';
