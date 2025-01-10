@@ -3,6 +3,7 @@
 namespace Drupal\pmsr\Controller;
 
 use Drupal\Core\Controller\ControllerBase;
+use Drupal\Core\Url;
 
 class LandingPageController extends ControllerBase {
   public function content() {
@@ -28,6 +29,26 @@ class LandingPageController extends ControllerBase {
       ['icon' => 'fas fa-magnifying-glass fa-2xl', 'label' => 'Social Search', 'url' => '#'],
     ];
 
+    // Verifica se o utilizador está autenticado
+    $current_user = \Drupal::currentUser();
+    if ($current_user->isAuthenticated()) {
+      // Utilizador autenticado: mostra opções de Profile e Log Out
+      $user_profile_url = Url::fromRoute('entity.user.canonical', ['user' => $current_user->id()])->toString();
+      $logout_url = Url::fromRoute('user.logout')->toString();
+      $user_links = '
+        <a class="nav-link" href="' . $user_profile_url . '">Profile</a>&nbsp;|&nbsp;
+        <a class="nav-link" href="' . $logout_url . '">Log Out</a>
+      ';
+    } else {
+      // Utilizador anônimo: mostra opções de Login e Sign Up
+      $login_url = Url::fromRoute('user.login')->toString();
+      $signup_url = Url::fromRoute('user.register')->toString();
+      $user_links = '
+        <a class="nav-link" href="' . $login_url . '?destination=pmsr">Login</a>&nbsp;|&nbsp;
+        <a class="nav-link" href="' . $signup_url . '?destination=pmsr">Sign Up</a>
+      ';
+    }
+
     // HTML HEADER
     $output = '<div id="landing_header" class="row background-portuguese-flag">';
     $output .= '
@@ -38,7 +59,7 @@ class LandingPageController extends ControllerBase {
         <h2 class="text-white">Repositório Médico Português</h2>
       </div>
       <div class="col-2 d-flex align-items-center text-align-center">
-        <a class="nav-link" href="user/login">Login / Sign Up</a>
+        ' . $user_links . '
       </div>
     ';
     $output .= '</div>';

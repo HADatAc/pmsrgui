@@ -1,7 +1,5 @@
 <?php
 
-use Drupal\Core\Render\AttachmentsInterface;
-
 /**
  * Implements hook_page_attachments().
  */
