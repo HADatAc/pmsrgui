@@ -19,19 +19,19 @@ class PmsrSettingsForm extends ConfigFormBase {
 
     $form['title'] = [
       '#type' => 'textfield',
-      '#title' => $this->t('Título'),
+      '#title' => $this->t('Title'),
       '#default_value' => $config->get('title'),
     ];
 
     $form['primary_color'] = [
       '#type' => 'color',
-      '#title' => $this->t('Cor Primária'),
+      '#title' => $this->t('Main Color'),
       '#default_value' => $config->get('primary_color'),
     ];
 
     $form['secondary_color'] = [
       '#type' => 'color',
-      '#title' => $this->t('Cor Secundária'),
+      '#title' => $this->t('Secondary Color'),
       '#default_value' => $config->get('secondary_color'),
     ];
 
@@ -44,7 +44,7 @@ class PmsrSettingsForm extends ConfigFormBase {
         'file_validate_image_resolution' => ['150x150', ''],
       ],
       '#default_value' => $config->get('logo'),
-      '#description' => $this->t('A imagem deve ter no mínimo 150px de largura.'),
+      '#description' => $this->t('Image should have 150px x 150px.'),
     ];
 
     $form['image_1'] = [
@@ -56,7 +56,7 @@ class PmsrSettingsForm extends ConfigFormBase {
         'file_validate_image_resolution' => ['1400x1', ''],
       ],
       '#default_value' => $config->get('image_1'),
-      '#description' => $this->t('A imagem deve ter no mínimo 1400px de largura.'),
+      '#description' => $this->t('Image should have at least 1400px wide.'),
     ];
 
     $form['image_2'] = [
@@ -68,7 +68,7 @@ class PmsrSettingsForm extends ConfigFormBase {
         'file_validate_image_resolution' => ['1400x1', ''],
       ],
       '#default_value' => $config->get('image_2'),
-      '#description' => $this->t('A imagem deve ter no mínimo 1400px de largura.'),
+      '#description' => $this->t('Image should have at least 1400px wide.'),
     ];
 
     $form['image_3'] = [
@@ -80,7 +80,7 @@ class PmsrSettingsForm extends ConfigFormBase {
         'file_validate_image_resolution' => ['1400x1', ''],
       ],
       '#default_value' => $config->get('image_3'),
-      '#description' => $this->t('A imagem deve ter no mínimo 1400px de largura.'),
+      '#description' => $this->t('Image should have at least 1400px wide.'),
     ];
 
     return parent::buildForm($form, $form_state);
@@ -89,6 +89,7 @@ class PmsrSettingsForm extends ConfigFormBase {
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $this->config('pmsr.settings')
       ->set('title', $form_state->getValue('title'))
+      ->set('logo', $form_state->getValue('logo'))
       ->set('primary_color', $form_state->getValue('primary_color'))
       ->set('secondary_color', $form_state->getValue('secondary_color'))
       ->set('image_1', $form_state->getValue('image_1'))

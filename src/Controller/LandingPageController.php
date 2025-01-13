@@ -12,24 +12,32 @@ class LandingPageController extends ControllerBase {
     // LOAD CONFIG
     $config = \Drupal::config('pmsr.settings');
 
-    // Caminho para o logotipo
+    // Module path
     $module_path = \Drupal::service('extension.list.module')->getPath('pmsr');
-    $logo_url = base_path() . $module_path . '/images/cienciapt_logo_150.png';
 
     $title = $config->get('title') ?? 'Repositório Médico Português';
-    $logo_url = $config->get('logo') ?? base_path() . $module_path . '/images/cienciapt_logo_150.png';
 
-    // Carregar a imagem 1
+    // Load Logo
+    $logo_fid = $config->get('logo');
+    $logo_url = base_path() . $module_path . '/images/cienciapt_logo_150.png';
+    if (!empty($logo_fid)) {
+      $file = File::load($logo_fid[0]);
+      if ($file) {
+        $logo_url = file_create_url($file->getFileUri());
+      }
+    }
+
+    // Load image 1
     $image_1_fid = $config->get('image_1');
     $img_1 = base_path() . $module_path . '/images/img1.jpg';
     if (!empty($image_1_fid)) {
-      $file = File::load($image_1_fid[0]);
+        $file = File::load($image_1_fid[0]);
       if ($file) {
         $img_1 = file_create_url($file->getFileUri());
       }
     }
 
-    // Carregar a imagem 2
+    // Load image 2
     $image_2_fid = $config->get('image_2');
     $img_2 = base_path() . $module_path . '/images/img2.jpg';
     if (!empty($image_2_fid)) {
@@ -39,7 +47,7 @@ class LandingPageController extends ControllerBase {
       }
     }
 
-    // Carregar a imagem 3
+    // Load image 3
     $image_3_fid = $config->get('image_3');
     $img_3 = base_path() . $module_path . '/images/img3.jpg';
     if (!empty($image_3_fid)) {
@@ -49,7 +57,7 @@ class LandingPageController extends ControllerBase {
       }
     }
 
-    // Definição dos botões
+    // Buttons definition
     $buttons_col1 = [
       ['icon' => 'fas fa-chart-bar fa-2xl', 'label' => 'Manage<br /> Simulator Model', 'url' => '#'],
       ['icon' => 'fas fa-magnifying-glass fa-2xl', 'label' => 'Search Simulator', 'url' => '#'],
@@ -67,10 +75,10 @@ class LandingPageController extends ControllerBase {
       ['icon' => 'fas fa-magnifying-glass fa-2xl', 'label' => 'Social Search', 'url' => '#'],
     ];
 
-    // Verifica se o utilizador está autenticado
+    // Check if user is authenticated
     $current_user = \Drupal::currentUser();
     if ($current_user->isAuthenticated()) {
-      // Utilizador autenticado: mostra opções de Profile e Log Out
+      // User authenticated: show Profile and Log Out options
       $user_profile_url = Url::fromRoute('entity.user.canonical', ['user' => $current_user->id()])->toString();
       $logout_url = Url::fromRoute('user.logout')->toString();
       $user_links = '
@@ -78,7 +86,7 @@ class LandingPageController extends ControllerBase {
         <a class="nav-link" href="' . $logout_url . '">Log Out</a>
       ';
     } else {
-      // Utilizador anônimo: mostra opções de Login e Sign Up
+      // Anonymous user: show Login and Sign Up options
       $login_url = Url::fromRoute('user.login')->toString();
       $signup_url = Url::fromRoute('user.register')->toString();
       $user_links = '
