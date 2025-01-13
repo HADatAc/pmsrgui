@@ -88,7 +88,7 @@ class LandingPageController extends ControllerBase {
     // Column 1
     $output .= '<div class="col-4 d-flex flex-column justify-content-between">';
     foreach ($buttons_col1 as $button) {
-      $output .= '<a href="' . $button['url'] . '" class="btn btn-primary btn-lg my-2 d-flex align-items-center justify-content-center custom-button">';
+      $output .= '<a href="' . $button['url'] . '" class="btn btn-success btn-lg my-2 d-flex align-items-center justify-content-center custom-button">';
       $output .= '<i class="' . $button['icon'] . ' me-2"></i>&nbsp;';
       $output .= '<h5>' . $button['label'] . '</h5>';
       $output .= '</a>';
@@ -98,7 +98,7 @@ class LandingPageController extends ControllerBase {
     // Column 2
     $output .= '<div class="col-4 d-flex flex-column justify-content-between">';
     foreach ($buttons_col2 as $button) {
-      $output .= '<a href="' . $button['url'] . '" class="btn btn-primary btn-lg my-2 d-flex align-items-center justify-content-center custom-button">';
+      $output .= '<a href="' . $button['url'] . '" class="btn btn-success btn-lg my-2 d-flex align-items-center justify-content-center custom-button">';
       $output .= '<i class="' . $button['icon'] . ' me-2"></i>&nbsp;';
       $output .= '<h5>' . $button['label'] . '</h5>';
       $output .= '</a>';
@@ -108,7 +108,7 @@ class LandingPageController extends ControllerBase {
     // Column 3
     $output .= '<div class="col-4 d-flex flex-column justify-content-between">';
     foreach ($buttons_col3 as $button) {
-      $output .= '<a href="' . $button['url'] . '" class="btn btn-primary btn-lg my-2 d-flex align-items-center justify-content-center custom-button">';
+      $output .= '<a href="' . $button['url'] . '" class="btn btn-success btn-lg my-2 d-flex align-items-center justify-content-center custom-button">';
       $output .= '<i class="' . $button['icon'] . ' me-2"></i>&nbsp;';
       $output .= '<h5>' . $button['label'] . '</h5>';
       $output .= '</a>';
