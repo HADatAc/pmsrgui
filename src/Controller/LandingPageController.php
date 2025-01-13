@@ -69,6 +69,19 @@ class LandingPageController extends ControllerBase {
       $img_3 = base_path() . $module_path . '/images/img3.jpg';
     }
 
+    // Load footer logo
+    $footer_logo_fid = $config->get('footer_logo');
+    if (!empty($footer_logo_fid) && is_array($footer_logo_fid)) {
+      $file = File::load($footer_logo_fid[0]);
+      if ($file) {
+        $footer_logo = file_create_url($file->getFileUri());
+      } else {
+        $footer_logo = base_path() . $module_path . '/images/footer.png';
+      }
+    } else {
+      $footer_logo = base_path() . $module_path . '/images/footer.png';
+    }
+
     // Buttons definition
     $buttons_col1 = [
       ['icon' => 'fas fa-chart-bar fa-2xl', 'label' => 'Manage<br /> Simulator Model', 'url' => 'http://localhost:8081/drupal/web/sir/select/instrument/1/9'],
@@ -174,6 +187,17 @@ class LandingPageController extends ControllerBase {
     $output .= '</div>';
 
     $output .= '</div></div>';
+
+    // HTML FOOTER
+    $output .= '<div id="landing_footer" class="background-footer" style="height: 150px; position: relative; bottom: 0; width: 100%;">
+                  <div class="container h-100">
+                    <div class="row h-100 align-items-center">
+                      <div class="col text-center">
+                        <img height="80" src="'.$footer_logo.'" alt="footer logo">
+                      </div>
+                    </div>
+                  </div>
+                </div>';
 
     // Return HTML
     return [

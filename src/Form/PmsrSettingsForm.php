@@ -44,7 +44,19 @@ class PmsrSettingsForm extends ConfigFormBase {
         'file_validate_image_resolution' => ['150x150', ''],
       ],
       '#default_value' => $config->get('logo'),
-      '#description' => $this->t('Image should have 150px x 150px.'),
+      '#description' => $this->t('Image should have 150px X 150px.'),
+    ];
+
+    $form['footer_logo'] = [
+      '#type' => 'managed_file',
+      '#title' => $this->t('Footer Logo'),
+      '#upload_location' => 'public://pmsr_images/',
+      '#upload_validators' => [
+        'file_validate_extensions' => ['png jpg jpeg'],
+        'file_validate_image_resolution' => ['700x1', ''],
+      ],
+      '#default_value' => $config->get('footer_logo'),
+      '#description' => $this->t('Image should have at least 700px wide.'),
     ];
 
     $form['image_1'] = [
@@ -90,6 +102,7 @@ class PmsrSettingsForm extends ConfigFormBase {
     $this->config('pmsr.settings')
       ->set('title', $form_state->getValue('title'))
       ->set('logo', $form_state->getValue('logo'))
+      ->set('footer_logo', $form_state->getValue('footer_logo'))
       ->set('primary_color', $form_state->getValue('primary_color'))
       ->set('secondary_color', $form_state->getValue('secondary_color'))
       ->set('image_1', $form_state->getValue('image_1'))
