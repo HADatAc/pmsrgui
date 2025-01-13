@@ -4,12 +4,50 @@ namespace Drupal\pmsr\Controller;
 
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\Url;
+use Drupal\file\Entity\File;
 
 class LandingPageController extends ControllerBase {
   public function content() {
+
+    // LOAD CONFIG
+    $config = \Drupal::config('pmsr.settings');
+
     // Caminho para o logotipo
     $module_path = \Drupal::service('extension.list.module')->getPath('pmsr');
     $logo_url = base_path() . $module_path . '/images/cienciapt_logo_150.png';
+
+    $title = $config->get('title') ?? 'Repositório Médico Português';
+    $logo_url = $config->get('logo') ?? base_path() . $module_path . '/images/cienciapt_logo_150.png';
+
+    // Carregar a imagem 1
+    $image_1_fid = $config->get('image_1');
+    $img_1 = base_path() . $module_path . '/images/img1.jpg';
+    if (!empty($image_1_fid)) {
+      $file = File::load($image_1_fid[0]);
+      if ($file) {
+        $img_1 = file_create_url($file->getFileUri());
+      }
+    }
+
+    // Carregar a imagem 2
+    $image_2_fid = $config->get('image_2');
+    $img_2 = base_path() . $module_path . '/images/img2.jpg';
+    if (!empty($image_2_fid)) {
+        $file = File::load($image_2_fid[0]);
+      if ($file) {
+        $img_2 = file_create_url($file->getFileUri());
+      }
+    }
+
+    // Carregar a imagem 3
+    $image_3_fid = $config->get('image_3');
+    $img_3 = base_path() . $module_path . '/images/img3.jpg';
+    if (!empty($image_3_fid)) {
+      $file = File::load($image_3_fid[0]);
+      if ($file) {
+        $img_3 = file_create_url($file->getFileUri());
+      }
+    }
 
     // Definição dos botões
     $buttons_col1 = [
@@ -57,7 +95,7 @@ class LandingPageController extends ControllerBase {
           <img class="px-5" height="150" src="'.$logo_url.'" />
         </div>
         <div class="col-8 d-flex align-items-center">
-          <h2 class="text-white">Repositório Médico Português</h2>
+          <h2 class="text-white">'.$title.'</h2>
         </div>
         <div class="col d-flex align-items-center text-align-center">
           ' . $user_links . '
@@ -70,13 +108,13 @@ class LandingPageController extends ControllerBase {
     $output .= '<div class="container-image">
                   <div class="row text-center p-0">
                     <div class="col-md-4 p-0">
-                      <img src="'.base_path() . $module_path . '/images/img1.jpg" class="custom-img" alt="Image 1">
+                      <img src="'.$img_1.'" class="custom-img" alt="Image 1">
                     </div>
                     <div class="col-md-4 p-0">
-                      <img src="'.base_path() . $module_path . '/images/img2.jpg" class="custom-img" alt="Image 2">
+                      <img src="'.$img_2.'" class="custom-img" alt="Image 2">
                     </div>
                     <div class="col-md-4 p-0">
-                      <img src="'.base_path() . $module_path . '/images/img3.jpg" class="custom-img" alt="Image 3">
+                      <img src="'.$img_3.'" class="custom-img" alt="Image 3">
                     </div>
                   </div>
                 </div>';

@@ -5,3 +5,11 @@ pmsr.landing_page:
     _title: 'PMSR Landing Page'
   requirements:
     _permission: 'access content'
+
+pmsr.settings:
+  path: '/admin/config/pmsr/settings'
+  defaults:
+    _form: '\Drupal\pmsr\Form\PmsrSettingsForm'
+    _title: 'PMSR Configurations'
+  requirements:
+    _permission: 'administer site configuration'
