@@ -19,47 +19,59 @@ class LandingPageController extends ControllerBase {
 
     // Load Logo
     $logo_fid = $config->get('logo');
-    $logo_url = base_path() . $module_path . '/images/cienciapt_logo_150.png';
-    if (!empty($logo_fid)) {
+    if (!empty($logo_fid) && is_array($logo_fid)) {
       $file = File::load($logo_fid[0]);
       if ($file) {
         $logo_url = file_create_url($file->getFileUri());
+      } else {
+        $logo_url = base_path() . $module_path . '/images/cienciapt_logo_150.png';
       }
+    } else {
+      $logo_url = base_path() . $module_path . '/images/cienciapt_logo_150.png';
     }
 
     // Load image 1
     $image_1_fid = $config->get('image_1');
-    $img_1 = base_path() . $module_path . '/images/img1.jpg';
-    if (!empty($image_1_fid)) {
-        $file = File::load($image_1_fid[0]);
+    if (!empty($image_1_fid) && is_array($image_1_fid)) {
+      $file = File::load($image_1_fid[0]);
       if ($file) {
         $img_1 = file_create_url($file->getFileUri());
+      } else {
+        $img_1 = base_path() . $module_path . '/images/img1.jpg';
       }
+    } else {
+      $img_1 = base_path() . $module_path . '/images/img1.jpg';
     }
 
     // Load image 2
     $image_2_fid = $config->get('image_2');
-    $img_2 = base_path() . $module_path . '/images/img2.jpg';
-    if (!empty($image_2_fid)) {
-        $file = File::load($image_2_fid[0]);
+    if (!empty($image_2_fid) && is_array($image_2_fid)) {
+      $file = File::load($image_2_fid[0]);
       if ($file) {
         $img_2 = file_create_url($file->getFileUri());
+      } else {
+        $img_2 = base_path() . $module_path . '/images/img2.jpg';
       }
+    } else {
+      $img_2 = base_path() . $module_path . '/images/img2.jpg';
     }
 
     // Load image 3
     $image_3_fid = $config->get('image_3');
-    $img_3 = base_path() . $module_path . '/images/img3.jpg';
-    if (!empty($image_3_fid)) {
+    if (!empty($image_3_fid) && is_array($image_3_fid)) {
       $file = File::load($image_3_fid[0]);
       if ($file) {
         $img_3 = file_create_url($file->getFileUri());
+      } else {
+        $img_3 = base_path() . $module_path . '/images/img3.jpg';
       }
+    } else {
+      $img_3 = base_path() . $module_path . '/images/img3.jpg';
     }
 
     // Buttons definition
     $buttons_col1 = [
-      ['icon' => 'fas fa-chart-bar fa-2xl', 'label' => 'Manage<br /> Simulator Model', 'url' => '#'],
+      ['icon' => 'fas fa-chart-bar fa-2xl', 'label' => 'Manage<br /> Simulator Model', 'url' => 'http://localhost:8081/drupal/web/sir/select/instrument/1/9'],
       ['icon' => 'fas fa-magnifying-glass fa-2xl', 'label' => 'Search Simulator', 'url' => '#'],
 
     ];
@@ -82,16 +94,16 @@ class LandingPageController extends ControllerBase {
       $user_profile_url = Url::fromRoute('entity.user.canonical', ['user' => $current_user->id()])->toString();
       $logout_url = Url::fromRoute('user.logout')->toString();
       $user_links = '
-        <a class="nav-link" href="' . $user_profile_url . '">Profile</a>&nbsp;|&nbsp;
-        <a class="nav-link" href="' . $logout_url . '">Log Out</a>
+        <a class="nav-link text-white" href="' . $user_profile_url . '">Profile</a>&nbsp;|&nbsp;
+        <a class="nav-link text-white" href="' . $logout_url . '">Log Out</a>
       ';
     } else {
       // Anonymous user: show Login and Sign Up options
       $login_url = Url::fromRoute('user.login')->toString();
       $signup_url = Url::fromRoute('user.register')->toString();
       $user_links = '
-        <a class="nav-link" href="' . $login_url . '?destination=pmsr">Login</a>&nbsp;|&nbsp;
-        <a class="nav-link" href="' . $signup_url . '?destination=pmsr">Sign Up</a>
+        <a class="nav-link text-white" href="' . $login_url . '?destination=pmsr">Login</a>&nbsp;|&nbsp;
+        <a class="nav-link text-white" href="' . $signup_url . '?destination=pmsr">Sign Up</a>
       ';
     }
 
@@ -103,9 +115,9 @@ class LandingPageController extends ControllerBase {
           <img class="px-5" height="150" src="'.$logo_url.'" />
         </div>
         <div class="col-8 d-flex align-items-center">
-          <h2 class="text-white">'.$title.'</h2>
+          <h1 class="text-black">'.$title.'</h1>
         </div>
-        <div class="col d-flex align-items-center text-align-center">
+        <div class="col d-flex align-items-center text-align-center text-white">
           ' . $user_links . '
         </div>
       </div>

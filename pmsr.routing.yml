@@ -7,9 +7,9 @@ pmsr.landing_page:
     _permission: 'access content'
 
 pmsr.settings:
-  path: '/admin/config/pmsr/settings'
+  path: '/admin/config/pmsr'
   defaults:
     _form: '\Drupal\pmsr\Form\PmsrSettingsForm'
-    _title: 'PMSR Configurations'
+    _title: 'PMSR GUI Module Configurations'
   requirements:
     _permission: 'administer site configuration'
