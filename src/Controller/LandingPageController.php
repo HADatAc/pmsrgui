@@ -84,7 +84,7 @@ class LandingPageController extends ControllerBase {
 
     // Buttons definition
     $buttons_col1 = [
-      ['icon' => 'fas fa-chart-bar fa-2xl', 'label' => 'Manage<br /> Simulator Model', 'url' => 'http://localhost:8081/drupal/web/sir/select/instrument/1/9'],
+      ['icon' => 'fas fa-chart-bar fa-2xl', 'label' => 'Manage<br /> Simulator Model', 'url' => 'sir/select/instrument/1/9'],
       ['icon' => 'fas fa-magnifying-glass fa-2xl', 'label' => 'Search Simulator', 'url' => '#'],
 
     ];
@@ -189,11 +189,11 @@ class LandingPageController extends ControllerBase {
     $output .= '</div></div>';
 
     // HTML FOOTER
-    $output .= '<div id="landing_footer" class="background-footer" style="height: 150px; position: relative; bottom: 0; width: 100%;">
+    $output .= '<div id="landing_footer">
                   <div class="container h-100">
                     <div class="row h-100 align-items-center">
                       <div class="col text-center">
-                        <img height="80" src="'.$footer_logo.'" alt="footer logo">
+                        <img height="40" src="'.$footer_logo.'" alt="footer logo">
                       </div>
                     </div>
                   </div>
