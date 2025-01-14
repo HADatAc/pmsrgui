@@ -3,22 +3,35 @@
 /**
  * IMPLEMENTS hook_install().
  *
- * Configure GLOBAL homepage
+ * Configure GLOBAL homepage and update preferred settings
  */
 function pmsr_install() {
   // Define a rota personalizada como homepage.
   \Drupal::configFactory()->getEditable('system.site')
     ->set('page.front', '/pmsr')
     ->save();
+
+  // Atualiza as configurações do outro módulo
+  \Drupal::configFactory()->getEditable('rep.settings')
+    ->set('preferred_instrument', 'Simulator')
+    ->set('preferred_detector', 'Simulation Technique')
+    ->save();
 }
 
 /**
  * IMPLEMENTS hook_uninstall().
  *
- * Restore DEFAULT homepage
+ * Restore DEFAULT homepage and settings
  */
 function pmsr_uninstall() {
+  // Restaura a homepage padrão
   \Drupal::configFactory()->getEditable('system.site')
     ->clear('page.front')
+    ->save();
+
+  // Opcional: restaurar as configurações originais do outro módulo
+  \Drupal::configFactory()->getEditable('rep.settings')
+    ->set('preferred_instrument', 'Instrument')
+    ->set('preferred_detector', 'Detector')
     ->save();
 }
