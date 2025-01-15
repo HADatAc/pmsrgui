@@ -1,0 +1,44 @@
+
+/* HascoBarrio Theme Override */
+body.pmsr-module-enabled #navbar-top.navbar,
+#navbar-top.navbar {
+  height: 176px!important; /* Ajuste conforme necessário */
+  background: linear-gradient(
+    to right,
+    #ffffff 25%,
+    #006600 100%
+  );
+  opacity: 0.9;
+}
+
+body.pmsr-module-enabled #navbar-main.navbar.navbar-expand-lg{
+  background-color: #0066004b!important;
+}
+
+body.pmsr-module-enabled #navbar-main.navbar.navbar-expand-lg a{
+  color: #000!important;
+}
+
+body.pmsr-module-enabled #navbar-main.navbar.navbar-expand-lg li.dropdown-item.active a.is-active {
+  color: #ffffff!important;
+  background-color: transparent!important;
+}
+
+body.pmsr-module-enabled #navbar-main.navbar.navbar-expand-lg a.active {
+  font-weight: 600!important;
+  background-color: #006600be!important;
+  color: #ffffff!important;
+}
+
+body.pmsr-module-enabled img.img-fluid.d-inline-block.align-top {
+  padding-left: 3rem!important;
+  padding-right: 3rem!important;
+}
+
+body.pmsr-module-enabled #block-hasco-barrio-main-menu {
+  padding-left: 3rem!important;
+}
+
+body.pmsr-module-enabled section.row.region.region-top-header-form {
+  padding-right: 3rem!important;
+}

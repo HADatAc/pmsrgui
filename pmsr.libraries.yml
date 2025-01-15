@@ -9,7 +9,11 @@ favicons:
   css:
     theme:
       https://cdn.jsdelivr.net/npm/favicons@4.0.0/css/favicons.min.css: {}
-styles:
+pmsr-styles:
   css:
     theme:
-      css/pmsr_styles.css: { weight: 100 }
+      css/pmsr_styles.css: {}
+pmsr-overrides:
+  css:
+    theme:
+      css/pmsr_overrides.css: { weight: 1000 }

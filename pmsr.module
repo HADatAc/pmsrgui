@@ -11,9 +11,26 @@ function pmsr_preprocess_html(&$variables) {
  * Implements hook_page_attachments().
  */
 function pmsr_page_attachments(array &$attachments) {
-  // Add the bootstrap library declared in the pmsr.libraries.yml file.
-  $attachments['#attached']['library'][] = 'pmsr/bootstrap';
-  $attachments['#attached']['library'][] = 'pmsr/pmsr-styles';
+  // Sempre carrega o pmsr-overrides
+  $attachments['#attached']['library'][] = 'pmsr/pmsr-overrides';
+
+  // Obtém o nome da rota atual
+  $route_name = \Drupal::routeMatch()->getRouteName();
+
+  // Verifica se a rota começa com 'pmsr.'
+  if (strpos($route_name, 'pmsr.') === 0) {
+    $attachments['#attached']['library'][] = 'pmsr/pmsr-styles';
+  }
+
+  // Obtém o título das configurações do PMSR
+  $config = \Drupal::config('pmsr.settings');
+  $title = $config->get('title');
+
+  // Altera o nome do site
+  \Drupal::configFactory()
+    ->getEditable('rep.settings')
+    ->set('site_name', $title)
+    ->save();
 }
 
 
@@ -57,4 +74,41 @@ function pmsr_menu_links_discovered_alter(&$links) {
     $links['dpl.manage_detector_instances']['title'] = 'Manage Simulation Technique Instances';
     $links['dpl.manage_detector_instances']['description'] = 'Manage Simulation Technique Instances';
   }
+}
+
+/**
+ * Implements hook_preprocess_page().
+ */
+function pmsr_preprocess_page(&$variables) {
+  // Obtém o título das configurações do PMSR
+  $config = \Drupal::config('pmsr.settings');
+  $title = $config->get('title');
+
+  // Adiciona a variável para o template
+  $variables['pmsr_title'] = $title;
+
+  // Adiciona CSS inline para alinhamento vertical
+  $style = '
+    .navbar-brand {
+      display: flex !important;
+      align-items: center !important;
+      font-size: 2.5rem!important;
+      margin-top: 0;
+      margin-bottom: .5rem;
+      font-weight: 500;
+      line-height: 1.2;
+    }
+    .navbar-brand img {
+      margin-right: 10px;
+    }
+  ';
+
+  $variables['#attached']['html_head'][] = [
+    [
+      '#type' => 'html_tag',
+      '#tag' => 'style',
+      '#value' => $style,
+    ],
+    'pmsr_navbar_style'
+  ];
 }

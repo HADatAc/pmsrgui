@@ -101,41 +101,44 @@ class LandingPageController extends ControllerBase {
     ];
 
     // Check if user is authenticated
-    $current_user = \Drupal::currentUser();
-    if ($current_user->isAuthenticated()) {
-      // User authenticated: show Profile and Log Out options
-      $user_profile_url = Url::fromRoute('entity.user.canonical', ['user' => $current_user->id()])->toString();
-      $logout_url = Url::fromRoute('user.logout')->toString();
-      $user_links = '
-        <a class="nav-link text-white" href="' . $user_profile_url . '">Profile</a>&nbsp;|&nbsp;
-        <a class="nav-link text-white" href="' . $logout_url . '">Log Out</a>
-      ';
-    } else {
-      // Anonymous user: show Login and Sign Up options
-      $login_url = Url::fromRoute('user.login')->toString();
-      $signup_url = Url::fromRoute('user.register')->toString();
-      $user_links = '
-        <a class="nav-link text-white" href="' . $login_url . '?destination=pmsr">Login</a>&nbsp;|&nbsp;
-        <a class="nav-link text-white" href="' . $signup_url . '?destination=pmsr">Sign Up</a>
-      ';
-    }
+    // $current_user = \Drupal::currentUser();
+    // if ($current_user->isAuthenticated()) {
+    //   // User authenticated: show Profile and Log Out options
+    //   $user_profile_url = Url::fromRoute('entity.user.canonical', ['user' => $current_user->id()])->toString();
+    //   $logout_url = Url::fromRoute('user.logout')->toString();
+    //   $user_links = '
+    //     <a class="nav-link text-white" href="' . $user_profile_url . '">Profile</a>&nbsp;|&nbsp;
+    //     <a class="nav-link text-white" href="' . $logout_url . '">Log Out</a>
+    //   ';
+    // } else {
+    //   // Anonymous user: show Login and Sign Up options
+    //   $login_url = Url::fromRoute('user.login')->toString();
+    //   $signup_url = Url::fromRoute('user.register')->toString();
+    //   $user_links = '
+    //     <a class="nav-link text-white" href="' . $login_url . '?destination=pmsr">Login</a>&nbsp;|&nbsp;
+    //     <a class="nav-link text-white" href="' . $signup_url . '?destination=pmsr">Sign Up</a>
+    //   ';
+    // }
+
+    // INIT HTML
+    $output = '';
 
     // HTML HEADER
-    $output = '<div id="landing_header" class=" background-portuguese-flag">';
-    $output .= '
-      <div class="row pt-3">
-        <div class="col d-flex align-items-center">
-          <img class="px-5" height="150" src="'.$logo_url.'" />
-        </div>
-        <div class="col-8 d-flex align-items-center">
-          <h1 class="text-black">'.$title.'</h1>
-        </div>
-        <div class="col d-flex align-items-center text-align-center text-white">
-          ' . $user_links . '
-        </div>
-      </div>
-    ';
-    $output .= '</div>';
+    // $output = '<div id="landing_header" class=" background-portuguese-flag">';
+    // $output .= '
+    //   <div class="row pt-3">
+    //     <div class="col d-flex align-items-center">
+    //       <img class="px-5" height="150" src="'.$logo_url.'" />
+    //     </div>
+    //     <div class="col-8 d-flex align-items-center">
+    //       <h1 class="text-black">'.$title.'</h1>
+    //     </div>
+    //     <div class="col d-flex align-items-center text-align-center text-white">
+    //       ' . $user_links . '
+    //     </div>
+    //   </div>
+    // ';
+    // $output .= '</div>';
 
     // HTML IMAGES ROW
     $output .= '<div class="container-image">
