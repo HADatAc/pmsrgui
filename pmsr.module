@@ -22,3 +22,19 @@ function pmsr_block_view_alter(array &$build, \Drupal\Core\Block\BlockPluginInte
     }
   }
 }
+
+/**
+ * Implements hook_menu_links_discovered_alter().
+ */
+function pmsr_menu_links_discovered_alter(&$links) {
+  if (isset($links['std.top_level'])) {
+    $links['std.top_level']['title'] = 'Simulation Scenario';
+    $links['std.top_level']['description'] = 'Manage Simulation Scenarios';
+
+    $links['std.search_option']['title'] = 'Search Simulation Scenarios';
+    $links['std.search_option']['description'] = 'Search Simulation Scenarios';
+
+    $links['std.manage_studies']['title'] = 'Manage Simulation Scenarios';
+    $links['std.manage_studies']['description'] = 'Manage Simulation Scenarios';
+  }
+}

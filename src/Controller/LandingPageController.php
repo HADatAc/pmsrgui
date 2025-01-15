@@ -91,7 +91,7 @@ class LandingPageController extends ControllerBase {
 
     $buttons_col2 = [
       ['icon' => 'fas fa-chart-bar fa-2xl', 'label' => 'Manage<br /> Simulator Instances', 'url' => '#'],
-      ['icon' => 'fas fa-magnifying-glass fa-2xl', 'label' => 'Search Data', 'url' => '#'],
+      ['icon' => 'fas fa-magnifying-glass fa-2xl', 'label' => 'Find and Access Data', 'url' => '#'],
 
     ];
 

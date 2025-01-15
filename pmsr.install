@@ -16,6 +16,18 @@ function pmsr_install() {
     ->set('preferred_instrument', 'Simulator')
     ->set('preferred_detector', 'Simulation Technique')
     ->save();
+
+  // Modifica o título do menu usando configuração do menu
+  \Drupal::configFactory()->getEditable('system.menu.main')
+    ->save();
+
+  // Limpa o cache do menu
+  \Drupal::service('plugin.manager.menu.link')->rebuild();
+
+  // Limpa todos os caches relevantes
+  \Drupal::service('cache.render')->invalidateAll();
+  \Drupal::service('cache.discovery')->invalidateAll();
+  \Drupal::service('router.builder')->rebuild();
 }
 
 /**
@@ -29,7 +41,7 @@ function pmsr_uninstall() {
     ->clear('page.front')
     ->save();
 
-  // Opcional: restaurar as configurações originais do outro módulo
+  // Restaura as configurações originais
   \Drupal::configFactory()->getEditable('rep.settings')
     ->set('preferred_instrument', 'Instrument')
     ->set('preferred_detector', 'Detector')
