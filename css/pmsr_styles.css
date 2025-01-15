@@ -83,3 +83,16 @@ footer {
 #landing_footer img {
   opacity: 1;
 }
+
+
+/* HascoBarrio Theme Override */
+
+html.no-touchevents.js body.pmsr-module-enabled.layout-no-sidebars.user-logged-in.path-sir.toolbar-horizontal.toolbar-fixed.toolbar-tray-open div-dialog-off-canvas-main-canvas div#page-wrapper div#page header#header.header #navbar-top.navbar {
+  background-color: #006600 !important;
+}
+
+/* Para links dentro do navbar */
+html body.pmsr-module-enabled #navbar-top.navbar a,
+html body.pmsr-module-enabled .region-secondary-menu a {
+  color: #ffffff !important;
+}

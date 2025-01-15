@@ -12,4 +12,4 @@ favicons:
 styles:
   css:
     theme:
-      css/pmsr_styles.css: {}
+      css/pmsr_styles.css: { weight: 100 }
