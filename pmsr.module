@@ -44,5 +44,17 @@ function pmsr_menu_links_discovered_alter(&$links) {
 
     $links['std.manage_studies']['title'] = 'Manage Simulation Scenarios';
     $links['std.manage_studies']['description'] = 'Manage Simulation Scenarios';
+
+    $links['dpl.manage_platforms']['title'] = 'Manage Laboratories';
+    $links['dpl.manage_platforms']['description'] = 'Manage Laboratories';
+
+    $links['dpl.manage_platform_instances']['title'] = 'Manage Laboratory Instances';
+    $links['dpl.manage_platform_instances']['description'] = 'Manage Laboratory Instances';
+
+    $links['dpl.manage_instrument_instances']['title'] = 'Manage Simulator Instances';
+    $links['dpl.manage_instrument_instances']['description'] = 'Manage Simulator Instances';
+
+    $links['dpl.manage_detector_instances']['title'] = 'Manage Simulation Technique Instances';
+    $links['dpl.manage_detector_instances']['description'] = 'Manage Simulation Technique Instances';
   }
 }
