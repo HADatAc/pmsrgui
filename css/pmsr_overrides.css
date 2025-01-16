@@ -42,3 +42,34 @@ body.pmsr-module-enabled #block-hasco-barrio-main-menu {
 body.pmsr-module-enabled section.row.region.region-top-header-form {
   padding-right: 3rem!important;
 }
+
+.btn-primary {
+  background-color: #006600ce!important;
+}
+
+.btn-primary:hover {
+  background-color: #00660094!important;
+}
+
+#cards-wrapper .edit-element-button,
+.save-button {
+  background-color: #0d6efd!important;
+}
+
+#cards-wrapper .edit-element-button:hover,
+.save-button:hover {
+  background-color: #074cb4!important;
+}
+
+.cancel-button {
+  background-color: #be2b3a!important;
+}
+
+.cancel-button:hover {
+  background-color: #c82333!important;
+}
+
+.page-item.active .page-link {
+  background-color: #006600ce!important;
+  border-color: #006600ce!important;
+}
