@@ -31,6 +31,26 @@ function pmsr_page_attachments(array &$attachments) {
     ->getEditable('rep.settings')
     ->set('site_name', $title)
     ->save();
+
+  // Atualiza a configuração do nome do site
+  \Drupal::configFactory()
+    ->getEditable('system.site')
+    ->set('name', $title)
+    ->save();
+
+  // Obtém o caminho do logo definido nas configurações do módulo
+  $config = \Drupal::config('pmsr.settings');
+  $logo_path = base_path() . 'modules/custom/pmsr/images/ciencia_logo_150.png'; // Caminho padrão
+
+  // Se você quiser garantir que o logo padrão não seja usado
+  \Drupal::configFactory()
+    ->getEditable('system.theme.' . \Drupal::theme()->getActiveTheme()->getName())
+    ->set('logo.path', $logo_path)
+    ->set('logo.use_default', FALSE)
+    ->save();
+
+  dpm($logo_path);
+  dvr(theme_get_setting('logo.path', \Drupal::theme()->getActiveTheme()->getName()));
 }
 
 

@@ -51,6 +51,14 @@ body.pmsr-module-enabled section.row.region.region-top-header-form {
   background-color: #00660094!important;
 }
 
+.btn-info {
+  background-color: #17a2b8!important;
+}
+
+.btn-info:hover {
+  background-color: #17a3b8b7!important;
+}
+
 #cards-wrapper .edit-element-button,
 .save-button {
   background-color: #0d6efd!important;

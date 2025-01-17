@@ -17,19 +17,6 @@ class LandingPageController extends ControllerBase {
 
     $title = $config->get('title') ?? 'Repositório Médico Português';
 
-    // Load Logo
-    $logo_fid = $config->get('logo');
-    if (!empty($logo_fid) && is_array($logo_fid)) {
-      $file = File::load($logo_fid[0]);
-      if ($file) {
-        $logo_url = file_create_url($file->getFileUri());
-      } else {
-        $logo_url = base_path() . $module_path . '/images/cienciapt_logo_150.png';
-      }
-    } else {
-      $logo_url = base_path() . $module_path . '/images/cienciapt_logo_150.png';
-    }
-
     // Load image 1
     $image_1_fid = $config->get('image_1');
     if (!empty($image_1_fid) && is_array($image_1_fid)) {
