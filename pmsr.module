@@ -49,8 +49,8 @@ function pmsr_page_attachments(array &$attachments) {
     ->set('logo.use_default', FALSE)
     ->save();
 
-  dpm($logo_path);
-  dvr(theme_get_setting('logo.path', \Drupal::theme()->getActiveTheme()->getName()));
+  //dpm($logo_path);
+  //dvr(theme_get_setting('logo.path', \Drupal::theme()->getActiveTheme()->getName()));
 }
 
 
