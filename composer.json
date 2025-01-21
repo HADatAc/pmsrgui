@@ -1,5 +1,5 @@
 {
-    "name": "pmsrgui",
+    "name": "sagres/pmsrgui",
     "description": "PMSR Landing Page",
     "type": "drupal-module",
     "require": {
