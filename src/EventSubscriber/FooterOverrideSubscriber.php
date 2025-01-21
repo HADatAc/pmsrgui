@@ -98,7 +98,7 @@ class FooterOverrideSubscriber implements EventSubscriberInterface {
           <div class="container h-20">
             <div class="row h-100 align-items-center">
               <div class="col text-center">
-                <b><small>Tech Partners:</small></b> <a href="https://graxiom.com/" target="_blank"><img height="25" src="$partners_logo" alt="Tech Partners"></a>&nbsp;&nbsp;&nbsp;&nbsp;<a href="https://www.hasco.com.br/" target="_blank"><img height="25" src="$partners_2_logo" alt="Tech Partners"></a>
+                <b><small>Tech Partners:</small></b> <a href="https://graxiom.com/" target="_blank"><img height="25" src="$partners_logo" alt="Tech Partners"></a>&nbsp;&nbsp;&nbsp;&nbsp;<a href="https://www.ipiaget.org/" target="_blank"><img height="25" src="$partners_2_logo" alt="Tech Partners"></a>
               </div>
             </div>
           </div>
