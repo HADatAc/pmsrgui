@@ -95,10 +95,10 @@ class FooterOverrideSubscriber implements EventSubscriberInterface {
           </div>
         </div>
         <div id="partners_footer" class="py-1">
-          <div class="container h-20">
-            <div class="row h-100 align-items-center">
-              <div class="col text-center">
-                <b><small>Tech Partners:</small></b> <a href="https://graxiom.com/" target="_blank"><img height="25" src="$partners_logo" alt="Tech Partners"></a>&nbsp;&nbsp;&nbsp;&nbsp;<a href="https://www.ipiaget.org/" target="_blank"><img height="25" src="$partners_2_logo" alt="Tech Partners"></a>
+          <div class="container h-20 w-100" style="text-align: right;padding-right: 0px!important;">
+            <div class="row h-100">
+              <div class="col text-right">
+                <b><small class="pt-2">Powered by:</small></b> <a href="https://graxiom.com/" target="_blank"><img height="25" src="$partners_logo" alt="Tech Partners"></a></a>
               </div>
             </div>
           </div>
