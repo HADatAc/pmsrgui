@@ -1,5 +1,5 @@
 {
-    "name": "pmsr_gui",
+    "name": "pmsrgui",
     "description": "PMSR Landing Page",
     "type": "drupal-module",
     "require": {
