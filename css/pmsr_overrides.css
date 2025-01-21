@@ -1,3 +1,6 @@
+html {
+  /* background-color: #ffffff!important; */
+}
 
 /* HascoBarrio Theme Override */
 body.pmsr-module-enabled #navbar-top.navbar,
@@ -9,6 +12,29 @@ body.pmsr-module-enabled #navbar-top.navbar,
     #006600 100%
   );
   opacity: 0.9;
+  overflow-x: hidden;
+}
+
+#main-wrapper {
+  min-height: 63vh!important;
+}
+
+.site-footer {
+  background-color: #ffffff!important;
+  padding: 15px 0 0 0!important;
+}
+
+#partners_footer {
+  background-color: #292929!important;
+  padding: 15px 0 15px 0!important;
+  color: #ffffff79!important;
+  font-weight: 200!important;
+  font-family: 'Roboto', sans-serif!important;
+  font-size: 12px!important;
+}
+
+#landing_footer {
+  background-color: #0066004b!important;
 }
 
 body.pmsr-module-enabled #navbar-main.navbar.navbar-expand-lg{

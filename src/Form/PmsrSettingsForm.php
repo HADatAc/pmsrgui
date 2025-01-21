@@ -23,6 +23,12 @@ class PmsrSettingsForm extends ConfigFormBase {
       '#default_value' => $config->get('title'),
     ];
 
+    $form['subTitle'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Sub Title'),
+      '#default_value' => $config->get('subTitle'),
+    ];
+
     $form['primary_color'] = [
       '#type' => 'color',
       '#title' => $this->t('Main Color'),
@@ -95,12 +101,35 @@ class PmsrSettingsForm extends ConfigFormBase {
       '#description' => $this->t('Image should have at least 1400px wide.'),
     ];
 
+    $form['partners_logo'] = [
+      '#type' => 'managed_file',
+      '#title' => $this->t('Partners Logo'),
+      '#upload_location' => 'public://pmsr_images/',
+      '#upload_validators' => [
+        'file_validate_extensions' => ['png jpg jpeg'],
+        'file_validate_image_resolution' => ['1400x1', ''],
+      ],
+      '#default_value' => $config->get('partners_logo'),
+    ];
+
+    $form['partners_2_logo'] = [
+      '#type' => 'managed_file',
+      '#title' => $this->t('Partners 2 Logo'),
+      '#upload_location' => 'public://pmsr_images/',
+      '#upload_validators' => [
+        'file_validate_extensions' => ['png jpg jpeg'],
+        'file_validate_image_resolution' => ['1400x1', ''],
+      ],
+      '#default_value' => $config->get('partners_2_logo'),
+    ];
+
     return parent::buildForm($form, $form_state);
   }
 
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $this->config('pmsr.settings')
       ->set('title', $form_state->getValue('title'))
+      ->set('subTitle', $form_state->getValue('subTitle'))
       ->set('logo', $form_state->getValue('logo'))
       ->set('footer_logo', $form_state->getValue('footer_logo'))
       ->set('primary_color', $form_state->getValue('primary_color'))
@@ -108,6 +137,8 @@ class PmsrSettingsForm extends ConfigFormBase {
       ->set('image_1', $form_state->getValue('image_1'))
       ->set('image_2', $form_state->getValue('image_2'))
       ->set('image_3', $form_state->getValue('image_3'))
+      ->set('partners_logo', $form_state->getValue('partners_logo'))
+      ->set('partners_2_logo', $form_state->getValue('partners_2_logo'))
       ->save();
 
     parent::submitForm($form, $form_state);

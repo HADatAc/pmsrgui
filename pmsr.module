@@ -25,7 +25,7 @@ function pmsr_page_attachments(array &$attachments) {
   // Obtém o título das configurações do PMSR
   $config = \Drupal::config('pmsr.settings');
   $title = $config->get('title');
-
+  $subTitle = $config->get('subTitle');
   // Altera o nome do site
   \Drupal::configFactory()
     ->getEditable('rep.settings')
@@ -131,4 +131,5 @@ function pmsr_preprocess_page(&$variables) {
     ],
     'pmsr_navbar_style'
   ];
+
 }

@@ -5,6 +5,10 @@ html, body {
   margin: 0;
 }
 
+main {
+  min-height: 68vh!important;
+}
+
 .custom-button {
   height: 200px !important;
 }
@@ -40,9 +44,9 @@ main.main-content {
   padding: 0!important;
 }
 
-footer {
+/* footer {
   display: none;
-}
+} */
 
 
 #landing_header {

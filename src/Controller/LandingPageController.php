@@ -127,20 +127,20 @@ class LandingPageController extends ControllerBase {
     // ';
     // $output .= '</div>';
 
-    // HTML IMAGES ROW
-    $output .= '<div class="container-image">
-                  <div class="row text-center p-0">
-                    <div class="col-md-4 p-0">
-                      <img src="'.$img_1.'" class="custom-img" alt="Image 1">
-                    </div>
-                    <div class="col-md-4 p-0">
-                      <img src="'.$img_2.'" class="custom-img" alt="Image 2">
-                    </div>
-                    <div class="col-md-4 p-0">
-                      <img src="'.$img_3.'" class="custom-img" alt="Image 3">
-                    </div>
-                  </div>
-                </div>';
+    // // HTML IMAGES ROW
+    // $output .= '<div class="container-image">
+    //               <div class="row text-center p-0">
+    //                 <div class="col-md-4 p-0">
+    //                   <img src="'.$img_1.'" class="custom-img" alt="Image 1">
+    //                 </div>
+    //                 <div class="col-md-4 p-0">
+    //                   <img src="'.$img_2.'" class="custom-img" alt="Image 2">
+    //                 </div>
+    //                 <div class="col-md-4 p-0">
+    //                   <img src="'.$img_3.'" class="custom-img" alt="Image 3">
+    //                 </div>
+    //               </div>
+    //             </div>';
 
     // HTML FOR BUTTONS
     $output .= '<div class="container text-center my-5">';
@@ -179,15 +179,15 @@ class LandingPageController extends ControllerBase {
     $output .= '</div></div>';
 
     // HTML FOOTER
-    $output .= '<div id="landing_footer">
-                  <div class="container h-100">
-                    <div class="row h-100 align-items-center">
-                      <div class="col text-center">
-                        <img height="40" src="'.$footer_logo.'" alt="footer logo">
-                      </div>
-                    </div>
-                  </div>
-                </div>';
+    // $output .= '<div id="landing_footer">
+    //               <div class="container h-100">
+    //                 <div class="row h-100 align-items-center">
+    //                   <div class="col text-center">
+    //                     <img height="40" src="'.$footer_logo.'" alt="footer logo">
+    //                   </div>
+    //                 </div>
+    //               </div>
+    //             </div>';
 
     // Return HTML
     return [
