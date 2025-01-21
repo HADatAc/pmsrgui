@@ -1,0 +1,6 @@
+pmsr.settings:
+  title: 'Config PMSR'
+  description: 'Configure PMSR módule'
+  parent: system.admin_config
+  route_name: pmsr.settings
+  weight: 100

@@ -1,0 +1,15 @@
+pmsr.landing_page:
+  path: '/pmsr'
+  defaults:
+    _controller: 'Drupal\pmsr\Controller\LandingPageController::content'
+    _title: 'PMSR Landing Page'
+  requirements:
+    _permission: 'access content'
+
+pmsr.settings:
+  path: '/admin/config/pmsr'
+  defaults:
+    _form: '\Drupal\pmsr\Form\PmsrSettingsForm'
+    _title: 'PMSR GUI Module Configurations'
+  requirements:
+    _permission: 'administer site configuration'

@@ -1,0 +1,10 @@
+services:
+  pmsr.theme_negotiator:
+    class: Drupal\pmsr\Theme\PmsrThemeNegotiator
+    tags:
+      - { name: theme_negotiator, priority: 999 }
+
+  pmsr.footer_override_subscriber:
+    class: Drupal\pmsr\EventSubscriber\FooterOverrideSubscriber
+    tags:
+      - { name: event_subscriber }

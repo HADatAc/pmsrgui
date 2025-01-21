@@ -1,0 +1,49 @@
+<?php
+
+/**
+ * IMPLEMENTS hook_install().
+ *
+ * Configure GLOBAL homepage and update preferred settings
+ */
+function pmsr_install() {
+  // Define a rota personalizada como homepage.
+  \Drupal::configFactory()->getEditable('system.site')
+    ->set('page.front', '/pmsr')
+    ->save();
+
+  // Atualiza as configurações do outro módulo
+  \Drupal::configFactory()->getEditable('rep.settings')
+    ->set('preferred_instrument', 'Simulator')
+    ->set('preferred_detector', 'Simulation Technique')
+    ->save();
+
+  // Modifica o título do menu usando configuração do menu
+  \Drupal::configFactory()->getEditable('system.menu.main')
+    ->save();
+
+  // Limpa o cache do menu
+  \Drupal::service('plugin.manager.menu.link')->rebuild();
+
+  // Limpa todos os caches relevantes
+  \Drupal::service('cache.render')->invalidateAll();
+  \Drupal::service('cache.discovery')->invalidateAll();
+  \Drupal::service('router.builder')->rebuild();
+}
+
+/**
+ * IMPLEMENTS hook_uninstall().
+ *
+ * Restore DEFAULT homepage and settings
+ */
+function pmsr_uninstall() {
+  // Restaura a homepage padrão
+  \Drupal::configFactory()->getEditable('system.site')
+    ->clear('page.front')
+    ->save();
+
+  // Restaura as configurações originais
+  \Drupal::configFactory()->getEditable('rep.settings')
+    ->set('preferred_instrument', 'Instrument')
+    ->set('preferred_detector', 'Detector')
+    ->save();
+}

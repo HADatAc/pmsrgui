@@ -1,0 +1,135 @@
+<?php
+
+/**
+ * Implements hook_preprocess_html().
+ */
+function pmsr_preprocess_html(&$variables) {
+  $variables['attributes']['class'][] = 'pmsr-module-enabled';
+}
+
+/**
+ * Implements hook_page_attachments().
+ */
+function pmsr_page_attachments(array &$attachments) {
+  // Sempre carrega o pmsr-overrides
+  $attachments['#attached']['library'][] = 'pmsr/pmsr-overrides';
+
+  // Obtém o nome da rota atual
+  $route_name = \Drupal::routeMatch()->getRouteName();
+
+  // Verifica se a rota começa com 'pmsr.'
+  if (strpos($route_name, 'pmsr.') === 0) {
+    $attachments['#attached']['library'][] = 'pmsr/pmsr-styles';
+  }
+
+  // Obtém o título das configurações do PMSR
+  $config = \Drupal::config('pmsr.settings');
+  $title = $config->get('title');
+  $subTitle = $config->get('subTitle');
+  // Altera o nome do site
+  \Drupal::configFactory()
+    ->getEditable('rep.settings')
+    ->set('site_name', $title)
+    ->save();
+
+  // Atualiza a configuração do nome do site
+  \Drupal::configFactory()
+    ->getEditable('system.site')
+    ->set('name', $title)
+    ->save();
+
+  // Obtém o caminho do logo definido nas configurações do módulo
+  $config = \Drupal::config('pmsr.settings');
+  $logo_path = base_path() . 'modules/custom/pmsr/images/ciencia_logo_150.png'; // Caminho padrão
+
+  // Se você quiser garantir que o logo padrão não seja usado
+  \Drupal::configFactory()
+    ->getEditable('system.theme.' . \Drupal::theme()->getActiveTheme()->getName())
+    ->set('logo.path', $logo_path)
+    ->set('logo.use_default', FALSE)
+    ->save();
+
+  //dpm($logo_path);
+  //dvr(theme_get_setting('logo.path', \Drupal::theme()->getActiveTheme()->getName()));
+}
+
+
+/**
+ * Implements hook_block_view_alter().
+ */
+function pmsr_block_view_alter(array &$build, \Drupal\Core\Block\BlockPluginInterface $block) {
+  // Verifica se o bloco é o "block-hasco-barrio-page-title".
+  if ($block->getBaseId() === 'page_title_block') {
+    // Verifica se a rota atual é "pmsr.landing_page".
+    if (\Drupal::routeMatch()->getRouteName() === 'pmsr.landing_page') {
+      // Remove o conteúdo do bloco.
+      $build = [];
+    }
+  }
+}
+
+/**
+ * Implements hook_menu_links_discovered_alter().
+ */
+function pmsr_menu_links_discovered_alter(&$links) {
+  if (isset($links['std.top_level'])) {
+    $links['std.top_level']['title'] = 'Simulation Scenario';
+    $links['std.top_level']['description'] = 'Manage Simulation Scenarios';
+
+    $links['std.search_option']['title'] = 'Search Simulation Scenarios';
+    $links['std.search_option']['description'] = 'Search Simulation Scenarios';
+
+    $links['std.manage_studies']['title'] = 'Manage Simulation Scenarios';
+    $links['std.manage_studies']['description'] = 'Manage Simulation Scenarios';
+
+    $links['dpl.manage_platforms']['title'] = 'Manage Laboratories';
+    $links['dpl.manage_platforms']['description'] = 'Manage Laboratories';
+
+    $links['dpl.manage_platform_instances']['title'] = 'Manage Laboratory Instances';
+    $links['dpl.manage_platform_instances']['description'] = 'Manage Laboratory Instances';
+
+    $links['dpl.manage_instrument_instances']['title'] = 'Manage Simulator Instances';
+    $links['dpl.manage_instrument_instances']['description'] = 'Manage Simulator Instances';
+
+    $links['dpl.manage_detector_instances']['title'] = 'Manage Simulation Technique Instances';
+    $links['dpl.manage_detector_instances']['description'] = 'Manage Simulation Technique Instances';
+  }
+}
+
+/**
+ * Implements hook_preprocess_page().
+ */
+function pmsr_preprocess_page(&$variables) {
+  // Obtém o título das configurações do PMSR
+  $config = \Drupal::config('pmsr.settings');
+  $title = $config->get('title');
+
+  // Adiciona a variável para o template
+  $variables['pmsr_title'] = $title;
+
+  // Adiciona CSS inline para alinhamento vertical
+  $style = '
+    .navbar-brand {
+      display: flex !important;
+      align-items: center !important;
+      font-size: 2.5rem!important;
+      margin-top: 0;
+      margin-bottom: .5rem;
+      font-weight: 500;
+      line-height: 1.2;
+    }
+    .navbar-brand img {
+      margin-right: 10px;
+    }
+  ';
+
+  $variables['#attached']['html_head'][] = [
+    [
+      '#type' => 'html_tag',
+      '#tag' => 'style',
+      '#value' => $style,
+    ],
+    'pmsr_navbar_style'
+  ];
+
+}
