@@ -73,7 +73,7 @@ function pmsr_block_view_alter(array &$build, \Drupal\Core\Block\BlockPluginInte
  */
 function pmsr_menu_links_discovered_alter(&$links) {
   if (isset($links['std.top_level'])) {
-    $links['std.top_level']['title'] = 'Simulation Scenario';
+    $links['std.top_level']['title'] = 'Simulation Scenarios';
     $links['std.top_level']['description'] = 'Manage Simulation Scenarios';
 
     $links['std.search_option']['title'] = 'Search Simulation Scenarios';
