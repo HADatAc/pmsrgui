@@ -11,6 +11,7 @@ class LandingPageController extends ControllerBase {
 
     // LOAD CONFIG
     $config = \Drupal::config('pmsr.settings');
+    $user = \Drupal::currentUser();
 
     // Module path
     $module_path = \Drupal::service('extension.list.module')->getPath('pmsr');
@@ -143,40 +144,61 @@ class LandingPageController extends ControllerBase {
     //             </div>';
 
     // HTML FOR BUTTONS
-    $output .= '<div class="container text-center my-5">';
+    $output .= '<div class="container my-5">';
     $output .= '<div class="row">';
 
-    // Column 1
-    $output .= '<div class="col-4 d-flex flex-column justify-content-between">';
-    foreach ($buttons_col1 as $button) {
-      $output .= '<a href="' . $button['url'] . '" class="btn btn-primary btn-lg my-2 d-flex align-items-center justify-content-center custom-button">';
-      $output .= '<i class="' . $button['icon'] . ' me-2"></i>&nbsp;';
-      $output .= '<h5>' . $button['label'] . '</h5>';
-      $output .= '</a>';
-    }
-    $output .= '</div>';
+    //USER IS AUTHENTICATED
+    if ($user->isAuthenticated()) {
+      // Column 1
+      $output .= '<div class="col-4 d-flex flex-column justify-content-between">';
+      foreach ($buttons_col1 as $button) {
+        $output .= '<a href="' . $button['url'] . '" class="btn btn-primary btn-lg my-2 d-flex align-items-center justify-content-center custom-button">';
+        $output .= '<i class="' . $button['icon'] . ' me-2"></i>&nbsp;';
+        $output .= '<h5>' . $button['label'] . '</h5>';
+        $output .= '</a>';
+      }
+      $output .= '</div>';
 
-    // Column 2
-    $output .= '<div class="col-4 d-flex flex-column justify-content-between">';
-    foreach ($buttons_col2 as $button) {
-      $output .= '<a href="' . $button['url'] . '" class="btn btn-primary btn-lg my-2 d-flex align-items-center justify-content-center custom-button">';
-      $output .= '<i class="' . $button['icon'] . ' me-2"></i>&nbsp;';
-      $output .= '<h5>' . $button['label'] . '</h5>';
-      $output .= '</a>';
-    }
-    $output .= '</div>';
+      // Column 2
+      $output .= '<div class="col-4 d-flex flex-column justify-content-between">';
+      foreach ($buttons_col2 as $button) {
+        $output .= '<a href="' . $button['url'] . '" class="btn btn-primary btn-lg my-2 d-flex align-items-center justify-content-center custom-button">';
+        $output .= '<i class="' . $button['icon'] . ' me-2"></i>&nbsp;';
+        $output .= '<h5>' . $button['label'] . '</h5>';
+        $output .= '</a>';
+      }
+      $output .= '</div>';
 
-    // Column 3
-    $output .= '<div class="col-4 d-flex flex-column justify-content-between">';
-    foreach ($buttons_col3 as $button) {
-      $output .= '<a href="' . $button['url'] . '" class="btn btn-primary btn-lg my-2 d-flex align-items-center justify-content-center custom-button">';
-      $output .= '<i class="' . $button['icon'] . ' me-2"></i>&nbsp;';
-      $output .= '<h5>' . $button['label'] . '</h5>';
-      $output .= '</a>';
-    }
-    $output .= '</div>';
+      // Column 3
+      $output .= '<div class="col-4 d-flex flex-column justify-content-between">';
+      foreach ($buttons_col3 as $button) {
+        $output .= '<a href="' . $button['url'] . '" class="btn btn-primary btn-lg my-2 d-flex align-items-center justify-content-center custom-button">';
+        $output .= '<i class="' . $button['icon'] . ' me-2"></i>&nbsp;';
+        $output .= '<h5>' . $button['label'] . '</h5>';
+        $output .= '</a>';
+      }
+      $output .= '</div>';
+    } else {
+      // USER IS NOT AUTHENTICATED
 
-    $output .= '</div></div>';
+      $output .= '<div class="col-12 text-center">';
+      $output .= '      <h2>Welcome to '.$config->get('title').'</h2>';
+      $output .= '</div>';
+
+      // CLOSE ROW
+      $output .= '</div>';
+
+      $output .= '<div class="row">';
+      $output .= '<div class="col-2"></div>';
+      $output .= '<div class="col-8 mt-5text-left">';
+      $output .= '  <p>To access the content you must be authenticated</p>';
+      $output .= '  ';
+      $output .= '</div>';
+      $output .= '<div class="col-2"></div>';
+    }
+
+    // CLOSE CONTAINER
+    $output .= '</div>';
 
     // HTML FOOTER
     // $output .= '<div id="landing_footer">

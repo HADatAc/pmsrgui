@@ -13,3 +13,11 @@ pmsr.settings:
     _title: 'PMSR GUI Module Configurations'
   requirements:
     _permission: 'administer site configuration'
+
+pmsr.access_denied:
+  path: '/acess-denied'
+  defaults:
+    _controller: '\Drupal\pmsr\Controller\AccessDeniedController::accessDeniedPage'
+    _title: 'Access Denied'
+  requirements:
+    _access: 'TRUE'

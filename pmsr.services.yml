@@ -8,3 +8,8 @@ services:
     class: Drupal\pmsr\EventSubscriber\FooterOverrideSubscriber
     tags:
       - { name: event_subscriber }
+
+  # pmsr.custom_403_subscriber:
+  #   class: Drupal\pmsr\EventSubscriber\Custom403Subscriber
+  #   tags:
+  #     - { name: event_subscriber }
