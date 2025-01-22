@@ -8,28 +8,28 @@ use Symfony\Component\HttpKernel\Event\ResponseEvent;
 use Drupal\file\Entity\File;
 
 /**
- * Subscritor de evento para injetar HTML no footer de todas as páginas.
+ * Event subscriber to inject HTML into the footer of all pages.
  */
 class FooterOverrideSubscriber implements EventSubscriberInterface {
 
   /**
-   * Registra o método que irá reagir ao evento RESPONSE do Kernel.
+   * Registers the method that will respond to the Kernel's RESPONSE event.
    *
    * @return array
-   *   Array com o evento e o método a chamar.
+   *   Array with the event and the method to call.
    */
   public static function getSubscribedEvents() {
-    // O -100 garante que isso ocorra perto do final do pipeline de resposta.
+    // The -100 guarantees that this occurs near the end of the response pipeline.
     return [
       KernelEvents::RESPONSE => ['injectFooter', -100],
     ];
   }
 
   /**
-   * Injeta HTML antes de </body> em todas as respostas HTML do site.
+   * Injects HTML before </body> in all HTML responses on the site.
    *
    * @param \Symfony\Component\HttpKernel\Event\ResponseEvent $event
-   *   O objeto de evento, que contém a resposta.
+   *   The event object, which contains the response.
    */
   public function injectFooter(ResponseEvent $event) {
     // Load config
@@ -38,12 +38,12 @@ class FooterOverrideSubscriber implements EventSubscriberInterface {
     // Module path
     $module_path = \Drupal::service('extension.list.module')->getPath('pmsr');
 
-    // Verifica se é realmente uma resposta HTML.
+    // Check if it's really an HTML response.
     $response = $event->getResponse();
     $content_type = $response->headers->get('content-type');
     if ($content_type && str_contains($content_type, 'html')) {
 
-      // Obtenha o HTML atual da página.
+      // Get the current HTML of the page.
       $content = $response->getContent();
 
       // Load footer logo
@@ -83,7 +83,7 @@ class FooterOverrideSubscriber implements EventSubscriberInterface {
         $partners_2_logo = base_path() . $module_path . '/images/piaget.png';
       }
 
-      // Defina aqui o HTML que deseja injetar:
+      // Set the HTML to inject here:
       $footer_html = <<<HTML
         <div id="landing_footer" class="py-3">
           <div class="container h-100">
@@ -105,13 +105,13 @@ class FooterOverrideSubscriber implements EventSubscriberInterface {
         </div>
       HTML;
 
-      // Insere logo antes de </body>.
-      // IMPORTANTE: isso depende de haver um "</body>" minúsculo no HTML final.
-      // Se seu tema/módulo gerar BODY maiúsculo ou outro, pode ser necessário
-      // um replace case-insensitive, ou outra lógica.
+      // Insert logo before </body>.
+      // IMPORTANT: this depends on there being a "</body>" in the final HTML.
+      // If your theme/module generates BODY uppercase or other, it may be necessary
+      // to use a case-insensitive replace, or other logic.
       $content = str_replace('</footer>', $footer_html . '</footer>', $content);
 
-      // Atualiza o conteúdo da resposta.
+      // Update the response content.
       $response->setContent($content);
     }
   }

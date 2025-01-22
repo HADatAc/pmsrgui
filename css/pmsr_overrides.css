@@ -1,8 +1,5 @@
-html {
-  /* background-color: #ffffff!important; */
-}
-
 /* HascoBarrio Theme Override */
+
 body.pmsr-module-enabled #navbar-top.navbar,
 #navbar-top.navbar {
   height: 176px!important; /* Ajuste conforme necessário */
@@ -13,6 +10,7 @@ body.pmsr-module-enabled #navbar-top.navbar,
   );
   opacity: 0.9;
   overflow-x: hidden;
+  border-bottom: 2px solid #00660096!important;
 }
 
 #main-wrapper {
