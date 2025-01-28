@@ -105,3 +105,12 @@ body.pmsr-module-enabled section.row.region.region-top-header-form {
   background-color: #006600ce!important;
   border-color: #006600ce!important;
 }
+
+body.pmsr-module-enabled #navbar-main.navbar.navbar-expand-lg a {
+  text-decoration: none!important;
+}
+
+body.pmsr-module-enabled li.dropdown-item.active,
+body.pmsr-module-enabled li.dropdown-item:active {
+  background-color: #006600be!important;
+}
