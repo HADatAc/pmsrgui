@@ -114,3 +114,12 @@ body.pmsr-module-enabled li.dropdown-item.active,
 body.pmsr-module-enabled li.dropdown-item:active {
   background-color: #006600be!important;
 }
+
+body.pmsr-module-enabled div.nav-pills .form-control.nav-link.active {
+  background-color: #006600!important;
+}
+
+body.pmsr-module-enabled div.nav-pills .form-control.nav-link {
+  background-color: #006600be!important;
+  color: #f4f4f4!important;
+}
