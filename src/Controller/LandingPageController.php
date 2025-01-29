@@ -190,7 +190,7 @@ class LandingPageController extends ControllerBase {
 
       $output .= '<div class="row">';
       $output .= '<div class="col-2"></div>';
-      $output .= '<div class="col-8 mt-5text-left">';
+      $output .= '<div class="col-8 mt-5 text-left" style="margin-top:2rem;">';
       $output .= '  <p>To access the content you must be authenticated</p>';
       $output .= '  ';
       $output .= '</div>';
