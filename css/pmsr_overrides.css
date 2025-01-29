@@ -123,3 +123,7 @@ body.pmsr-module-enabled div.nav-pills .form-control.nav-link {
   background-color: #006600be!important;
   color: #f4f4f4!important;
 }
+
+body.pmsr-module-enabled .navbar .navbar-brand img {
+  height: 140px!important;
+}
