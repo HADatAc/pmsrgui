@@ -127,3 +127,10 @@ body.pmsr-module-enabled div.nav-pills .form-control.nav-link {
 body.pmsr-module-enabled .navbar .navbar-brand img {
   height: 140px!important;
 }
+
+/* HIDE CREATE USER ACCOUNT */
+a[href*="/user/password"],
+a[href*="user/register"] {
+  display: none !important;
+}
+
