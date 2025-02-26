@@ -32,6 +32,7 @@ class FooterOverrideSubscriber implements EventSubscriberInterface {
    *   The event object, which contains the response.
    */
   public function injectFooter(ResponseEvent $event) {
+
     // Load config
     $config = \Drupal::config('pmsr.settings');
 
@@ -109,7 +110,26 @@ class FooterOverrideSubscriber implements EventSubscriberInterface {
       // IMPORTANT: this depends on there being a "</body>" in the final HTML.
       // If your theme/module generates BODY uppercase or other, it may be necessary
       // to use a case-insensitive replace, or other logic.
-      $content = str_replace('</footer>', $footer_html . '</footer>', $content);
+      $account = \Drupal::currentUser();
+      $request = $event->getRequest();
+      // dpm($request->attributes->get('_route'));
+      if ($request->attributes->get('_route') !== 'system.403') {
+        $content = str_replace('</footer>', $footer_html . '</footer>', $content);
+      }
+      // else {
+      //   $footer_html2 = <<<HTML
+      //   <div id="partners_footer" class="py-1">
+      //     <div class="container h-20 w-100" style="text-align: right;padding-right: 0px!important;">
+      //       <div class="row h-100">
+      //         <div class="col text-right">
+      //           <b><small class="pt-2">Powered by:</small></b> <a href="https://graxiom.com/" target="_blank"><img height="25" src="$partners_logo" alt="Tech Partners"></a></a>
+      //         </div>
+      //       </div>
+      //     </div>
+      //   </div>
+      // HTML;
+      //   $content = str_replace('</footer>', $footer_html2 . '</footer>', $content);
+      // }
 
       // Update the response content.
       $response->setContent($content);
