@@ -54,6 +54,10 @@ body.pmsr-module-enabled #navbar-main.navbar.navbar-expand-lg a.active {
   color: #ffffff!important;
 }
 
+body.pmsr-module-enabled #navbar-main.navbar.navbar-expand-lg .dropdown-menu a.active.dropdown-toggle {
+  background: none!important;
+}
+
 body.pmsr-module-enabled img.img-fluid.d-inline-block.align-top {
   padding-left: 3rem!important;
   padding-right: 3rem!important;
