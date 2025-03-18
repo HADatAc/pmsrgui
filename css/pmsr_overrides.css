@@ -138,3 +138,44 @@ a[href*="user/register"] {
   display: none !important;
 }
 
+/* On screens that are 600px or less, set the background color to olive */
+@media screen and (max-width: 600px) {
+  body.pmsr-module-enabled .navbar .navbar-brand img {
+    height: 70px!important;
+    width: 70px;
+  }
+  body.pmsr-module-enabled img.img-fluid.d-inline-block.align-top {
+    padding-right: 0!important;
+    padding-left: 0!important;
+  }
+  header a.navbar-brand {
+    font-size: 14px!important;
+    text-wrap: auto;
+    padding-right: 38px;
+  }
+  .content .container {
+    padding-right: calc(var(--bs-gutter-x)* 0.8);
+    padding-left: calc(var(--bs-gutter-x)* 1.6);
+  }
+
+  .content .container .my-5 {
+    margin-top: 1rem!important;
+  }
+
+  /* CSS */
+  .custom-button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .custom-button h5 {
+    font-size: 1rem;
+  }
+
+  .custom-button i {
+    font-size: 1rem;
+  }
+}
