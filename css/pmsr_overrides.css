@@ -1,8 +1,5 @@
-html {
-  /* background-color: #ffffff!important; */
-}
-
 /* HascoBarrio Theme Override */
+
 body.pmsr-module-enabled #navbar-top.navbar,
 #navbar-top.navbar {
   height: 176px!important; /* Ajuste conforme necessário */
@@ -13,6 +10,7 @@ body.pmsr-module-enabled #navbar-top.navbar,
   );
   opacity: 0.9;
   overflow-x: hidden;
+  border-bottom: 2px solid #00660096!important;
 }
 
 #main-wrapper {
@@ -54,6 +52,10 @@ body.pmsr-module-enabled #navbar-main.navbar.navbar-expand-lg a.active {
   font-weight: 600!important;
   background-color: #006600be!important;
   color: #ffffff!important;
+}
+
+body.pmsr-module-enabled #navbar-main.navbar.navbar-expand-lg .dropdown-menu a.active.dropdown-toggle {
+  background: none!important;
 }
 
 body.pmsr-module-enabled img.img-fluid.d-inline-block.align-top {
@@ -106,4 +108,74 @@ body.pmsr-module-enabled section.row.region.region-top-header-form {
 .page-item.active .page-link {
   background-color: #006600ce!important;
   border-color: #006600ce!important;
+}
+
+body.pmsr-module-enabled #navbar-main.navbar.navbar-expand-lg a {
+  text-decoration: none!important;
+}
+
+body.pmsr-module-enabled li.dropdown-item.active,
+body.pmsr-module-enabled li.dropdown-item:active {
+  background-color: #006600be!important;
+}
+
+body.pmsr-module-enabled div.nav-pills .form-control.nav-link.active {
+  background-color: #006600!important;
+}
+
+body.pmsr-module-enabled div.nav-pills .form-control.nav-link {
+  background-color: #006600be!important;
+  color: #f4f4f4!important;
+}
+
+body.pmsr-module-enabled .navbar .navbar-brand img {
+  height: 140px!important;
+}
+
+/* HIDE CREATE USER ACCOUNT */
+a[href*="/user/password"],
+a[href*="user/register"] {
+  display: none !important;
+}
+
+/* On screens that are 600px or less, set the background color to olive */
+@media screen and (max-width: 600px) {
+  body.pmsr-module-enabled .navbar .navbar-brand img {
+    height: 70px!important;
+    width: 70px;
+  }
+  body.pmsr-module-enabled img.img-fluid.d-inline-block.align-top {
+    padding-right: 0!important;
+    padding-left: 0!important;
+  }
+  header a.navbar-brand {
+    font-size: 14px!important;
+    text-wrap: auto;
+    padding-right: 38px;
+  }
+  .content .container {
+    padding-right: calc(var(--bs-gutter-x)* 0.8);
+    padding-left: calc(var(--bs-gutter-x)* 1.6);
+  }
+
+  .content .container .my-5 {
+    margin-top: 1rem!important;
+  }
+
+  /* CSS */
+  .custom-button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .custom-button h5 {
+    font-size: 1rem;
+  }
+
+  .custom-button i {
+    font-size: 1rem;
+  }
 }

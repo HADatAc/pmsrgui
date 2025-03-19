@@ -15,6 +15,7 @@ function pmsr_install() {
   \Drupal::configFactory()->getEditable('rep.settings')
     ->set('preferred_instrument', 'Simulator')
     ->set('preferred_detector', 'Simulation Technique')
+    ->set('preferred_actuator', 'Actuator')
     ->save();
 
   // Modifica o título do menu usando configuração do menu
@@ -45,5 +46,6 @@ function pmsr_uninstall() {
   \Drupal::configFactory()->getEditable('rep.settings')
     ->set('preferred_instrument', 'Instrument')
     ->set('preferred_detector', 'Detector')
+    ->set('preferred_actuator', 'Actuator')
     ->save();
 }
