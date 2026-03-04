@@ -8,6 +8,32 @@
 
   Drupal.behaviors.pmsrProjectContributorsMap = {
     attach: function (context) {
+      once('pmsrSuppressKnownKgErrors', 'body', context).forEach(function () {
+        var selectors = [
+          '.messages--error',
+          '.alert-danger',
+          '.messages.messages--error'
+        ];
+
+        selectors.forEach(function (selector) {
+          document.querySelectorAll(selector).forEach(function (node) {
+            var text = (node.textContent || '').toLowerCase();
+            var isKnownKgMissing =
+              text.indexOf('returned no object from the knowledge graph') !== -1 ||
+              text.indexOf('failed to fetch uri data') !== -1;
+
+            if (!isKnownKgMissing) {
+              return;
+            }
+
+            node.style.display = 'none';
+            console.warn('[pmsrLanding] suppressed known missing-URI message banner', {
+              text: (node.textContent || '').trim()
+            });
+          });
+        });
+      });
+
       once('pmsrProjectResolutionDebug', 'body', context).forEach(function () {
         var debug = (drupalSettings && drupalSettings.pmsrLandingDebug && drupalSettings.pmsrLandingDebug.projectResolution)
           ? drupalSettings.pmsrLandingDebug.projectResolution

@@ -286,9 +286,9 @@ class LandingPageControllerCienciaPt extends ControllerBase {
       return '';
     }
 
-    // Prefer dynamic resolution from Social API over OAuth client_credentials.
+    // Prefer dynamic resolution through REP connector (FusekiAPIConnector).
     try {
-      $call = $this->fetchProjectsFromSocialByConsumer($consumerId);
+      $call = $this->fetchProjectsViaRepConnector();
       $this->projectResolutionDebug['dynamicCall'] = $call;
 
       $parsed = $call['parsed'] ?? NULL;
@@ -300,7 +300,7 @@ class LandingPageControllerCienciaPt extends ControllerBase {
         ]);
         foreach ($parsed as $project) {
           if (is_object($project) && !empty($project->uri)) {
-            $this->projectResolutionDebug['source'] = 'social_api_listByKeywordType';
+            $this->projectResolutionDebug['source'] = 'rep.api_connector.listByKeywordType';
             $this->projectResolutionDebug['resolvedProjectUri'] = (string) $project->uri;
             \Drupal::logger('pmsr')->notice('Landing dynamic project selected uri=@u label=@l', [
               '@u' => (string) $project->uri,
@@ -311,7 +311,7 @@ class LandingPageControllerCienciaPt extends ControllerBase {
         }
       }
       elseif (is_object($parsed) && !empty($parsed->uri)) {
-        $this->projectResolutionDebug['source'] = 'social_api_listByKeywordType';
+        $this->projectResolutionDebug['source'] = 'rep.api_connector.listByKeywordType';
         $this->projectResolutionDebug['resolvedProjectUri'] = (string) $parsed->uri;
         \Drupal::logger('pmsr')->notice('Landing dynamic project received single object uri=@u label=@l', [
           '@u' => (string) $parsed->uri,
@@ -359,33 +359,20 @@ class LandingPageControllerCienciaPt extends ControllerBase {
       return $associatedProject;
     }
 
-    // Last fallback only: consumer->project mapping stored by SocialM manager.
-    // This may be stale in some environments, so it must not override explicit
-    // PMSR/REP configuration.
-    $localMappedProject = $this->getLocalMappedProjectForConsumer($consumerId);
-    if ($localMappedProject !== '') {
-      $this->projectResolutionDebug['source'] = 'socialm_manageConsumers.project_id';
-      $this->projectResolutionDebug['resolvedProjectUri'] = $localMappedProject;
-      \Drupal::logger('pmsr')->notice('Landing project resolution fallback(socialm_manageConsumers): consumer_id=@c project_uri=@p', [
-        '@c' => $consumerId,
-        '@p' => $localMappedProject,
-      ]);
-      return $localMappedProject;
-    }
+    $this->projectResolutionDebug['reason'] = 'no_project_from_rep_or_config';
 
     return '';
   }
 
   /**
-   * Performs a direct OAuth + Social API call for projects by consumer_id.
+   * Retrieves project candidates through REP connector (FusekiAPIConnector).
    *
    * @return array{status:int|null,oauth:array,request:array,response:mixed,parsed:mixed,error:string|null}
    */
-  protected function fetchProjectsFromSocialByConsumer(string $consumerId): array {
+  protected function fetchProjectsViaRepConnector(): array {
     $oauthConfig = \Drupal::config('social.oauth.settings');
     $oauthUrl = trim((string) $oauthConfig->get('oauth_url'));
     $clientId = trim((string) $oauthConfig->get('client_id'));
-    $clientSecret = (string) $oauthConfig->get('client_secret');
 
     $result = [
       'status' => NULL,
@@ -394,134 +381,54 @@ class LandingPageControllerCienciaPt extends ControllerBase {
         'client_id' => $clientId,
       ],
       'request' => [
-        'consumer_id' => $consumerId,
+        'consumer_id' => $clientId,
         'elementType' => 'project',
+        'project' => 'all',
         'keyword' => '_',
         'type' => '_',
         'manageremail' => '_',
         'status' => '_',
+        'pageSize' => 50,
+        'offset' => 0,
       ],
       'response' => NULL,
       'parsed' => NULL,
       'error' => NULL,
     ];
 
-    if ($oauthUrl === '' || $clientId === '' || $clientSecret === '') {
-      $result['error'] = 'Missing social.oauth.settings credentials';
+    if ($clientId === '') {
+      $result['error'] = 'Missing social.oauth.settings.client_id';
       return $result;
     }
 
-    $httpClient = \Drupal::httpClient();
-
     try {
-      $tokenResponse = $httpClient->request('POST', $oauthUrl, [
-        'form_params' => [
-          'grant_type' => 'client_credentials',
-          'client_id' => $clientId,
-          'client_secret' => $clientSecret,
-          'scope' => 'read',
-        ],
-        'headers' => ['Accept' => 'application/json'],
-        'http_errors' => FALSE,
-        'timeout' => 20,
-        'connect_timeout' => 8,
-      ]);
+      /** @var \Drupal\rep\ApiConnectorInterface $api */
+      $api = \Drupal::service('rep.api_connector');
+      $raw = $api->listByKeywordType('project', 50, 0, 'all', '_', '_', '_', '_');
 
-      $tokenPayload = json_decode((string) $tokenResponse->getBody(), TRUE);
-      $accessToken = is_array($tokenPayload) ? (string) ($tokenPayload['access_token'] ?? '') : '';
-      if ($accessToken === '') {
-        $result['status'] = (int) $tokenResponse->getStatusCode();
-        $result['response'] = is_array($tokenPayload) ? $tokenPayload : (string) $tokenResponse->getBody();
-        $result['error'] = 'OAuth token missing in response';
-        return $result;
+      $result['status'] = 200;
+      $result['response'] = $this->normalizeDebugPayload($raw);
+
+      $parsed = $api->parseObjectResponse($raw, 'listByKeywordType');
+      if (is_array($parsed)) {
+        $result['parsed'] = $parsed;
       }
-
-      $baseUrl = rtrim(preg_replace('#/oauth/token$#', '', $oauthUrl), '/');
-      $socialListUrl = $baseUrl . '/api/socialm/list';
-
-      $socialResponse = $httpClient->request('POST', $socialListUrl, [
-        'headers' => [
-          'Authorization' => 'Bearer ' . $accessToken,
-          'Accept' => 'application/json',
-          'Content-Type' => 'application/json',
-        ],
-        'json' => [
-          'token' => $accessToken,
-          'consumer_id' => $consumerId,
-          'elementType' => 'project',
-          'keyword' => '_',
-          'type' => '_',
-          'manageremail' => '_',
-          'status' => '_',
-        ],
-        'http_errors' => FALSE,
-        'timeout' => 30,
-        'connect_timeout' => 10,
-      ]);
-
-      $status = (int) $socialResponse->getStatusCode();
-      $bodyString = (string) $socialResponse->getBody();
-      $decoded = json_decode($bodyString, TRUE);
-
-      $result['status'] = $status;
-      $result['response'] = is_array($decoded) ? $decoded : $bodyString;
-
-      if ($status >= 400) {
-        $result['error'] = 'Social endpoint returned HTTP ' . $status;
-        return $result;
+      elseif (is_object($parsed) && !empty($parsed->body) && is_array($parsed->body)) {
+        $result['parsed'] = $parsed->body;
       }
-
-      if (is_array($decoded)) {
-        $result['parsed'] = $decoded;
+      elseif (is_object($parsed) && !empty($parsed->uri)) {
+        $result['parsed'] = $parsed;
       }
       else {
-        $result['parsed'] = $bodyString;
+        $result['parsed'] = $parsed;
       }
     }
     catch (\Throwable $e) {
       $result['error'] = $e->getMessage();
+      $result['status'] = 500;
     }
 
     return $result;
-  }
-
-  /**
-   * Reads the latest local project mapping for a consumer, when available.
-   */
-  protected function getLocalMappedProjectForConsumer(string $consumerId): string {
-    $consumerId = trim($consumerId);
-    if ($consumerId === '') {
-      return '';
-    }
-
-    try {
-      $db = \Drupal::database();
-      $schema = $db->schema();
-      $query = $db->select('socialm_manageConsumers', 'm')
-        ->fields('m', ['project_id'])
-        ->condition('consumer_id', $consumerId)
-        ->isNotNull('project_id');
-
-      $orderCandidates = ['id', 'updated_at', 'changed', 'created_at', 'created', 'timestamp'];
-      foreach ($orderCandidates as $fieldName) {
-        if ($schema->fieldExists('socialm_manageConsumers', $fieldName)) {
-          $query->orderBy($fieldName, 'DESC');
-          break;
-        }
-      }
-
-      $query->range(0, 1);
-
-      $projectId = trim((string) $query->execute()->fetchField());
-      return $projectId;
-    }
-    catch (\Throwable $e) {
-      \Drupal::logger('pmsr')->warning('Local fallback lookup failed for consumer_id=@c: @msg', [
-        '@c' => $consumerId,
-        '@msg' => $e->getMessage(),
-      ]);
-      return '';
-    }
   }
 
   protected function normalizeDebugPayload($payload) {
