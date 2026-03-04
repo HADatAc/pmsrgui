@@ -33,14 +33,7 @@ class FooterOverrideSubscriber implements EventSubscriberInterface {
    */
   public function injectFooter(ResponseEvent $event) {
 
-    // Do not inject the PMSR footer on the fullscreen CTT editor pages.
-    // Those pages are meant to be embedded/fullscreen and the extra footer
-    // space breaks the layout.
     $request = $event->getRequest();
-    $route_name = $request->attributes->get('_route');
-    if (in_array($route_name, ['ctt.editor', 'ctt.editor_process'], TRUE)) {
-      return;
-    }
 
     // Load config
     $config = \Drupal::config('pmsr.settings');
@@ -96,8 +89,8 @@ class FooterOverrideSubscriber implements EventSubscriberInterface {
       // Set the HTML to inject here:
       $footer_html = <<<HTML
         <div id="landing_footer" class="py-3">
-          <div class="container h-100">
-            <div class="row h-100 align-items-center">
+          <div class="container">
+            <div class="row align-items-center">
               <div class="col text-center">
                 <img height="40" src="$footer_logo" alt="footer logo">
               </div>
@@ -105,10 +98,11 @@ class FooterOverrideSubscriber implements EventSubscriberInterface {
           </div>
         </div>
         <div id="partners_footer" class="py-1">
-          <div class="container h-20 w-100" style="text-align: right;padding-right: 0px!important;">
-            <div class="row h-100">
+          <div class="container w-100" style="text-align: right;padding-right: 0px!important;">
+            <div class="row">
               <div class="col text-right">
-                <b><small class="pt-2">Powered by:</small></b> <a href="https://graxiom.com/" target="_blank"><img height="25" src="$partners_logo" alt="Tech Partners"></a></a>
+                <b><small class="pt-2">Powered by:</small></b>
+                <a href="https://graxiom.com/" target="_blank" rel="noopener noreferrer"><img height="25" src="$partners_logo" alt="Tech Partners"></a>
               </div>
             </div>
           </div>
