@@ -48,6 +48,42 @@ body.pmsr-module-enabled #navbar-top.navbar,
   background-color: #0066004b!important;
 }
 
+/* Footer layout hardening (especially on embedded editor pages). */
+#landing_footer .row {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  justify-content: center;
+}
+
+#landing_footer .col {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#partners_footer .container,
+#partners_footer .container-fluid {
+  max-width: 100% !important;
+}
+
+#partners_footer .row {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+#partners_footer .col {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  padding-right: 0 !important;
+}
+
+#partners_footer a {
+  display: inline-flex;
+  align-items: center;
+}
+
 body.pmsr-module-enabled #navbar-main.navbar.navbar-expand-lg{
   background-color: #0066004b!important;
 }
