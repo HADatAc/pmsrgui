@@ -102,21 +102,19 @@ class LandingPageControllerCienciaPt extends ControllerBase {
       return FALSE;
     }
 
-    // In this codebase, the PMSR GUI bundle lives under themes/custom/pmsrgui
-    // but it is not necessarily a Drupal theme (it contains the pmsr module).
-    // Treat it as present when that folder exists and the pmsr module exists.
+    // PMSR must exist as a Drupal module. Avoid hardcoded filesystem paths and
+    // support both machine names used across environments.
     try {
-      $modulePath = \Drupal::service('extension.list.module')->getPath('pmsr');
-      if (empty($modulePath)) {
-        return FALSE;
+      $moduleList = \Drupal::service('extension.list.module');
+      $modulePath = (string) $moduleList->getPath('pmsr');
+      if ($modulePath === '') {
+        $modulePath = (string) $moduleList->getPath('pmsr_gui');
       }
+      return $modulePath !== '';
     }
     catch (\Throwable $e) {
       return FALSE;
     }
-
-    $guiDir = rtrim((string) \Drupal::root(), '/\\') . '/themes/custom/pmsrgui';
-    return is_dir($guiDir);
   }
 
   /**

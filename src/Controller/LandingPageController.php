@@ -13,8 +13,18 @@ class LandingPageController extends ControllerBase {
     $config = \Drupal::config('pmsr.settings');
     $user = \Drupal::currentUser();
 
-    // Module path
-    $module_path = \Drupal::service('extension.list.module')->getPath('pmsr');
+    // Module path (supports both machine names across environments).
+    $module_path = '';
+    try {
+      $moduleList = \Drupal::service('extension.list.module');
+      $module_path = (string) $moduleList->getPath('pmsr');
+      if ($module_path === '') {
+        $module_path = (string) $moduleList->getPath('pmsr_gui');
+      }
+    }
+    catch (\Throwable $e) {
+      $module_path = '';
+    }
 
     $title = $config->get('title') ?? 'Repositório Médico Português';
 
