@@ -8,6 +8,18 @@
 
   Drupal.behaviors.pmsrProjectContributorsMap = {
     attach: function (context) {
+      once('pmsrProjectResolutionDebug', 'body', context).forEach(function () {
+        var debug = (drupalSettings && drupalSettings.pmsrLandingDebug && drupalSettings.pmsrLandingDebug.projectResolution)
+          ? drupalSettings.pmsrLandingDebug.projectResolution
+          : null;
+        if (debug) {
+          console.log('[pmsrLanding] consumer project resolution', debug);
+          if (debug.dynamicCall && Object.prototype.hasOwnProperty.call(debug.dynamicCall, 'parsed')) {
+            console.log('[pmsrLanding] social API object result', debug.dynamicCall.parsed);
+          }
+        }
+      });
+
       once('pmsrProjectContribMap', '.pmsr-project-map-toggle', context).forEach(function (btn) {
         var wrapper = document.getElementById('pmsr-project-map-wrapper');
         var container = document.getElementById('pmsr-project-map-container');

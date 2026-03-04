@@ -16,6 +16,8 @@ use Symfony\Component\HttpFoundation\Request;
  */
 class LandingPageControllerCienciaPt extends ControllerBase {
 
+  protected array $projectResolutionDebug = [];
+
   public function content(): array {
 
     // LOAD CONFIG
@@ -52,6 +54,12 @@ class LandingPageControllerCienciaPt extends ControllerBase {
           'pmsr/project_contributors_map',
           'rep/fontawesome',
         ],
+        'drupalSettings' => [
+          'pmsrLandingDebug' => [
+            'enabled' => TRUE,
+            'projectResolution' => [],
+          ],
+        ],
       ],
       '#cache' => ['max-age' => 0],
     ];
@@ -79,13 +87,18 @@ class LandingPageControllerCienciaPt extends ControllerBase {
     }
 
     $build['describe'] = $describe;
+    $build['#attached']['drupalSettings']['pmsrLandingDebug']['projectResolution'] = $this->projectResolutionDebug;
 
     return $build;
   }
 
   protected function isNewLandingEnabledForActiveTheme(): bool {
-    $enabled = (bool) \Drupal::config('rep.settings')->get('pmsr_new_landing_enabled');
-    if (!$enabled) {
+    $repConfig = \Drupal::config('rep.settings');
+    $enabled = (bool) $repConfig->get('pmsr_new_landing_enabled');
+    $socialEnabled = (bool) $repConfig->get('social_conf');
+
+    // New landing is enabled only when both flags are active.
+    if (!$enabled || !$socialEnabled) {
       return FALSE;
     }
 
@@ -112,26 +125,20 @@ class LandingPageControllerCienciaPt extends ControllerBase {
   protected function buildDescribeForConfiguredConsumerProject(array $buttons_col1, array $buttons_col2, array $buttons_col3): array {
     $consumerId = trim((string) \Drupal::config('social.oauth.settings')->get('client_id'));
     if ($consumerId === '') {
+      \Drupal::logger('pmsr')->warning('Landing project resolution skipped: empty consumer_id in social.oauth.settings.client_id');
       return [];
     }
 
-    try {
-      $projectUri = \Drupal::database()
-        ->select('socialm_manageConsumers', 'mc')
-        ->fields('mc', ['project_id'])
-        ->condition('consumer_id', $consumerId)
-        ->execute()
-        ->fetchField();
-    }
-    catch (\Exception $e) {
-      \Drupal::logger('pmsr')->error('Failed to resolve project_id for consumer_id=@c: @msg', [
-        '@c' => $consumerId,
-        '@msg' => $e->getMessage(),
-      ]);
-      return [];
-    }
+    $projectUri = $this->resolveProjectUriForConsumer($consumerId);
+    \Drupal::logger('pmsr')->notice('Landing project resolution: consumer_id=@c, project_uri=@p', [
+      '@c' => $consumerId,
+      '@p' => $projectUri !== '' ? $projectUri : '(empty)',
+    ]);
 
     if (empty($projectUri)) {
+      \Drupal::logger('pmsr')->warning('Landing project resolution failed for consumer_id=@c. Rendering buttons-only mode.', [
+        '@c' => $consumerId,
+      ]);
       return [];
     }
 
@@ -223,6 +230,219 @@ class LandingPageControllerCienciaPt extends ControllerBase {
       ],
       '#cache' => ['max-age' => 0],
     ];
+  }
+
+  /**
+   * Resolve the active project URI for a consumer.
+   *
+   * Strategy:
+    * 1) Resolve through Social API flow tied to consumer_id.
+    * 2) Fallback to local socialm_manageConsumers mapping.
+    * 3) Fallback to rep.settings.associated_project.
+   */
+  protected function resolveProjectUriForConsumer(string $consumerId): string {
+    $consumerId = trim($consumerId);
+    $this->projectResolutionDebug = [
+      'consumerId' => $consumerId,
+      'source' => 'none',
+      'resolvedProjectUri' => '',
+      'dynamicCall' => [],
+    ];
+
+    if ($consumerId === '') {
+      return '';
+    }
+
+    // Prefer dynamic resolution from Social API over OAuth client_credentials.
+    try {
+      $call = $this->fetchProjectsFromSocialByConsumer($consumerId);
+      $this->projectResolutionDebug['dynamicCall'] = $call;
+
+      $parsed = $call['parsed'] ?? NULL;
+
+      if (is_array($parsed)) {
+        \Drupal::logger('pmsr')->notice('Landing dynamic project resolution received array with @n items for consumer_id=@c', [
+          '@n' => count($parsed),
+          '@c' => $consumerId,
+        ]);
+        foreach ($parsed as $project) {
+          if (is_object($project) && !empty($project->uri)) {
+            $this->projectResolutionDebug['source'] = 'social_api_listByKeywordType';
+            $this->projectResolutionDebug['resolvedProjectUri'] = (string) $project->uri;
+            \Drupal::logger('pmsr')->notice('Landing dynamic project selected uri=@u label=@l', [
+              '@u' => (string) $project->uri,
+              '@l' => (string) ($project->label ?? ''),
+            ]);
+            return (string) $project->uri;
+          }
+        }
+      }
+      elseif (is_object($parsed) && !empty($parsed->uri)) {
+        $this->projectResolutionDebug['source'] = 'social_api_listByKeywordType';
+        $this->projectResolutionDebug['resolvedProjectUri'] = (string) $parsed->uri;
+        \Drupal::logger('pmsr')->notice('Landing dynamic project received single object uri=@u label=@l', [
+          '@u' => (string) $parsed->uri,
+          '@l' => (string) ($parsed->label ?? ''),
+        ]);
+        return (string) $parsed->uri;
+      }
+      else {
+        \Drupal::logger('pmsr')->warning('Landing dynamic project resolution returned non-project payload type=@t (status=@s) for consumer_id=@c', [
+          '@t' => gettype($parsed),
+          '@s' => (string) ($call['status'] ?? 'n/a'),
+          '@c' => $consumerId,
+        ]);
+      }
+    }
+    catch (\Throwable $e) {
+      $this->projectResolutionDebug['dynamicCall'] = [
+        'error' => $e->getMessage(),
+      ];
+      \Drupal::logger('pmsr')->warning('Dynamic project resolution via social API failed for consumer_id=@c: @msg', [
+        '@c' => $consumerId,
+        '@msg' => $e->getMessage(),
+      ]);
+    }
+
+    // Fallback: repository-level associated project.
+    $associatedProject = trim((string) \Drupal::config('rep.settings')->get('associated_project'));
+    if ($associatedProject !== '') {
+      $this->projectResolutionDebug['source'] = 'rep.settings.associated_project';
+      $this->projectResolutionDebug['resolvedProjectUri'] = $associatedProject;
+      \Drupal::logger('pmsr')->notice('Landing project resolution fallback(rep.settings.associated_project): @p', [
+        '@p' => $associatedProject,
+      ]);
+      return $associatedProject;
+    }
+
+    return '';
+  }
+
+  /**
+   * Performs a direct OAuth + Social API call for projects by consumer_id.
+   *
+   * @return array{status:int|null,oauth:array,request:array,response:mixed,parsed:mixed,error:string|null}
+   */
+  protected function fetchProjectsFromSocialByConsumer(string $consumerId): array {
+    $oauthConfig = \Drupal::config('social.oauth.settings');
+    $oauthUrl = trim((string) $oauthConfig->get('oauth_url'));
+    $clientId = trim((string) $oauthConfig->get('client_id'));
+    $clientSecret = (string) $oauthConfig->get('client_secret');
+
+    $result = [
+      'status' => NULL,
+      'oauth' => [
+        'oauth_url' => $oauthUrl,
+        'client_id' => $clientId,
+      ],
+      'request' => [
+        'consumer_id' => $consumerId,
+        'elementType' => 'project',
+        'keyword' => '_',
+        'type' => '_',
+        'manageremail' => '_',
+        'status' => '_',
+      ],
+      'response' => NULL,
+      'parsed' => NULL,
+      'error' => NULL,
+    ];
+
+    if ($oauthUrl === '' || $clientId === '' || $clientSecret === '') {
+      $result['error'] = 'Missing social.oauth.settings credentials';
+      return $result;
+    }
+
+    $httpClient = \Drupal::httpClient();
+
+    try {
+      $tokenResponse = $httpClient->request('POST', $oauthUrl, [
+        'form_params' => [
+          'grant_type' => 'client_credentials',
+          'client_id' => $clientId,
+          'client_secret' => $clientSecret,
+          'scope' => 'read',
+        ],
+        'headers' => ['Accept' => 'application/json'],
+        'http_errors' => FALSE,
+        'timeout' => 20,
+        'connect_timeout' => 8,
+      ]);
+
+      $tokenPayload = json_decode((string) $tokenResponse->getBody(), TRUE);
+      $accessToken = is_array($tokenPayload) ? (string) ($tokenPayload['access_token'] ?? '') : '';
+      if ($accessToken === '') {
+        $result['status'] = (int) $tokenResponse->getStatusCode();
+        $result['response'] = is_array($tokenPayload) ? $tokenPayload : (string) $tokenResponse->getBody();
+        $result['error'] = 'OAuth token missing in response';
+        return $result;
+      }
+
+      $baseUrl = rtrim(preg_replace('#/oauth/token$#', '', $oauthUrl), '/');
+      $socialListUrl = $baseUrl . '/api/socialm/list';
+
+      $socialResponse = $httpClient->request('POST', $socialListUrl, [
+        'headers' => [
+          'Authorization' => 'Bearer ' . $accessToken,
+          'Accept' => 'application/json',
+          'Content-Type' => 'application/json',
+        ],
+        'json' => [
+          'token' => $accessToken,
+          'consumer_id' => $consumerId,
+          'elementType' => 'project',
+          'keyword' => '_',
+          'type' => '_',
+          'manageremail' => '_',
+          'status' => '_',
+        ],
+        'http_errors' => FALSE,
+        'timeout' => 30,
+        'connect_timeout' => 10,
+      ]);
+
+      $status = (int) $socialResponse->getStatusCode();
+      $bodyString = (string) $socialResponse->getBody();
+      $decoded = json_decode($bodyString, TRUE);
+
+      $result['status'] = $status;
+      $result['response'] = is_array($decoded) ? $decoded : $bodyString;
+
+      if ($status >= 400) {
+        $result['error'] = 'Social endpoint returned HTTP ' . $status;
+        return $result;
+      }
+
+      if (is_array($decoded)) {
+        $result['parsed'] = $decoded;
+      }
+      else {
+        $result['parsed'] = $bodyString;
+      }
+    }
+    catch (\Throwable $e) {
+      $result['error'] = $e->getMessage();
+    }
+
+    return $result;
+  }
+
+  protected function normalizeDebugPayload($payload) {
+    if (is_scalar($payload) || $payload === NULL) {
+      return $payload;
+    }
+
+    $encoded = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+    if ($encoded === FALSE) {
+      return ['type' => gettype($payload), 'note' => 'json_encode_failed'];
+    }
+
+    if (strlen($encoded) > 12000) {
+      $encoded = substr($encoded, 0, 12000) . '...<truncated>';
+    }
+
+    $decoded = json_decode($encoded, TRUE);
+    return $decoded ?? $encoded;
   }
 
   protected function buildButtonsInlineRow(array $buttons): array {
