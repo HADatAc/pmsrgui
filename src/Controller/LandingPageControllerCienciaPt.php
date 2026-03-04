@@ -57,7 +57,14 @@ class LandingPageControllerCienciaPt extends ControllerBase {
         'drupalSettings' => [
           'pmsrLandingDebug' => [
             'enabled' => TRUE,
-            'projectResolution' => [],
+            'projectResolution' => [
+              'source' => 'init',
+              'reason' => 'not_executed',
+              'consumerId' => '',
+              'resolvedProjectUri' => '',
+              'dynamicCall' => [],
+              'authStatus' => $user->isAuthenticated() ? 'authenticated' : 'anonymous',
+            ],
           ],
         ],
       ],
@@ -66,6 +73,15 @@ class LandingPageControllerCienciaPt extends ControllerBase {
 
     // For anonymous users, show only the welcome message (no describe and no action buttons).
     if (!$user->isAuthenticated()) {
+      $this->projectResolutionDebug = [
+        'source' => 'none',
+        'reason' => 'anonymous_user',
+        'consumerId' => '',
+        'resolvedProjectUri' => '',
+        'dynamicCall' => [],
+        'authStatus' => 'anonymous',
+      ];
+      $build['#attached']['drupalSettings']['pmsrLandingDebug']['projectResolution'] = $this->projectResolutionDebug;
       $build['welcome'] = $this->buildButtonsBlock($config, FALSE, $buttons_col1, $buttons_col2, $buttons_col3);
       return $build;
     }
@@ -139,6 +155,7 @@ class LandingPageControllerCienciaPt extends ControllerBase {
         'resolvedProjectUri' => '',
         'dynamicCall' => [],
         'reason' => 'empty_consumer_id',
+        'authStatus' => 'authenticated',
       ];
       \Drupal::logger('pmsr')->warning('Landing project resolution skipped: empty consumer_id in social.oauth.settings.client_id');
       return [];
@@ -262,6 +279,7 @@ class LandingPageControllerCienciaPt extends ControllerBase {
       'source' => 'none',
       'resolvedProjectUri' => '',
       'dynamicCall' => [],
+      'authStatus' => 'authenticated',
     ];
 
     if ($consumerId === '') {
