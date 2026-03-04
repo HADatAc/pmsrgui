@@ -17,9 +17,17 @@ class LandingPageController extends ControllerBase {
     $module_path = '';
     try {
       $moduleList = \Drupal::service('extension.list.module');
-      $module_path = (string) $moduleList->getPath('pmsr');
-      if ($module_path === '') {
-        $module_path = (string) $moduleList->getPath('pmsr_gui');
+      $extensions = $moduleList->getList();
+      $moduleName = '';
+      if (isset($extensions['pmsr'])) {
+        $moduleName = 'pmsr';
+      }
+      elseif (isset($extensions['pmsr_gui'])) {
+        $moduleName = 'pmsr_gui';
+      }
+
+      if ($moduleName !== '') {
+        $module_path = (string) $moduleList->getPath($moduleName);
       }
     }
     catch (\Throwable $e) {

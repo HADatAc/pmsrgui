@@ -106,10 +106,20 @@ class LandingPageControllerCienciaPt extends ControllerBase {
     // support both machine names used across environments.
     try {
       $moduleList = \Drupal::service('extension.list.module');
-      $modulePath = (string) $moduleList->getPath('pmsr');
-      if ($modulePath === '') {
-        $modulePath = (string) $moduleList->getPath('pmsr_gui');
+      $extensions = $moduleList->getList();
+      $moduleName = '';
+      if (isset($extensions['pmsr'])) {
+        $moduleName = 'pmsr';
       }
+      elseif (isset($extensions['pmsr_gui'])) {
+        $moduleName = 'pmsr_gui';
+      }
+
+      if ($moduleName === '') {
+        return FALSE;
+      }
+
+      $modulePath = (string) $moduleList->getPath($moduleName);
       return $modulePath !== '';
     }
     catch (\Throwable $e) {
@@ -302,6 +312,18 @@ class LandingPageControllerCienciaPt extends ControllerBase {
       ]);
     }
 
+    // Fallback: consumer->project mapping stored by SocialM manager.
+    $localMappedProject = $this->getLocalMappedProjectForConsumer($consumerId);
+    if ($localMappedProject !== '') {
+      $this->projectResolutionDebug['source'] = 'socialm_manageConsumers.project_id';
+      $this->projectResolutionDebug['resolvedProjectUri'] = $localMappedProject;
+      \Drupal::logger('pmsr')->notice('Landing project resolution fallback(socialm_manageConsumers): consumer_id=@c project_uri=@p', [
+        '@c' => $consumerId,
+        '@p' => $localMappedProject,
+      ]);
+      return $localMappedProject;
+    }
+
     // Fallback: repository-level associated project.
     $associatedProject = trim((string) \Drupal::config('rep.settings')->get('associated_project'));
     if ($associatedProject !== '') {
@@ -423,6 +445,45 @@ class LandingPageControllerCienciaPt extends ControllerBase {
     }
 
     return $result;
+  }
+
+  /**
+   * Reads the latest local project mapping for a consumer, when available.
+   */
+  protected function getLocalMappedProjectForConsumer(string $consumerId): string {
+    $consumerId = trim($consumerId);
+    if ($consumerId === '') {
+      return '';
+    }
+
+    try {
+      $db = \Drupal::database();
+      $schema = $db->schema();
+      $query = $db->select('socialm_manageConsumers', 'm')
+        ->fields('m', ['project_id'])
+        ->condition('consumer_id', $consumerId)
+        ->isNotNull('project_id');
+
+      $orderCandidates = ['id', 'updated_at', 'changed', 'created_at', 'created', 'timestamp'];
+      foreach ($orderCandidates as $fieldName) {
+        if ($schema->fieldExists('socialm_manageConsumers', $fieldName)) {
+          $query->orderBy($fieldName, 'DESC');
+          break;
+        }
+      }
+
+      $query->range(0, 1);
+
+      $projectId = trim((string) $query->execute()->fetchField());
+      return $projectId;
+    }
+    catch (\Throwable $e) {
+      \Drupal::logger('pmsr')->warning('Local fallback lookup failed for consumer_id=@c: @msg', [
+        '@c' => $consumerId,
+        '@msg' => $e->getMessage(),
+      ]);
+      return '';
+    }
   }
 
   protected function normalizeDebugPayload($payload) {
