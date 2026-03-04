@@ -359,9 +359,16 @@ class LandingPageControllerCienciaPt extends ControllerBase {
       return $associatedProject;
     }
 
-    $this->projectResolutionDebug['reason'] = 'no_project_from_rep_or_config';
+    // Last fallback: fixed CienciaPT project URI.
+    $hardcodedProject = 'https://cienciapt.org/kg/PJT1742783481383251';
+    $this->projectResolutionDebug['source'] = 'hardcoded.cienciapt_project_uri';
+    $this->projectResolutionDebug['resolvedProjectUri'] = $hardcodedProject;
+    $this->projectResolutionDebug['reason'] = 'fallback_hardcoded_project_uri';
+    \Drupal::logger('pmsr')->notice('Landing project resolution fallback(hardcoded URI): @p', [
+      '@p' => $hardcodedProject,
+    ]);
+    return $hardcodedProject;
 
-    return '';
   }
 
   /**
