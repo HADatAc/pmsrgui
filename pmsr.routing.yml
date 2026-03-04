@@ -1,7 +1,7 @@
 pmsr.landing_page:
   path: '/pmsr'
   defaults:
-    _controller: 'Drupal\pmsr\Controller\LandingPageController::content'
+    _controller: 'Drupal\pmsr\Controller\LandingPageControllerCienciaPt::content'
     _title: 'PMSR Landing Page'
   requirements:
     _permission: 'access content'

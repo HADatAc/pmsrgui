@@ -74,20 +74,21 @@ class LandingPageController extends ControllerBase {
     $buttons_col1 = [
       ['icon' => 'fas fa-chart-bar fa-2xl', 'label' => 'Manage<br /> Simulator Model', 'url' => 'sir/select/instrument/1/9'],
       ['icon' => 'fas fa-magnifying-glass fa-2xl', 'label' => 'Search Simulator<br /> By Hierarchy', 'url' => 'sir/list'],
-      ['icon' => 'fas fa-magnifying-glass fa-2xl', 'label' => 'Search Instances<br /> By Geography', 'url' => '#', 'disabled' => true],
+      // ['icon' => 'fas fa-magnifying-glass fa-2xl', 'label' => 'Search Instances<br /> By Geography', 'url' => '#', 'disabled' => true],
     ];
 
     $buttons_col2 = [
       ['icon' => 'fas fa-chart-bar fa-2xl', 'label' => 'Manage<br /> Simulator Instances', 'url' => 'dpl/select/instrumentinstance/1/9'],
-      ['icon' => 'fas fa-magnifying-glass fa-2xl', 'label' => 'Search Simulator<br /> By Anatomy', 'url' => '#', 'disabled' => true],
-      ['icon' => 'fas fa-magnifying-glass fa-2xl', 'label' => 'Find and Access Data', 'url' => '#', 'disabled' => true],
+      ['icon' => 'fas fa-magnifying-glass fa-2xl', 'label' => 'Search Organization<br /> By Geography', 'url' => 'social/initiative/project/_/_/_/_/1/12', 'disabled' => false],
+      // ['icon' => 'fas fa-magnifying-glass fa-2xl', 'label' => 'Search Simulator<br /> By Anatomy', 'url' => '#', 'disabled' => true],
+      // ['icon' => 'fas fa-magnifying-glass fa-2xl', 'label' => 'Find and Access Data', 'url' => '#', 'disabled' => true],
 
     ];
 
     $buttons_col3 = [
-      ['icon' => 'fas fa-chart-bar fa-2xl', 'label' => 'Manage Use Cases', 'url' => '#', 'disabled' => true],
-      ['icon' => 'fas fa-magnifying-glass fa-2xl', 'label' => 'Search Organization<br /> By Geography', 'url' => 'sir/list', 'disabled' => true],
-      ['icon' => 'fas fa-magnifying-glass fa-2xl', 'label' => 'Search<br /> People by Geography', 'url' => '#', 'disabled' => true],
+      ['icon' => 'fas fa-chart-bar fa-2xl', 'label' => 'Manage Workflows', 'url' => 'std/select/workflow/1/9', 'disabled' => false],
+      // ['icon' => 'fas fa-magnifying-glass fa-2xl', 'label' => 'Search Organization<br /> By Geography', 'url' => 'sir/list', 'disabled' => true],
+      // ['icon' => 'fas fa-magnifying-glass fa-2xl', 'label' => 'Search<br /> People by Geography', 'url' => '#', 'disabled' => true],
     ];
 
     // INIT HTML
@@ -202,7 +203,9 @@ class LandingPageController extends ControllerBase {
       '#markup' => $output,
       '#attached' => [
         'library' => [
-          'pmsr/styles',
+          'pmsr/pmsr-styles',
+          'pmsr/pmsr-overrides',
+          'rep/fontawesome',
         ],
       ],
     ];
