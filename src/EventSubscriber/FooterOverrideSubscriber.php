@@ -89,21 +89,17 @@ class FooterOverrideSubscriber implements EventSubscriberInterface {
       // Set the HTML to inject here:
       $footer_html = <<<HTML
         <div id="landing_footer" class="py-3">
-          <div class="container">
-            <div class="row align-items-center">
-              <div class="col text-center">
-                <img height="40" src="$footer_logo" alt="footer logo">
-              </div>
+          <div class="pmsr-footer-wrap">
+            <div class="pmsr-footer-center">
+              <img height="40" src="$footer_logo" alt="footer logo">
             </div>
           </div>
         </div>
         <div id="partners_footer" class="py-1">
-          <div class="container w-100" style="text-align: right;padding-right: 0px!important;">
-            <div class="row">
-              <div class="col text-right">
-                <b><small class="pt-2">Powered by:</small></b>
-                <a href="https://graxiom.com/" target="_blank" rel="noopener noreferrer"><img height="25" src="$partners_logo" alt="Tech Partners"></a>
-              </div>
+          <div class="pmsr-partners-wrap">
+            <div class="pmsr-partners-content">
+              <b><small class="pt-2">Powered by:</small></b>
+              <a href="https://graxiom.com/" target="_blank" rel="noopener noreferrer"><img height="25" src="$partners_logo" alt="Tech Partners"></a>
             </div>
           </div>
         </div>

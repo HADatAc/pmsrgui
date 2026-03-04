@@ -79,7 +79,7 @@ class LandingPageController extends ControllerBase {
 
     $buttons_col2 = [
       ['icon' => 'fas fa-chart-bar fa-2xl', 'label' => 'Manage<br /> Simulator Instances', 'url' => 'dpl/select/instrumentinstance/1/9'],
-      ['icon' => 'fas fa-magnifying-glass fa-2xl', 'label' => 'Search Organization<br /> By Geography', 'url' => 'social/initiative/project/_/_/_/_/1/12', 'disabled' => false],
+      ['icon' => 'fas fa-magnifying-glass fa-2xl', 'label' => 'Search Organization<br /> By Geography', 'url' => 'social/list/organization/all/_/_/_/_/1/9?view_type=map', 'disabled' => false],
       // ['icon' => 'fas fa-magnifying-glass fa-2xl', 'label' => 'Search Simulator<br /> By Anatomy', 'url' => '#', 'disabled' => true],
       // ['icon' => 'fas fa-magnifying-glass fa-2xl', 'label' => 'Find and Access Data', 'url' => '#', 'disabled' => true],
 

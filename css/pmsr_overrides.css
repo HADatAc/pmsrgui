@@ -49,34 +49,27 @@ body.pmsr-module-enabled #navbar-top.navbar,
 }
 
 /* Footer layout hardening (especially on embedded editor pages). */
-#landing_footer .row {
-  margin-left: 0 !important;
-  margin-right: 0 !important;
-  justify-content: center;
+#landing_footer .pmsr-footer-wrap,
+#partners_footer .pmsr-partners-wrap {
+  width: 100%;
+  max-width: 1320px;
+  margin: 0 auto;
+  padding-left: 12px;
+  padding-right: 12px;
 }
 
-#landing_footer .col {
+#landing_footer .pmsr-footer-center {
   display: flex;
   justify-content: center;
   align-items: center;
 }
 
-#partners_footer .container,
-#partners_footer .container-fluid {
-  max-width: 100% !important;
-}
-
-#partners_footer .row {
-  margin-left: 0 !important;
-  margin-right: 0 !important;
-}
-
-#partners_footer .col {
+#partners_footer .pmsr-partners-content {
   display: flex;
   justify-content: flex-end;
   align-items: center;
   gap: 8px;
-  padding-right: 0 !important;
+  text-align: right;
 }
 
 #partners_footer a {

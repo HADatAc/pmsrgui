@@ -30,7 +30,7 @@ class LandingPageControllerCienciaPt extends ControllerBase {
 
     $buttons_col2 = [
       ['icon' => 'fas fa-chart-bar fa-2xl', 'label' => 'Manage<br /> Simulator Instances', 'url' => 'dpl/select/instrumentinstance/1/9'],
-      ['icon' => 'fas fa-magnifying-glass fa-2xl', 'label' => 'Search Organization<br /> By Geography', 'url' => 'social/initiative/project/_/_/_/_/1/12', 'disabled' => FALSE],
+      ['icon' => 'fas fa-magnifying-glass fa-2xl', 'label' => 'Search Organization<br /> By Geography', 'url' => 'social/list/organization/all/_/_/_/_/1/9?view_type=map', 'disabled' => FALSE],
     ];
 
     $buttons_col3 = [
@@ -169,6 +169,8 @@ class LandingPageControllerCienciaPt extends ControllerBase {
       // Left column: same sidebar content (header + data properties/main form).
       $headerBuild = \Drupal::formBuilder()->getForm('Drupal\\rep\\Form\\DescribeHeaderForm');
       $describeBuild = \Drupal::formBuilder()->getForm(DescribeForm::class, $encoded);
+      // In homepage embedded describe, hide the Back button from DescribeForm.
+      unset($describeBuild['submit'], $describeBuild['space']);
 
       // Right column: graph + associated elements + provenance/derivation.
       $associatesBuild = \Drupal::formBuilder()->getForm('Drupal\\rep\\Form\\DescribeAssociatesForm');
