@@ -393,6 +393,7 @@ class LandingPageControllerCienciaPt extends ControllerBase {
       ],
       'response' => NULL,
       'parsed' => NULL,
+      'attempts' => [],
       'error' => NULL,
     ];
 
@@ -404,24 +405,50 @@ class LandingPageControllerCienciaPt extends ControllerBase {
     try {
       /** @var \Drupal\rep\ApiConnectorInterface $api */
       $api = \Drupal::service('rep.api_connector');
-      $raw = $api->listByKeywordType('project', 50, 0, 'all', '_', '_', '_', '_');
+
+      $variants = [
+        ['project' => 'all', 'keyword' => '_', 'type' => '_', 'manageremail' => '_', 'status' => '_'],
+        ['project' => '_', 'keyword' => '_', 'type' => '_', 'manageremail' => '_', 'status' => '_'],
+        ['project' => 'all', 'keyword' => 'all', 'type' => '_', 'manageremail' => '_', 'status' => '_'],
+      ];
+
+      $lastRaw = NULL;
+      $lastParsed = NULL;
+
+      foreach ($variants as $variant) {
+        $raw = $api->listByKeywordType(
+          'project',
+          50,
+          0,
+          $variant['project'],
+          $variant['keyword'],
+          $variant['type'],
+          $variant['manageremail'],
+          $variant['status']
+        );
+        $parsed = $api->parseObjectResponse($raw, 'listByKeywordType');
+        $candidates = $this->extractProjectCandidates($parsed);
+
+        $result['attempts'][] = [
+          'request' => $variant,
+          'candidate_count' => count($candidates),
+          'parsed_type' => gettype($parsed),
+        ];
+
+        $lastRaw = $raw;
+        $lastParsed = $parsed;
+
+        if (!empty($candidates)) {
+          $result['status'] = 200;
+          $result['response'] = $this->normalizeDebugPayload($raw);
+          $result['parsed'] = $candidates;
+          return $result;
+        }
+      }
 
       $result['status'] = 200;
-      $result['response'] = $this->normalizeDebugPayload($raw);
-
-      $parsed = $api->parseObjectResponse($raw, 'listByKeywordType');
-      if (is_array($parsed)) {
-        $result['parsed'] = $parsed;
-      }
-      elseif (is_object($parsed) && !empty($parsed->body) && is_array($parsed->body)) {
-        $result['parsed'] = $parsed->body;
-      }
-      elseif (is_object($parsed) && !empty($parsed->uri)) {
-        $result['parsed'] = $parsed;
-      }
-      else {
-        $result['parsed'] = $parsed;
-      }
+      $result['response'] = $this->normalizeDebugPayload($lastRaw);
+      $result['parsed'] = $lastParsed;
     }
     catch (\Throwable $e) {
       $result['error'] = $e->getMessage();
@@ -429,6 +456,41 @@ class LandingPageControllerCienciaPt extends ControllerBase {
     }
 
     return $result;
+  }
+
+  /**
+   * Normalize different payload shapes into a list of project objects.
+   *
+   * @param mixed $parsed
+   *
+   * @return array<int, object>
+   */
+  protected function extractProjectCandidates($parsed): array {
+    $candidates = [];
+
+    if (is_array($parsed)) {
+      foreach ($parsed as $item) {
+        if (is_object($item) && !empty($item->uri)) {
+          $candidates[] = $item;
+        }
+      }
+      return $candidates;
+    }
+
+    if (is_object($parsed) && isset($parsed->body) && is_array($parsed->body)) {
+      foreach ($parsed->body as $item) {
+        if (is_object($item) && !empty($item->uri)) {
+          $candidates[] = $item;
+        }
+      }
+      return $candidates;
+    }
+
+    if (is_object($parsed) && !empty($parsed->uri)) {
+      $candidates[] = $parsed;
+    }
+
+    return $candidates;
   }
 
   protected function normalizeDebugPayload($payload) {
