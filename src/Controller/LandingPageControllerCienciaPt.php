@@ -72,6 +72,7 @@ class LandingPageControllerCienciaPt extends ControllerBase {
 
     // ---------- Describe block (authenticated) ----------
     $describe = $this->buildDescribeForConfiguredConsumerProject($buttons_col1, $buttons_col2, $buttons_col3);
+    $build['#attached']['drupalSettings']['pmsrLandingDebug']['projectResolution'] = $this->projectResolutionDebug;
     if (empty($describe)) {
       // If there is no mapped project, show only the landing buttons.
       $build['buttons_only'] = [
@@ -87,7 +88,6 @@ class LandingPageControllerCienciaPt extends ControllerBase {
     }
 
     $build['describe'] = $describe;
-    $build['#attached']['drupalSettings']['pmsrLandingDebug']['projectResolution'] = $this->projectResolutionDebug;
 
     return $build;
   }
@@ -133,6 +133,13 @@ class LandingPageControllerCienciaPt extends ControllerBase {
   protected function buildDescribeForConfiguredConsumerProject(array $buttons_col1, array $buttons_col2, array $buttons_col3): array {
     $consumerId = trim((string) \Drupal::config('social.oauth.settings')->get('client_id'));
     if ($consumerId === '') {
+      $this->projectResolutionDebug = [
+        'consumerId' => '',
+        'source' => 'none',
+        'resolvedProjectUri' => '',
+        'dynamicCall' => [],
+        'reason' => 'empty_consumer_id',
+      ];
       \Drupal::logger('pmsr')->warning('Landing project resolution skipped: empty consumer_id in social.oauth.settings.client_id');
       return [];
     }

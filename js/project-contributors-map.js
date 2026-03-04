@@ -12,10 +12,24 @@
         var debug = (drupalSettings && drupalSettings.pmsrLandingDebug && drupalSettings.pmsrLandingDebug.projectResolution)
           ? drupalSettings.pmsrLandingDebug.projectResolution
           : null;
-        if (debug) {
-          console.log('[pmsrLanding] consumer project resolution', debug);
-          if (debug.dynamicCall && Object.prototype.hasOwnProperty.call(debug.dynamicCall, 'parsed')) {
-            console.log('[pmsrLanding] social API object result', debug.dynamicCall.parsed);
+        if (!debug || typeof debug !== 'object' || Array.isArray(debug)) {
+          console.warn('[pmsrLanding] consumer project resolution missing/invalid', debug);
+          return;
+        }
+
+        console.log('[pmsrLanding] consumer project resolution', debug);
+        try {
+          console.log('[pmsrLanding][COPY_JSON]', JSON.stringify(debug, null, 2));
+        } catch (err) {
+          console.log('[pmsrLanding][COPY_JSON_FALLBACK]', String(debug));
+        }
+
+        if (debug.dynamicCall && Object.prototype.hasOwnProperty.call(debug.dynamicCall, 'parsed')) {
+          console.log('[pmsrLanding] social API object result', debug.dynamicCall.parsed);
+          try {
+            console.log('[pmsrLanding][COPY_SOCIAL_PARSED]', JSON.stringify(debug.dynamicCall.parsed, null, 2));
+          } catch (err) {
+            console.log('[pmsrLanding][COPY_SOCIAL_PARSED_FALLBACK]', String(debug.dynamicCall.parsed));
           }
         }
       });
