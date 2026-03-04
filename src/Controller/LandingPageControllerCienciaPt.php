@@ -337,18 +337,6 @@ class LandingPageControllerCienciaPt extends ControllerBase {
       ]);
     }
 
-    // Fallback: consumer->project mapping stored by SocialM manager.
-    $localMappedProject = $this->getLocalMappedProjectForConsumer($consumerId);
-    if ($localMappedProject !== '') {
-      $this->projectResolutionDebug['source'] = 'socialm_manageConsumers.project_id';
-      $this->projectResolutionDebug['resolvedProjectUri'] = $localMappedProject;
-      \Drupal::logger('pmsr')->notice('Landing project resolution fallback(socialm_manageConsumers): consumer_id=@c project_uri=@p', [
-        '@c' => $consumerId,
-        '@p' => $localMappedProject,
-      ]);
-      return $localMappedProject;
-    }
-
     // Fallback: module-level configured project URI (per environment).
     $moduleFallbackProject = trim((string) \Drupal::config('pmsr.settings')->get('project_uri_fallback'));
     if ($moduleFallbackProject !== '') {
@@ -369,6 +357,20 @@ class LandingPageControllerCienciaPt extends ControllerBase {
         '@p' => $associatedProject,
       ]);
       return $associatedProject;
+    }
+
+    // Last fallback only: consumer->project mapping stored by SocialM manager.
+    // This may be stale in some environments, so it must not override explicit
+    // PMSR/REP configuration.
+    $localMappedProject = $this->getLocalMappedProjectForConsumer($consumerId);
+    if ($localMappedProject !== '') {
+      $this->projectResolutionDebug['source'] = 'socialm_manageConsumers.project_id';
+      $this->projectResolutionDebug['resolvedProjectUri'] = $localMappedProject;
+      \Drupal::logger('pmsr')->notice('Landing project resolution fallback(socialm_manageConsumers): consumer_id=@c project_uri=@p', [
+        '@c' => $consumerId,
+        '@p' => $localMappedProject,
+      ]);
+      return $localMappedProject;
     }
 
     return '';
