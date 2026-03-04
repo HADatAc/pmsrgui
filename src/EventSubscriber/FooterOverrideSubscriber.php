@@ -33,6 +33,15 @@ class FooterOverrideSubscriber implements EventSubscriberInterface {
    */
   public function injectFooter(ResponseEvent $event) {
 
+    // Do not inject the PMSR footer on the fullscreen CTT editor pages.
+    // Those pages are meant to be embedded/fullscreen and the extra footer
+    // space breaks the layout.
+    $request = $event->getRequest();
+    $route_name = $request->attributes->get('_route');
+    if (in_array($route_name, ['ctt.editor', 'ctt.editor_process'], TRUE)) {
+      return;
+    }
+
     // Load config
     $config = \Drupal::config('pmsr.settings');
 
@@ -111,7 +120,6 @@ class FooterOverrideSubscriber implements EventSubscriberInterface {
       // If your theme/module generates BODY uppercase or other, it may be necessary
       // to use a case-insensitive replace, or other logic.
       $account = \Drupal::currentUser();
-      $request = $event->getRequest();
       // dpm($request->attributes->get('_route'));
       if ($request->attributes->get('_route') !== 'system.403') {
         $content = str_replace('</footer>', $footer_html . '</footer>', $content);
