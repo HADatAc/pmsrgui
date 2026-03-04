@@ -349,6 +349,17 @@ class LandingPageControllerCienciaPt extends ControllerBase {
       return $localMappedProject;
     }
 
+    // Fallback: module-level configured project URI (per environment).
+    $moduleFallbackProject = trim((string) \Drupal::config('pmsr.settings')->get('project_uri_fallback'));
+    if ($moduleFallbackProject !== '') {
+      $this->projectResolutionDebug['source'] = 'pmsr.settings.project_uri_fallback';
+      $this->projectResolutionDebug['resolvedProjectUri'] = $moduleFallbackProject;
+      \Drupal::logger('pmsr')->notice('Landing project resolution fallback(pmsr.settings.project_uri_fallback): @p', [
+        '@p' => $moduleFallbackProject,
+      ]);
+      return $moduleFallbackProject;
+    }
+
     // Fallback: repository-level associated project.
     $associatedProject = trim((string) \Drupal::config('rep.settings')->get('associated_project'));
     if ($associatedProject !== '') {

@@ -123,6 +123,13 @@ class PmsrSettingsForm extends ConfigFormBase {
       '#default_value' => $config->get('partners_2_logo'),
     ];
 
+    $form['project_uri_fallback'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Fallback Project URI'),
+      '#default_value' => $config->get('project_uri_fallback') ?? '',
+      '#description' => $this->t('Used in landing page when consumer-based project resolution fails (e.g., social API 502). Example: https://cienciapt.org/kg/PJT...'),
+    ];
+
     return parent::buildForm($form, $form_state);
   }
 
@@ -139,6 +146,7 @@ class PmsrSettingsForm extends ConfigFormBase {
       ->set('image_3', $form_state->getValue('image_3'))
       ->set('partners_logo', $form_state->getValue('partners_logo'))
       ->set('partners_2_logo', $form_state->getValue('partners_2_logo'))
+      ->set('project_uri_fallback', trim((string) $form_state->getValue('project_uri_fallback')))
       ->save();
 
     parent::submitForm($form, $form_state);
