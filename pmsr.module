@@ -22,10 +22,13 @@ function pmsr_page_attachments(array &$attachments) {
     $attachments['#attached']['library'][] = 'pmsr/pmsr-styles';
   }
 
-  // Obtém o título das configurações do PMSR
+  // Obtém o título das configurações do PMSR com fallback para evitar cabeçalho sem nome.
   $config = \Drupal::config('pmsr.settings');
-  $title = $config->get('title');
-  $subTitle = $config->get('subTitle');
+  $title = trim((string) $config->get('title'));
+  if ($title === '') {
+    $title = 'Portuguese Medical Simulation Repository';
+  }
+  $subTitle = trim((string) $config->get('subTitle'));
   // Altera o nome do site
   \Drupal::configFactory()
     ->getEditable('rep.settings')
@@ -38,9 +41,27 @@ function pmsr_page_attachments(array &$attachments) {
     ->set('name', $title)
     ->save();
 
-  // Obtém o caminho do logo definido nas configurações do módulo
-  $config = \Drupal::config('pmsr.settings');
-  $logo_path = base_path() . 'modules/custom/pmsr/images/ciencia_logo_150.png'; // Caminho padrão
+  // Obtém o caminho do logo definido nas configurações do módulo.
+  $module_path = '';
+  try {
+    $moduleList = \Drupal::service('extension.list.module');
+    $extensions = $moduleList->getList();
+    if (isset($extensions['pmsr'])) {
+      $module_path = (string) $moduleList->getPath('pmsr');
+    }
+    elseif (isset($extensions['pmsr_gui'])) {
+      $module_path = (string) $moduleList->getPath('pmsr_gui');
+    }
+  }
+  catch (\Throwable $e) {
+    $module_path = 'modules/custom/pmsr_gui';
+  }
+
+  if ($module_path === '') {
+    $module_path = 'modules/custom/pmsr_gui';
+  }
+
+  $logo_path = base_path() . trim($module_path, '/') . '/images/cienciapt_logo_150.png';
 
   // Se você quiser garantir que o logo padrão não seja usado
   \Drupal::configFactory()
