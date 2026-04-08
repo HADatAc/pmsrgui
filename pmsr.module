@@ -93,6 +93,21 @@ function pmsr_block_view_alter(array &$build, \Drupal\Core\Block\BlockPluginInte
  * Implements hook_menu_links_discovered_alter().
  */
 function pmsr_menu_links_discovered_alter(&$links) {
+  $preferred_platform = \Drupal::config('rep.settings')->get('preferred_platform') ?: 'Platform';
+
+  $to_plural = static function (string $label): string {
+    if (preg_match('/[^aeiou]y$/i', $label)) {
+      return substr($label, 0, -1) . 'ies';
+    }
+    if (preg_match('/s$/i', $label)) {
+      return $label;
+    }
+    return $label . 's';
+  };
+
+  $label_platform = ucfirst($preferred_platform);
+  $label_platform_plural = $to_plural($label_platform);
+
   if (isset($links['std.top_level'])) {
     $links['std.top_level']['title'] = 'Simulation Scenarios';
     $links['std.top_level']['description'] = 'Manage Simulation Scenarios';
@@ -103,11 +118,11 @@ function pmsr_menu_links_discovered_alter(&$links) {
     $links['std.manage_studies']['title'] = 'Manage Simulation Scenarios';
     $links['std.manage_studies']['description'] = 'Manage Simulation Scenarios';
 
-    $links['dpl.manage_platforms']['title'] = 'Manage Laboratories';
-    $links['dpl.manage_platforms']['description'] = 'Manage Laboratories';
+    $links['dpl.manage_platforms']['title'] = 'Manage ' . $label_platform_plural;
+    $links['dpl.manage_platforms']['description'] = 'Manage ' . $label_platform_plural;
 
-    $links['dpl.manage_platform_instances']['title'] = 'Manage Laboratory Instances';
-    $links['dpl.manage_platform_instances']['description'] = 'Manage Laboratory Instances';
+    $links['dpl.manage_platform_instances']['title'] = 'Manage ' . $label_platform . ' Instances';
+    $links['dpl.manage_platform_instances']['description'] = 'Manage ' . $label_platform . ' Instances';
 
     $links['dpl.manage_instrument_instances']['title'] = 'Manage Simulator Instances';
     $links['dpl.manage_instrument_instances']['description'] = 'Manage Simulator Instances';
