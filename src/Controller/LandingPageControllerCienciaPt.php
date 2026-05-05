@@ -112,9 +112,11 @@ class LandingPageControllerCienciaPt extends ControllerBase {
     $repConfig = \Drupal::config('rep.settings');
     $enabled = (bool) $repConfig->get('pmsr_new_landing_enabled');
     $socialEnabled = (bool) $repConfig->get('social_conf');
+    $configuredInitiative = trim((string) $repConfig->get('social_initiative_uri'));
 
-    // New landing is enabled only when both flags are active.
-    if (!$enabled || !$socialEnabled) {
+    // New landing requires the feature flag and at least one source of project resolution:
+    // social connector flow OR explicit project URI configured in REP settings.
+    if (!$enabled || (!$socialEnabled && $configuredInitiative === '')) {
       return FALSE;
     }
 
@@ -144,34 +146,52 @@ class LandingPageControllerCienciaPt extends ControllerBase {
   }
 
   /**
-   * Builds the DESCRIBE output for the project mapped to the configured OAuth consumer.
+   * Builds the DESCRIBE output for the project shown in the new landing page.
    */
   protected function buildDescribeForConfiguredConsumerProject(array $buttons_col1, array $buttons_col2, array $buttons_col3): array {
-    $consumerId = trim((string) \Drupal::config('social.oauth.settings')->get('client_id'));
-    if ($consumerId === '') {
+    // Priority 1: project URI explicitly configured in REP settings.
+    $projectUri = trim((string) \Drupal::config('rep.settings')->get('social_initiative_uri'));
+    if ($projectUri !== '') {
       $this->projectResolutionDebug = [
         'consumerId' => '',
-        'source' => 'none',
-        'resolvedProjectUri' => '',
+        'source' => 'rep.settings.social_initiative_uri',
+        'resolvedProjectUri' => $projectUri,
         'dynamicCall' => [],
-        'reason' => 'empty_consumer_id',
+        'reason' => 'configured_social_initiative_uri',
         'authStatus' => 'authenticated',
       ];
-      \Drupal::logger('pmsr')->warning('Landing project resolution skipped: empty consumer_id in social.oauth.settings.client_id');
-      return [];
-    }
-
-    $projectUri = $this->resolveProjectUriForConsumer($consumerId);
-    \Drupal::logger('pmsr')->notice('Landing project resolution: consumer_id=@c, project_uri=@p', [
-      '@c' => $consumerId,
-      '@p' => $projectUri !== '' ? $projectUri : '(empty)',
-    ]);
-
-    if (empty($projectUri)) {
-      \Drupal::logger('pmsr')->warning('Landing project resolution failed for consumer_id=@c. Rendering buttons-only mode.', [
-        '@c' => $consumerId,
+      \Drupal::logger('pmsr')->notice('Landing project resolution using configured social initiative URI: @p', [
+        '@p' => $projectUri,
       ]);
-      return [];
+    }
+    else {
+      // Fallback: keep existing consumer-based resolution flow.
+      $consumerId = trim((string) \Drupal::config('social.oauth.settings')->get('client_id'));
+      if ($consumerId === '') {
+        $this->projectResolutionDebug = [
+          'consumerId' => '',
+          'source' => 'none',
+          'resolvedProjectUri' => '',
+          'dynamicCall' => [],
+          'reason' => 'empty_consumer_id_and_no_social_initiative_uri',
+          'authStatus' => 'authenticated',
+        ];
+        \Drupal::logger('pmsr')->warning('Landing project resolution skipped: empty consumer_id and empty rep.settings.social_initiative_uri');
+        return [];
+      }
+
+      $projectUri = $this->resolveProjectUriForConsumer($consumerId);
+      \Drupal::logger('pmsr')->notice('Landing project resolution: consumer_id=@c, project_uri=@p', [
+        '@c' => $consumerId,
+        '@p' => $projectUri !== '' ? $projectUri : '(empty)',
+      ]);
+
+      if (empty($projectUri)) {
+        \Drupal::logger('pmsr')->warning('Landing project resolution failed for consumer_id=@c. Rendering buttons-only mode.', [
+          '@c' => $consumerId,
+        ]);
+        return [];
+      }
     }
 
     // Build contributor markers for the map (best-effort; cached geocoding).
