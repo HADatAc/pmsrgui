@@ -36,7 +36,7 @@ class LandingPageControllerCienciaPt extends ControllerBase {
     ];
 
     $buttons_col3 = [
-      ['icon' => 'fas fa-chart-bar fa-2xl', 'label' => 'Manage Workflows', 'url' => 'std/select/workflow/1/9', 'disabled' => FALSE],
+      ['icon' => 'fas fa-chart-bar fa-2xl', 'label' => 'Manage Studies', 'url' => 'std/select/study/1/9', 'disabled' => FALSE],
     ];
 
     // Feature flag: when disabled (or PMSR GUI bundle not present), fall back to

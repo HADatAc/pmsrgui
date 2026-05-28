@@ -104,7 +104,7 @@ class LandingPageController extends ControllerBase {
     ];
 
     $buttons_col3 = [
-      ['icon' => 'fas fa-chart-bar fa-2xl', 'label' => 'Manage Workflows', 'url' => 'std/select/workflow/1/9', 'disabled' => false],
+      ['icon' => 'fas fa-chart-bar fa-2xl', 'label' => 'Manage Studies', 'url' => 'std/select/study/1/9', 'disabled' => false],
       // ['icon' => 'fas fa-magnifying-glass fa-2xl', 'label' => 'Search Organization<br /> By Geography', 'url' => 'sir/list', 'disabled' => true],
       // ['icon' => 'fas fa-magnifying-glass fa-2xl', 'label' => 'Search<br /> People by Geography', 'url' => '#', 'disabled' => true],
     ];
