@@ -6,7 +6,6 @@ use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\Render\Markup;
 use Drupal\Core\Url;
 use Drupal\Component\Utility\Html;
-use Drupal\Component\Utility\UrlHelper;
 use Drupal\rep\Form\DescribeForm;
 use Drupal\rep\Utils;
 use Symfony\Component\HttpFoundation\Request;
@@ -564,7 +563,7 @@ class LandingPageControllerCienciaPt extends ControllerBase {
 
     $markup = '';
     $markup .= '<div class="mb-3">';
-    $markup .= '  <div class="d-flex flex-nowrap justify-content-start gap-2">';
+    $markup .= '  <div class="d-flex flex-wrap justify-content-start align-items-center gap-2">';
     $markup .= implode('', $links);
     $markup .= '  </div>';
     $markup .= '</div>';
@@ -627,9 +626,20 @@ class LandingPageControllerCienciaPt extends ControllerBase {
     }
 
     $placeholder = Utils::placeholderImage('', 'organization', '/');
+    /** @var \Drupal\social\Service\OrganizationStats|null $stats */
+    $stats = NULL;
+    try {
+      $stats = \Drupal::service('social.organization_stats');
+    }
+    catch (\Throwable $e) {
+      $stats = NULL;
+    }
+
     $markers = [];
     $max_live_geocodes = 40;
     $live_geocodes = 0;
+    $max_stats_lookups = 40;
+    $stats_lookups = 0;
 
     foreach (array_keys($contributors) as $uri) {
       $uri = (string) $uri;
@@ -730,27 +740,35 @@ class LandingPageControllerCienciaPt extends ControllerBase {
       elseif ($full && is_object($full) && !empty($full->hasImageUri)) {
         $imageUrl = Utils::getAPIImage($uri, (string) $full->hasImageUri, $placeholder);
       }
+      $popupImageUrl = $imageUrl !== '' ? $imageUrl : $placeholder;
 
-      $externalUrl = '';
-      $candidate = '';
-      if (is_object($obj) && !empty($obj->hasWebDocument)) {
-        $candidate = (string) $obj->hasWebDocument;
-      }
-      elseif ($full && is_object($full)) {
-        $candidate = (string) ($full->hasWebDocument ?? ($full->hasURL ?? ($full->url ?? '')));
-      }
-      if ($candidate !== '' && UrlHelper::isValid($candidate, TRUE)) {
-        $externalUrl = UrlHelper::filterBadProtocol($candidate);
+      $simCount = 0;
+      $labCount = 0;
+      if ($stats) {
+        $counts = NULL;
+        if (method_exists($stats, 'getCachedCountsByOrganizationUri')) {
+          $counts = $stats->getCachedCountsByOrganizationUri($uri);
+        }
+        if (!is_array($counts) && $stats_lookups < $max_stats_lookups) {
+          $counts = $stats->getCountsByOrganizationUri($uri);
+          $stats_lookups++;
+        }
+        if (is_array($counts)) {
+          $simCount = (int) ($counts['simulator_instances'] ?? 0);
+          $labCount = (int) ($counts['laboratory_instances'] ?? ($counts['platform_instances'] ?? ($counts['workflow_nr'] ?? 0)));
+        }
       }
 
-      $openHref = Url::fromUserInput('/rep/uri/' . base64_encode($uri))->toString();
+      $viewHref = Utils::describeHref($uri);
 
-      $popup = '<div class="small">'
-        . ($imageUrl !== ''
-          ? '<div class="mb-2"><img src="' . Html::escape($imageUrl) . '" alt="' . Html::escape($title) . '" style="width:48px;height:48px;object-fit:contain;border:1px solid #ddd;border-radius:6px;background:#fff;" /></div>'
-          : '')
-        . '<strong>' . Html::escape($title) . '</strong>'
-        . '<div class="mt-2"><a target="_blank" rel="noopener" href="' . Html::escape($openHref) . '">Open</a></div>'
+      $popup = '<div class="small social-org-popup">'
+        . '<div class="social-org-popup-logo mb-2"><img src="' . Html::escape($popupImageUrl) . '" alt="' . Html::escape($title) . '" /></div>'
+        . '<div class="social-org-popup-title"><strong>' . Html::escape($title) . '</strong></div>'
+        . '<div class="social-org-popup-counts mt-1">'
+        . '<div>Simulator Instances: <strong>' . $simCount . '</strong></div>'
+        . '<div>Laboratory Instances: <strong>' . $labCount . '</strong></div>'
+        . '</div>'
+        . '<div class="mt-2"><a class="social-org-popup-view" href="' . Html::escape($viewHref) . '">View</a></div>'
         . '</div>';
 
       $markers[] = [
@@ -761,7 +779,7 @@ class LandingPageControllerCienciaPt extends ControllerBase {
         'imageUrl' => $imageUrl,
         'markerText' => 'ORG',
         'popupHtml' => $popup,
-        'url' => $openHref,
+        'url' => $viewHref,
       ];
     }
 
