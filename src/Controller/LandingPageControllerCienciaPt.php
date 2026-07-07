@@ -744,6 +744,7 @@ class LandingPageControllerCienciaPt extends ControllerBase {
 
       $simCount = 0;
       $labCount = 0;
+      $peopleCount = 0;
       if ($stats) {
         $counts = NULL;
         if (method_exists($stats, 'getCachedCountsByOrganizationUri')) {
@@ -756,6 +757,7 @@ class LandingPageControllerCienciaPt extends ControllerBase {
         if (is_array($counts)) {
           $simCount = (int) ($counts['simulator_instances'] ?? 0);
           $labCount = (int) ($counts['laboratory_instances'] ?? ($counts['platform_instances'] ?? ($counts['workflow_nr'] ?? 0)));
+          $peopleCount = (int) ($counts['people'] ?? ($counts['affiliated_people'] ?? 0));
         }
       }
 
@@ -767,6 +769,7 @@ class LandingPageControllerCienciaPt extends ControllerBase {
         . '<div class="social-org-popup-counts mt-1">'
         . '<div>Simulator Instances: <strong>' . $simCount . '</strong></div>'
         . '<div>Laboratory Instances: <strong>' . $labCount . '</strong></div>'
+        . '<div>People: <strong>' . $peopleCount . '</strong></div>'
         . '</div>'
         . '<div class="mt-2"><a class="social-org-popup-view" href="' . Html::escape($viewHref) . '">View</a></div>'
         . '</div>';
@@ -778,6 +781,7 @@ class LandingPageControllerCienciaPt extends ControllerBase {
         'elementType' => 'organization',
         'imageUrl' => $imageUrl,
         'markerText' => 'ORG',
+        'peopleCount' => $peopleCount,
         'popupHtml' => $popup,
         'url' => $viewHref,
       ];
