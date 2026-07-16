@@ -33,11 +33,31 @@ class FooterOverrideSubscriber implements EventSubscriberInterface {
    */
   public function injectFooter(ResponseEvent $event) {
 
+    $request = $event->getRequest();
+
     // Load config
     $config = \Drupal::config('pmsr.settings');
 
-    // Module path
-    $module_path = \Drupal::service('extension.list.module')->getPath('pmsr');
+    // Module path (supports both machine names across environments).
+    $module_path = '';
+    try {
+      $moduleList = \Drupal::service('extension.list.module');
+      $extensions = $moduleList->getList();
+      $moduleName = '';
+      if (isset($extensions['pmsr'])) {
+        $moduleName = 'pmsr';
+      }
+      elseif (isset($extensions['pmsr_gui'])) {
+        $moduleName = 'pmsr_gui';
+      }
+
+      if ($moduleName !== '') {
+        $module_path = (string) $moduleList->getPath($moduleName);
+      }
+    }
+    catch (\Throwable $e) {
+      $module_path = '';
+    }
 
     // Check if it's really an HTML response.
     $response = $event->getResponse();
@@ -87,20 +107,17 @@ class FooterOverrideSubscriber implements EventSubscriberInterface {
       // Set the HTML to inject here:
       $footer_html = <<<HTML
         <div id="landing_footer" class="py-3">
-          <div class="container h-100">
-            <div class="row h-100 align-items-center">
-              <div class="col text-center">
-                <img height="40" src="$footer_logo" alt="footer logo">
-              </div>
+          <div class="pmsr-footer-wrap">
+            <div class="pmsr-footer-center">
+              <img height="40" src="$footer_logo" alt="footer logo">
             </div>
           </div>
         </div>
         <div id="partners_footer" class="py-1">
-          <div class="container h-20 w-100" style="text-align: right;padding-right: 0px!important;">
-            <div class="row h-100">
-              <div class="col text-right">
-                <b><small class="pt-2">Powered by:</small></b> <a href="https://graxiom.com/" target="_blank"><img height="25" src="$partners_logo" alt="Tech Partners"></a></a>
-              </div>
+          <div class="pmsr-partners-wrap">
+            <div class="pmsr-partners-content">
+              <b><small class="pt-2">Powered by:</small></b>
+              <a href="https://graxiom.com/" target="_blank" rel="noopener noreferrer"><img height="25" src="$partners_logo" alt="Tech Partners"></a>
             </div>
           </div>
         </div>
@@ -111,7 +128,6 @@ class FooterOverrideSubscriber implements EventSubscriberInterface {
       // If your theme/module generates BODY uppercase or other, it may be necessary
       // to use a case-insensitive replace, or other logic.
       $account = \Drupal::currentUser();
-      $request = $event->getRequest();
       // dpm($request->attributes->get('_route'));
       if ($request->attributes->get('_route') !== 'system.403') {
         $content = str_replace('</footer>', $footer_html . '</footer>', $content);

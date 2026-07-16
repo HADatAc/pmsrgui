@@ -31,8 +31,50 @@ body.pmsr-module-enabled #navbar-top.navbar,
   font-size: 12px!important;
 }
 
+/* Prevent global img{height:auto} rules from inflating footer logos. */
+#landing_footer img {
+  height: 40px;
+  width: auto;
+  max-width: none;
+}
+
+#partners_footer img {
+  height: 25px;
+  width: auto;
+  max-width: none;
+}
+
 #landing_footer {
   background-color: #0066004b!important;
+}
+
+/* Footer layout hardening (especially on embedded editor pages). */
+#landing_footer .pmsr-footer-wrap,
+#partners_footer .pmsr-partners-wrap {
+  width: 100%;
+  max-width: 1320px;
+  margin: 0 auto;
+  padding-left: 12px;
+  padding-right: 12px;
+}
+
+#landing_footer .pmsr-footer-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#partners_footer .pmsr-partners-content {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  text-align: right;
+}
+
+#partners_footer a {
+  display: inline-flex;
+  align-items: center;
 }
 
 body.pmsr-module-enabled #navbar-main.navbar.navbar-expand-lg{

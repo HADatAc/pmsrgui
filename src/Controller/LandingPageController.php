@@ -13,8 +13,26 @@ class LandingPageController extends ControllerBase {
     $config = \Drupal::config('pmsr.settings');
     $user = \Drupal::currentUser();
 
-    // Module path
-    $module_path = \Drupal::service('extension.list.module')->getPath('pmsr');
+    // Module path (supports both machine names across environments).
+    $module_path = '';
+    try {
+      $moduleList = \Drupal::service('extension.list.module');
+      $extensions = $moduleList->getList();
+      $moduleName = '';
+      if (isset($extensions['pmsr'])) {
+        $moduleName = 'pmsr';
+      }
+      elseif (isset($extensions['pmsr_gui'])) {
+        $moduleName = 'pmsr_gui';
+      }
+
+      if ($moduleName !== '') {
+        $module_path = (string) $moduleList->getPath($moduleName);
+      }
+    }
+    catch (\Throwable $e) {
+      $module_path = '';
+    }
 
     $title = $config->get('title') ?? 'Repositório Médico Português';
 
@@ -74,20 +92,21 @@ class LandingPageController extends ControllerBase {
     $buttons_col1 = [
       ['icon' => 'fas fa-chart-bar fa-2xl', 'label' => 'Manage<br /> Simulator Model', 'url' => 'sir/select/instrument/1/9'],
       ['icon' => 'fas fa-magnifying-glass fa-2xl', 'label' => 'Search Simulator<br /> By Hierarchy', 'url' => 'sir/list'],
-      ['icon' => 'fas fa-magnifying-glass fa-2xl', 'label' => 'Search Instances<br /> By Geography', 'url' => '#', 'disabled' => true],
+      // ['icon' => 'fas fa-magnifying-glass fa-2xl', 'label' => 'Search Instances<br /> By Geography', 'url' => '#', 'disabled' => true],
     ];
 
     $buttons_col2 = [
       ['icon' => 'fas fa-chart-bar fa-2xl', 'label' => 'Manage<br /> Simulator Instances', 'url' => 'dpl/select/instrumentinstance/1/9'],
-      ['icon' => 'fas fa-magnifying-glass fa-2xl', 'label' => 'Search Simulator<br /> By Anatomy', 'url' => '#', 'disabled' => true],
-      ['icon' => 'fas fa-magnifying-glass fa-2xl', 'label' => 'Find and Access Data', 'url' => '#', 'disabled' => true],
+      ['icon' => 'fas fa-magnifying-glass fa-2xl', 'label' => 'Search Organization<br /> By Geography', 'url' => 'social/list/organization/all/_/_/_/_/1/9?view_type=map', 'disabled' => false],
+      // ['icon' => 'fas fa-magnifying-glass fa-2xl', 'label' => 'Search Simulator<br /> By Anatomy', 'url' => '#', 'disabled' => true],
+      // ['icon' => 'fas fa-magnifying-glass fa-2xl', 'label' => 'Find and Access Data', 'url' => '#', 'disabled' => true],
 
     ];
 
     $buttons_col3 = [
-      ['icon' => 'fas fa-chart-bar fa-2xl', 'label' => 'Manage Use Cases', 'url' => '#', 'disabled' => true],
-      ['icon' => 'fas fa-magnifying-glass fa-2xl', 'label' => 'Search Organization<br /> By Geography', 'url' => 'sir/list', 'disabled' => true],
-      ['icon' => 'fas fa-magnifying-glass fa-2xl', 'label' => 'Search<br /> People by Geography', 'url' => '#', 'disabled' => true],
+      ['icon' => 'fas fa-chart-bar fa-2xl', 'label' => 'Manage Studies', 'url' => 'std/select/study/1/9', 'disabled' => false],
+      // ['icon' => 'fas fa-magnifying-glass fa-2xl', 'label' => 'Search Organization<br /> By Geography', 'url' => 'sir/list', 'disabled' => true],
+      // ['icon' => 'fas fa-magnifying-glass fa-2xl', 'label' => 'Search<br /> People by Geography', 'url' => '#', 'disabled' => true],
     ];
 
     // INIT HTML
@@ -202,7 +221,9 @@ class LandingPageController extends ControllerBase {
       '#markup' => $output,
       '#attached' => [
         'library' => [
-          'pmsr/styles',
+          'pmsr/pmsr-styles',
+          'pmsr/pmsr-overrides',
+          'rep/fontawesome',
         ],
       ],
     ];
