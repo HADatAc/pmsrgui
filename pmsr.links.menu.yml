@@ -6,16 +6,16 @@ pmsr.settings:
   weight: 100
 
 #
-# PMSR SETUP MENU (under Repository > Ontologies)
+# PMSR SETUP MENU (under Repository, parallel to Ontologies)
 #
 
 pmsr.pmsr_setup:
   title: PMSR Setup
   description: PMSR Ingestion Tools
   route_name: '<nolink>'
-  parent: rep.ontologies_root
+  parent: rep.top_level
   menu_name: main
-  weight: 10
+  weight: 50
   requirements:
     _permission: 'access content'
     _role: 'authenticated'
