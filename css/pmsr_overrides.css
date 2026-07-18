@@ -114,15 +114,44 @@ body.pmsr-module-enabled #navbar-main.navbar.navbar-expand-lg a {
   text-decoration: none!important;
 }
 
-/* Ensure ALL menu items have consistent styling */
-body.pmsr-module-enabled #navbar-main.navbar.navbar-expand-lg li.nav-item > a.nav-link,
-body.pmsr-module-enabled #navbar-main.navbar.navbar-expand-lg .dropdown-menu > li > a.dropdown-item {
+/* ============================================================
+   COMPREHENSIVE MENU STYLING - ENSURE CONSISTENCY ACROSS ALL MENUS
+   ============================================================ */
+
+/* Base styling for ALL top-level menu links - NO background by default */
+body.pmsr-module-enabled #navbar-main ul.navbar-nav > li.nav-item > a,
+body.pmsr-module-enabled #navbar-main ul.navbar-nav > li.nav-item > a.nav-link,
+body.pmsr-module-enabled #navbar-main.navbar.navbar-expand-lg li.nav-item > a.nav-link {
   color: #000!important;
   font-weight: 500!important;
   text-decoration: none!important;
+  background-color: transparent!important;
 }
 
-/* Active menu item styling - applies to ALL menu items */
+/* Remove background from dropdown toggle when dropdown is open */
+body.pmsr-module-enabled #navbar-main ul.navbar-nav > li.nav-item.show > a,
+body.pmsr-module-enabled #navbar-main ul.navbar-nav > li.nav-item.show > a.nav-link,
+body.pmsr-module-enabled #navbar-main.navbar.navbar-expand-lg li.nav-item.show > a.nav-link {
+  background-color: transparent!important;
+  color: #000!important;
+}
+
+/* Base styling for ALL dropdown menu links - NO background by default */
+body.pmsr-module-enabled #navbar-main .dropdown-menu li a,
+body.pmsr-module-enabled #navbar-main .dropdown-menu li a.dropdown-item,
+body.pmsr-module-enabled #navbar-main.navbar.navbar-expand-lg .dropdown-menu > li > a.dropdown-item,
+body.pmsr-module-enabled #navbar-main ul.navbar-nav li.dropdown .dropdown-menu li a {
+  color: #000!important;
+  font-weight: 500!important;
+  text-decoration: none!important;
+  background-color: transparent!important;
+}
+
+/* Active state for top-level menu items (current page) */
+body.pmsr-module-enabled #navbar-main ul.navbar-nav > li.nav-item > a.active,
+body.pmsr-module-enabled #navbar-main ul.navbar-nav > li.nav-item > a.is-active,
+body.pmsr-module-enabled #navbar-main ul.navbar-nav > li.nav-item > a.nav-link.active,
+body.pmsr-module-enabled #navbar-main ul.navbar-nav > li.nav-item > a.nav-link.is-active,
 body.pmsr-module-enabled #navbar-main.navbar.navbar-expand-lg li.nav-item > a.nav-link.active,
 body.pmsr-module-enabled #navbar-main.navbar.navbar-expand-lg li.nav-item > a.nav-link.is-active {
   font-weight: 600!important;
@@ -130,23 +159,50 @@ body.pmsr-module-enabled #navbar-main.navbar.navbar-expand-lg li.nav-item > a.na
   color: #ffffff!important;
 }
 
-/* Dropdown active items */
-body.pmsr-module-enabled #navbar-main.navbar.navbar-expand-lg .dropdown-menu > li.active > a,
-body.pmsr-module-enabled #navbar-main.navbar.navbar-expand-lg .dropdown-menu > li > a.is-active {
-  color: #ffffff!important;
-  background-color: #006600be!important;
+/* But NOT when dropdown is open - dropdown open state should not apply active styling */
+body.pmsr-module-enabled #navbar-main ul.navbar-nav > li.nav-item.show > a.active,
+body.pmsr-module-enabled #navbar-main ul.navbar-nav > li.nav-item.show > a.nav-link.active,
+body.pmsr-module-enabled #navbar-main.navbar.navbar-expand-lg li.nav-item.show > a.nav-link.active {
+  background-color: transparent!important;
+  color: #000!important;
+  font-weight: 500!important;
 }
 
+/* Active state for dropdown menu items (current page) */
+body.pmsr-module-enabled #navbar-main .dropdown-menu li.active > a,
+body.pmsr-module-enabled #navbar-main .dropdown-menu li > a.active,
+body.pmsr-module-enabled #navbar-main .dropdown-menu li > a.is-active,
+body.pmsr-module-enabled #navbar-main .dropdown-menu li.active > a.dropdown-item,
+body.pmsr-module-enabled #navbar-main.navbar.navbar-expand-lg .dropdown-menu > li.active > a,
+body.pmsr-module-enabled #navbar-main.navbar.navbar-expand-lg .dropdown-menu > li > a.is-active,
+body.pmsr-module-enabled #navbar-main ul.navbar-nav li.dropdown .dropdown-menu li.active a,
+body.pmsr-module-enabled #navbar-main ul.navbar-nav li.dropdown .dropdown-menu li a.is-active {
+  color: #ffffff!important;
+  background-color: #006600be!important;
+  font-weight: 600!important;
+}
+
+/* Hover states for top-level menu items - ONLY on hover */
+body.pmsr-module-enabled #navbar-main ul.navbar-nav > li.nav-item > a:hover,
+body.pmsr-module-enabled #navbar-main ul.navbar-nav > li.nav-item > a.nav-link:hover,
+body.pmsr-module-enabled #navbar-main.navbar.navbar-expand-lg li.nav-item > a.nav-link:hover {
+  background-color: #00660094!important;
+  color: #ffffff!important;
+}
+
+/* Hover states for dropdown menu items - ONLY on hover */
+body.pmsr-module-enabled #navbar-main .dropdown-menu li a:hover,
+body.pmsr-module-enabled #navbar-main .dropdown-menu li a.dropdown-item:hover,
+body.pmsr-module-enabled #navbar-main.navbar.navbar-expand-lg .dropdown-menu > li > a.dropdown-item:hover,
+body.pmsr-module-enabled #navbar-main ul.navbar-nav li.dropdown .dropdown-menu li a:hover {
+  background-color: #00660094!important;
+  color: #ffffff!important;
+}
+
+/* Legacy support for old selectors */
 body.pmsr-module-enabled li.dropdown-item.active,
 body.pmsr-module-enabled li.dropdown-item:active {
   background-color: #006600be!important;
-}
-
-/* Hover states for ALL menu items */
-body.pmsr-module-enabled #navbar-main.navbar.navbar-expand-lg li.nav-item > a.nav-link:hover,
-body.pmsr-module-enabled #navbar-main.navbar.navbar-expand-lg .dropdown-menu > li > a.dropdown-item:hover {
-  background-color: #00660094!important;
-  color: #ffffff!important;
 }
 
 body.pmsr-module-enabled li.dropdown-item.active a.is-active {
@@ -154,7 +210,7 @@ body.pmsr-module-enabled li.dropdown-item.active a.is-active {
   background-color: transparent!important;
 }
 
-body.pmsr-module-enabled #navbar-main.navbar.navbar-expand-lg a.active {
+body.pmsr-module-enabled #navbar-main.navbar.navbar-expand-lg a.active:not(.show) {
   font-weight: 600!important;
   background-color: #006600be!important;
   color: #ffffff!important;

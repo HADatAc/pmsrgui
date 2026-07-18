@@ -16,8 +16,7 @@ class IngestionController extends ControllerBase {
   public function ingestOntologies() {
     $output = '';
     
-    $output .= '<div class="container mt-4">';
-    $output .= '<h1>Ingest PMSR Ontologies</h1>';
+    $output .= '<div class="container-fluid mt-4">';
     $output .= '<p>This page will ingest PMSR, UBERON, and NCIT ontologies from code into Apache Fuseki.</p>';
     
     $output .= '<div class="card mt-4">';
@@ -34,8 +33,8 @@ class IngestionController extends ControllerBase {
     $output .= '</div>';
     
     $output .= '<div class="mt-4">';
-    $output .= '<button class="btn btn-primary btn-lg" onclick="startIngestion()">Start Ingestion</button>';
-    $output .= '<a href="/pmsr" class="btn btn-secondary btn-lg ms-2">Cancel</a>';
+    $output .= '<button class="btn btn-primary btn-lg btn-start-ingestion">Start Ingestion</button>';
+    $output .= '<button class="btn btn-secondary btn-lg ms-2" onclick="history.back()">Cancel</button>';
     $output .= '</div>';
     
     $output .= '<div id="ingestion-status" class="mt-4" style="display:none;">';
@@ -49,57 +48,20 @@ class IngestionController extends ControllerBase {
     
     $output .= '</div>'; // End container
     
-    // Add JavaScript for ingestion
-    $output .= '
-    <script>
-    function startIngestion() {
-      document.getElementById("ingestion-status").style.display = "block";
-      document.getElementById("status-message").textContent = "Ingesting ontologies...";
-      
-      fetch("/hascoapi/api/pmsr/ingest/ontologies", {
-        method: "POST"
-      })
-      .then(response => response.json())
-      .then(data => {
-        document.getElementById("ingestion-status").style.display = "none";
-        
-        const resultsDiv = document.getElementById("ingestion-results");
-        resultsDiv.style.display = "block";
-        
-        if (data.isSuccessful) {
-          resultsDiv.innerHTML = `
-            <div class="alert alert-success">
-              <h4>✓ Ingestion Completed Successfully</h4>
-              <p>${data.message || "All ontologies have been ingested."}</p>
-            </div>
-          `;
-        } else {
-          resultsDiv.innerHTML = `
-            <div class="alert alert-danger">
-              <h4>✗ Ingestion Failed</h4>
-              <p>${data.message || "An error occurred during ingestion."}</p>
-            </div>
-          `;
-        }
-      })
-      .catch(error => {
-        document.getElementById("ingestion-status").style.display = "none";
-        document.getElementById("ingestion-results").innerHTML = `
-          <div class="alert alert-danger">
-            <h4>✗ Error</h4>
-            <p>Failed to connect to the ingestion service.</p>
-          </div>
-        `;
-      });
-    }
-    </script>
-    ';
-    
     return [
       '#markup' => $output,
       '#attached' => [
         'library' => [
           'pmsr/styles',
+          'pmsr/ingestion',
+        ],
+        'drupalSettings' => [
+          'pmsr' => [
+            'ingestion' => [
+              'endpoint' => '/hascoapi/api/pmsr/ingest/ontologies',
+              'message' => 'Ingesting ontologies...',
+            ],
+          ],
         ],
       ],
     ];
@@ -111,8 +73,7 @@ class IngestionController extends ControllerBase {
   public function ingestInstruments() {
     $output = '';
     
-    $output .= '<div class="container mt-4">';
-    $output .= '<h1>Ingest INS Instruments</h1>';
+    $output .= '<div class="container-fluid mt-4">';
     $output .= '<p>This page will ingest instrument definitions from INS templates.</p>';
     
     $output .= '<div class="card mt-4">';
@@ -125,8 +86,8 @@ class IngestionController extends ControllerBase {
     $output .= '</div>';
     
     $output .= '<div class="mt-4">';
-    $output .= '<button class="btn btn-primary btn-lg" onclick="startIngestion()">Start Ingestion</button>';
-    $output .= '<a href="/pmsr" class="btn btn-secondary btn-lg ms-2">Cancel</a>';
+    $output .= '<button class="btn btn-primary btn-lg btn-start-ingestion">Start Ingestion</button>';
+    $output .= '<button class="btn btn-secondary btn-lg ms-2" onclick="history.back()">Cancel</button>';
     $output .= '</div>';
     
     $output .= '<div id="ingestion-status" class="mt-4" style="display:none;">';
@@ -140,57 +101,20 @@ class IngestionController extends ControllerBase {
     
     $output .= '</div>'; // End container
     
-    // Add JavaScript for ingestion
-    $output .= '
-    <script>
-    function startIngestion() {
-      document.getElementById("ingestion-status").style.display = "block";
-      document.getElementById("status-message").textContent = "Ingesting instruments...";
-      
-      fetch("/hascoapi/api/pmsr/ingest/instruments", {
-        method: "POST"
-      })
-      .then(response => response.json())
-      .then(data => {
-        document.getElementById("ingestion-status").style.display = "none";
-        
-        const resultsDiv = document.getElementById("ingestion-results");
-        resultsDiv.style.display = "block";
-        
-        if (data.isSuccessful) {
-          resultsDiv.innerHTML = `
-            <div class="alert alert-success">
-              <h4>✓ Ingestion Completed Successfully</h4>
-              <p>${data.message || "All instruments have been ingested."}</p>
-            </div>
-          `;
-        } else {
-          resultsDiv.innerHTML = `
-            <div class="alert alert-danger">
-              <h4>✗ Ingestion Failed</h4>
-              <p>${data.message || "An error occurred during ingestion."}</p>
-            </div>
-          `;
-        }
-      })
-      .catch(error => {
-        document.getElementById("ingestion-status").style.display = "none";
-        document.getElementById("ingestion-results").innerHTML = `
-          <div class="alert alert-danger">
-            <h4>✗ Error</h4>
-            <p>Failed to connect to the ingestion service.</p>
-          </div>
-        `;
-      });
-    }
-    </script>
-    ';
-    
     return [
       '#markup' => $output,
       '#attached' => [
         'library' => [
           'pmsr/styles',
+          'pmsr/ingestion',
+        ],
+        'drupalSettings' => [
+          'pmsr' => [
+            'ingestion' => [
+              'endpoint' => '/hascoapi/api/pmsr/ingest/instruments',
+              'message' => 'Ingesting instruments...',
+            ],
+          ],
         ],
       ],
     ];
@@ -202,8 +126,7 @@ class IngestionController extends ControllerBase {
   public function ingestGeography() {
     $output = '';
     
-    $output .= '<div class="container mt-4">';
-    $output .= '<h1>Ingest KRG Geography and Organizations</h1>';
+    $output .= '<div class="container-fluid mt-4">';
     $output .= '<p>This page will ingest geography data and organizational structures from KRG templates.</p>';
     
     $output .= '<div class="card mt-4">';
@@ -221,8 +144,8 @@ class IngestionController extends ControllerBase {
     $output .= '</div>';
     
     $output .= '<div class="mt-4">';
-    $output .= '<button class="btn btn-primary btn-lg" onclick="startIngestion()">Start Ingestion</button>';
-    $output .= '<a href="/pmsr" class="btn btn-secondary btn-lg ms-2">Cancel</a>';
+    $output .= '<button class="btn btn-primary btn-lg btn-start-ingestion">Start Ingestion</button>';
+    $output .= '<button class="btn btn-secondary btn-lg ms-2" onclick="history.back()">Cancel</button>';
     $output .= '</div>';
     
     $output .= '<div id="ingestion-status" class="mt-4" style="display:none;">';
@@ -236,57 +159,20 @@ class IngestionController extends ControllerBase {
     
     $output .= '</div>'; // End container
     
-    // Add JavaScript for ingestion
-    $output .= '
-    <script>
-    function startIngestion() {
-      document.getElementById("ingestion-status").style.display = "block";
-      document.getElementById("status-message").textContent = "Ingesting geography data...";
-      
-      fetch("/hascoapi/api/pmsr/ingest/geography", {
-        method: "POST"
-      })
-      .then(response => response.json())
-      .then(data => {
-        document.getElementById("ingestion-status").style.display = "none";
-        
-        const resultsDiv = document.getElementById("ingestion-results");
-        resultsDiv.style.display = "block";
-        
-        if (data.isSuccessful) {
-          resultsDiv.innerHTML = `
-            <div class="alert alert-success">
-              <h4>✓ Ingestion Completed Successfully</h4>
-              <p>${data.message || "Geography and organizations have been ingested."}</p>
-            </div>
-          `;
-        } else {
-          resultsDiv.innerHTML = `
-            <div class="alert alert-danger">
-              <h4>✗ Ingestion Failed</h4>
-              <p>${data.message || "An error occurred during ingestion."}</p>
-            </div>
-          `;
-        }
-      })
-      .catch(error => {
-        document.getElementById("ingestion-status").style.display = "none";
-        document.getElementById("ingestion-results").innerHTML = `
-          <div class="alert alert-danger">
-            <h4>✗ Error</h4>
-            <p>Failed to connect to the ingestion service.</p>
-          </div>
-        `;
-      });
-    }
-    </script>
-    ';
-    
     return [
       '#markup' => $output,
       '#attached' => [
         'library' => [
           'pmsr/styles',
+          'pmsr/ingestion',
+        ],
+        'drupalSettings' => [
+          'pmsr' => [
+            'ingestion' => [
+              'endpoint' => '/hascoapi/api/pmsr/ingest/geography',
+              'message' => 'Ingesting geography data...',
+            ],
+          ],
         ],
       ],
     ];
@@ -298,8 +184,7 @@ class IngestionController extends ControllerBase {
   public function ingestPeople() {
     $output = '';
     
-    $output .= '<div class="container mt-4">';
-    $output .= '<h1>Ingest KGR People</h1>';
+    $output .= '<div class="container-fluid mt-4">';
     $output .= '<p>This page will ingest people data from KGR templates.</p>';
     
     $output .= '<div class="card mt-4">';
@@ -317,8 +202,8 @@ class IngestionController extends ControllerBase {
     $output .= '</div>';
     
     $output .= '<div class="mt-4">';
-    $output .= '<button class="btn btn-primary btn-lg" onclick="startIngestion()">Start Ingestion</button>';
-    $output .= '<a href="/pmsr" class="btn btn-secondary btn-lg ms-2">Cancel</a>';
+    $output .= '<button class="btn btn-primary btn-lg btn-start-ingestion">Start Ingestion</button>';
+    $output .= '<button class="btn btn-secondary btn-lg ms-2" onclick="history.back()">Cancel</button>';
     $output .= '</div>';
     
     $output .= '<div id="ingestion-status" class="mt-4" style="display:none;">';
@@ -332,57 +217,20 @@ class IngestionController extends ControllerBase {
     
     $output .= '</div>'; // End container
     
-    // Add JavaScript for ingestion
-    $output .= '
-    <script>
-    function startIngestion() {
-      document.getElementById("ingestion-status").style.display = "block";
-      document.getElementById("status-message").textContent = "Ingesting people data...";
-      
-      fetch("/hascoapi/api/pmsr/ingest/people", {
-        method: "POST"
-      })
-      .then(response => response.json())
-      .then(data => {
-        document.getElementById("ingestion-status").style.display = "none";
-        
-        const resultsDiv = document.getElementById("ingestion-results");
-        resultsDiv.style.display = "block";
-        
-        if (data.isSuccessful) {
-          resultsDiv.innerHTML = `
-            <div class="alert alert-success">
-              <h4>✓ Ingestion Completed Successfully</h4>
-              <p>${data.message || "People data has been ingested."}</p>
-            </div>
-          `;
-        } else {
-          resultsDiv.innerHTML = `
-            <div class="alert alert-danger">
-              <h4>✗ Ingestion Failed</h4>
-              <p>${data.message || "An error occurred during ingestion."}</p>
-            </div>
-          `;
-        }
-      })
-      .catch(error => {
-        document.getElementById("ingestion-status").style.display = "none";
-        document.getElementById("ingestion-results").innerHTML = `
-          <div class="alert alert-danger">
-            <h4>✗ Error</h4>
-            <p>Failed to connect to the ingestion service.</p>
-          </div>
-        `;
-      });
-    }
-    </script>
-    ';
-    
     return [
       '#markup' => $output,
       '#attached' => [
         'library' => [
           'pmsr/styles',
+          'pmsr/ingestion',
+        ],
+        'drupalSettings' => [
+          'pmsr' => [
+            'ingestion' => [
+              'endpoint' => '/hascoapi/api/pmsr/ingest/people',
+              'message' => 'Ingesting people data...',
+            ],
+          ],
         ],
       ],
     ];

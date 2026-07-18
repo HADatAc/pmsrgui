@@ -49,3 +49,31 @@ function pmsr_uninstall() {
     ->set('preferred_actuator', 'Actuator')
     ->save();
 }
+
+/**
+ * Update main menu block to be visible on all pages including PMSR routes.
+ */
+function pmsr_update_9002() {
+  try {
+    $block = \Drupal\block\Entity\Block::load('hasco_barrio_main_menu');
+    if ($block) {
+      // Get current visibility settings
+      $visibility = $block->getVisibility();
+      
+      // Remove any request_path visibility conditions that might be hiding pmsr pages
+      if (isset($visibility['request_path'])) {
+        unset($visibility['request_path']);
+        $block->setVisibilityConfig('request_path', []);
+      }
+      
+      // Save the block
+      $block->save();
+      
+      // Clear caches
+      \Drupal::service('cache.render')->invalidateAll();
+      \Drupal::service('cache.discovery')->invalidateAll();
+    }
+  } catch (\Exception $e) {
+    \Drupal::logger('pmsr')->error('Error in update 9002: @message', ['@message' => $e->getMessage()]);
+  }
+}

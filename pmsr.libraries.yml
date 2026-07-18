@@ -17,3 +17,9 @@ pmsr-overrides:
   css:
     theme:
       css/pmsr_overrides.css: { weight: 1000 }
+ingestion:
+  js:
+    js/ingestion.js: {}
+  dependencies:
+    - core/jquery
+    - core/drupal
