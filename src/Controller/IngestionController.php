@@ -3,6 +3,7 @@
 namespace Drupal\pmsr\Controller;
 
 use Drupal\Core\Controller\ControllerBase;
+use Drupal\Core\Render\Markup;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 
 /**
@@ -49,9 +50,10 @@ class IngestionController extends ControllerBase {
     $output .= '</div>'; // End container
     
     return [
-      '#markup' => $output,
+      '#markup' => Markup::create($output),
       '#attached' => [
         'library' => [
+          'pmsr/bootstrap',
           'pmsr/styles',
           'pmsr/ingestion',
         ],
@@ -102,9 +104,10 @@ class IngestionController extends ControllerBase {
     $output .= '</div>'; // End container
     
     return [
-      '#markup' => $output,
+      '#markup' => Markup::create($output),
       '#attached' => [
         'library' => [
+          'pmsr/bootstrap',
           'pmsr/styles',
           'pmsr/ingestion',
         ],
@@ -160,9 +163,10 @@ class IngestionController extends ControllerBase {
     $output .= '</div>'; // End container
     
     return [
-      '#markup' => $output,
+      '#markup' => Markup::create($output),
       '#attached' => [
         'library' => [
+          'pmsr/bootstrap',
           'pmsr/styles',
           'pmsr/ingestion',
         ],
@@ -218,9 +222,10 @@ class IngestionController extends ControllerBase {
     $output .= '</div>'; // End container
     
     return [
-      '#markup' => $output,
+      '#markup' => Markup::create($output),
       '#attached' => [
         'library' => [
+          'pmsr/bootstrap',
           'pmsr/styles',
           'pmsr/ingestion',
         ],

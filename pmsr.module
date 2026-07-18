@@ -4,22 +4,8 @@
  * Implements hook_preprocess_html().
  */
 function pmsr_preprocess_html(&$variables) {
-  // Get current route
-  $route_name = \Drupal::routeMatch()->getRouteName();
-  
-  // Don't add pmsr-module-enabled class to ingestion and statistics pages
-  // so they show the main menu like normal pages
-  $excluded_routes = [
-    'pmsr.ingest_ontologies',
-    'pmsr.ingest_instruments',
-    'pmsr.ingest_geography',
-    'pmsr.ingest_people',
-    'pmsr.statistics',
-  ];
-  
-  if (!in_array($route_name, $excluded_routes)) {
-    $variables['attributes']['class'][] = 'pmsr-module-enabled';
-  }
+  // Always add pmsr-module-enabled class for consistent styling
+  $variables['attributes']['class'][] = 'pmsr-module-enabled';
 }
 
 /**

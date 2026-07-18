@@ -3,6 +3,7 @@
 namespace Drupal\pmsr\Controller;
 
 use Drupal\Core\Controller\ControllerBase;
+use Drupal\Core\Render\Markup;
 use Symfony\Component\HttpFoundation\JsonResponse;
 
 /**
@@ -140,9 +141,10 @@ class StatisticsController extends ControllerBase {
 
     return [
       '#title' => 'Statistics',
-      '#markup' => $output,
+      '#markup' => Markup::create($output),
       '#attached' => [
         'library' => [
+          'pmsr/bootstrap',
           'pmsr/styles',
         ],
       ],
