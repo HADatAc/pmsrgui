@@ -72,20 +72,20 @@ class LandingPageController extends ControllerBase {
 
     // Buttons definition
     $buttons_col1 = [
-      ['icon' => 'fas fa-chart-bar fa-2xl', 'label' => 'Manage<br /> Simulator Model', 'url' => 'sir/select/instrument/1/9'],
+      ['icon' => 'fas fa-magnifying-glass fa-2xl', 'label' => 'Search Scenarios and Access Data', 'url' => 'std/search/studies'],
+      ['icon' => 'fas fa-chart-bar fa-2xl', 'label' => 'Manage<br /> Simulator Instances', 'url' => 'dpl/select/instrumentinstance/1/9'],
       ['icon' => 'fas fa-magnifying-glass fa-2xl', 'label' => 'Search Simulator<br /> By Hierarchy', 'url' => 'sir/list'],
-      ['icon' => 'fas fa-magnifying-glass fa-2xl', 'label' => 'Search Instances<br /> By Geography', 'url' => '#', 'disabled' => true],
     ];
 
     $buttons_col2 = [
-      ['icon' => 'fas fa-chart-bar fa-2xl', 'label' => 'Manage<br /> Simulator Instances', 'url' => 'dpl/select/instrumentinstance/1/9'],
+      ['icon' => 'fas fa-chart-bar fa-2xl', 'label' => 'Manage<br /> Simulator Model', 'url' => 'sir/select/instrument/1/9'],
       ['icon' => 'fas fa-magnifying-glass fa-2xl', 'label' => 'Search Simulator<br /> By Anatomy', 'url' => '#', 'disabled' => true],
-      ['icon' => 'fas fa-magnifying-glass fa-2xl', 'label' => 'Find and Access Data', 'url' => '#', 'disabled' => true],
+      ['icon' => 'fas fa-chart-simple fa-2xl', 'label' => 'Statistics', 'url' => 'pmsr/statistics'],
 
     ];
 
     $buttons_col3 = [
-      ['icon' => 'fas fa-chart-bar fa-2xl', 'label' => 'Manage Use Cases', 'url' => '#', 'disabled' => true],
+      ['icon' => 'fas fa-magnifying-glass fa-2xl', 'label' => 'Search Instances<br /> By Geography', 'url' => '#', 'disabled' => true],
       ['icon' => 'fas fa-magnifying-glass fa-2xl', 'label' => 'Search Organization<br /> By Geography', 'url' => 'sir/list', 'disabled' => true],
       ['icon' => 'fas fa-magnifying-glass fa-2xl', 'label' => 'Search<br /> People by Geography', 'url' => '#', 'disabled' => true],
     ];

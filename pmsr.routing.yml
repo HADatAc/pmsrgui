@@ -6,6 +6,14 @@ pmsr.landing_page:
   requirements:
     _permission: 'access content'
 
+pmsr.statistics:
+  path: '/pmsr/statistics'
+  defaults:
+    _controller: 'Drupal\pmsr\Controller\StatisticsController::content'
+    _title: 'Statistics'
+  requirements:
+    _permission: 'access content'
+
 pmsr.settings:
   path: '/admin/config/pmsr'
   defaults:
