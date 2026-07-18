@@ -114,9 +114,54 @@ body.pmsr-module-enabled #navbar-main.navbar.navbar-expand-lg a {
   text-decoration: none!important;
 }
 
+/* Ensure ALL menu items have consistent styling */
+body.pmsr-module-enabled #navbar-main.navbar.navbar-expand-lg li.nav-item > a.nav-link,
+body.pmsr-module-enabled #navbar-main.navbar.navbar-expand-lg .dropdown-menu > li > a.dropdown-item {
+  color: #000!important;
+  font-weight: 500!important;
+  text-decoration: none!important;
+}
+
+/* Active menu item styling - applies to ALL menu items */
+body.pmsr-module-enabled #navbar-main.navbar.navbar-expand-lg li.nav-item > a.nav-link.active,
+body.pmsr-module-enabled #navbar-main.navbar.navbar-expand-lg li.nav-item > a.nav-link.is-active {
+  font-weight: 600!important;
+  background-color: #006600be!important;
+  color: #ffffff!important;
+}
+
+/* Dropdown active items */
+body.pmsr-module-enabled #navbar-main.navbar.navbar-expand-lg .dropdown-menu > li.active > a,
+body.pmsr-module-enabled #navbar-main.navbar.navbar-expand-lg .dropdown-menu > li > a.is-active {
+  color: #ffffff!important;
+  background-color: #006600be!important;
+}
+
 body.pmsr-module-enabled li.dropdown-item.active,
 body.pmsr-module-enabled li.dropdown-item:active {
   background-color: #006600be!important;
+}
+
+/* Hover states for ALL menu items */
+body.pmsr-module-enabled #navbar-main.navbar.navbar-expand-lg li.nav-item > a.nav-link:hover,
+body.pmsr-module-enabled #navbar-main.navbar.navbar-expand-lg .dropdown-menu > li > a.dropdown-item:hover {
+  background-color: #00660094!important;
+  color: #ffffff!important;
+}
+
+body.pmsr-module-enabled li.dropdown-item.active a.is-active {
+  color: #ffffff!important;
+  background-color: transparent!important;
+}
+
+body.pmsr-module-enabled #navbar-main.navbar.navbar-expand-lg a.active {
+  font-weight: 600!important;
+  background-color: #006600be!important;
+  color: #ffffff!important;
+}
+
+body.pmsr-module-enabled #navbar-main.navbar.navbar-expand-lg .dropdown-menu a.active.dropdown-toggle {
+  background: none!important;
 }
 
 body.pmsr-module-enabled div.nav-pills .form-control.nav-link.active {
