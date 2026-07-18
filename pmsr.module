@@ -32,8 +32,8 @@ function pmsr_page_attachments(array &$attachments) {
   // Obtém o nome da rota atual
   $route_name = \Drupal::routeMatch()->getRouteName();
 
-  // Verifica se a rota começa com 'pmsr.'
-  if (strpos($route_name, 'pmsr.') === 0) {
+  // Load pmsr-styles only on the landing page (hides the navbar)
+  if ($route_name === 'pmsr.landing_page') {
     $attachments['#attached']['library'][] = 'pmsr/pmsr-styles';
   }
 
@@ -115,36 +115,6 @@ function pmsr_menu_links_discovered_alter(&$links) {
  * Implements hook_preprocess_page().
  */
 function pmsr_preprocess_page(&$variables) {
-  // Get route name
-  $route_name = \Drupal::routeMatch()->getRouteName();
-  
-  // Add main menu to pmsr pages
-  if (strpos($route_name, 'pmsr.') === 0) {
-    try {
-      // Load the main menu block
-      $block_manager = \Drupal::service('plugin.manager.block');
-      $config = [];
-      $plugin_block = $block_manager->createInstance('system_menu_block:main', $config);
-      
-      // Render the block
-      if ($plugin_block) {
-        $render = $plugin_block->build();
-        // Add the menu to the page header region
-        $variables['page']['header'][] = [
-          '#theme' => 'block',
-          '#configuration' => $plugin_block->getConfiguration(),
-          '#plugin_id' => 'system_menu_block:main',
-          '#base_plugin_id' => 'system_menu_block',
-          '#derivative_plugin_id' => 'main',
-          'content' => $render,
-          '#weight' => -10,
-        ];
-      }
-    } catch (\Exception $e) {
-      \Drupal::logger('pmsr')->error('Error rendering main menu: @message', ['@message' => $e->getMessage()]);
-    }
-  }
-  
   // Obtém o título das configurações do PMSR
   $config = \Drupal::config('pmsr.settings');
   $title = $config->get('title');
