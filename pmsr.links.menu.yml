@@ -4,3 +4,71 @@ pmsr.settings:
   parent: system.admin_config
   route_name: pmsr.settings
   weight: 100
+
+#
+# ONTOLOGIES MENU
+#
+
+pmsr.ontologies:
+  title: Ontologies
+  description: Manage Ontologies
+  route_name: rep.home
+  menu_name: main
+  weight: 250
+  requirements:
+    _permission: 'access content'
+
+pmsr.pmsr_setup:
+  title: PMSR Setup
+  description: PMSR Ingestion Tools
+  route_name: '<nolink>'
+  parent: pmsr.ontologies
+  menu_name: main
+  weight: 1
+  requirements:
+    _permission: 'access content'
+    _role: 'authenticated'
+
+pmsr.ingest_ontologies:
+  title: 'Ingest PMSR Ontologies (pmsr, uberon, ncit)'
+  description: 'Ingest PMSR, UBERON, and NCIT ontologies from code'
+  route_name: pmsr.ingest_ontologies
+  parent: pmsr.pmsr_setup
+  menu_name: main
+  weight: 1
+  requirements:
+    _permission: 'access content'
+    _role: 'authenticated'
+
+pmsr.ingest_instruments:
+  title: 'Ingest INS Instruments'
+  description: 'Ingest INS instruments into the system'
+  route_name: pmsr.ingest_instruments
+  parent: pmsr.pmsr_setup
+  menu_name: main
+  weight: 2
+  requirements:
+    _permission: 'access content'
+    _role: 'authenticated'
+
+pmsr.ingest_geography:
+  title: 'Ingest KRG Geography and Organizations'
+  description: 'Ingest KRG geography and organizations data'
+  route_name: pmsr.ingest_geography
+  parent: pmsr.pmsr_setup
+  menu_name: main
+  weight: 3
+  requirements:
+    _permission: 'access content'
+    _role: 'authenticated'
+
+pmsr.ingest_people:
+  title: 'Ingest KGR People'
+  description: 'Ingest KGR people data'
+  route_name: pmsr.ingest_people
+  parent: pmsr.pmsr_setup
+  menu_name: main
+  weight: 4
+  requirements:
+    _permission: 'access content'
+    _role: 'authenticated'

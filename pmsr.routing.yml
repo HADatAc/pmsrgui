@@ -30,3 +30,39 @@ pmsr.access_denied:
   requirements:
     _access: 'TRUE'
 
+pmsr.ingest_ontologies:
+  path: '/pmsr/ingest/ontologies'
+  defaults:
+    _controller: '\Drupal\pmsr\Controller\IngestionController::ingestOntologies'
+    _title: 'Ingest PMSR Ontologies'
+  requirements:
+    _permission: 'access content'
+    _role: 'authenticated'
+
+pmsr.ingest_instruments:
+  path: '/pmsr/ingest/instruments'
+  defaults:
+    _controller: '\Drupal\pmsr\Controller\IngestionController::ingestInstruments'
+    _title: 'Ingest INS Instruments'
+  requirements:
+    _permission: 'access content'
+    _role: 'authenticated'
+
+pmsr.ingest_geography:
+  path: '/pmsr/ingest/geography'
+  defaults:
+    _controller: '\Drupal\pmsr\Controller\IngestionController::ingestGeography'
+    _title: 'Ingest KRG Geography and Organizations'
+  requirements:
+    _permission: 'access content'
+    _role: 'authenticated'
+
+pmsr.ingest_people:
+  path: '/pmsr/ingest/people'
+  defaults:
+    _controller: '\Drupal\pmsr\Controller\IngestionController::ingestPeople'
+    _title: 'Ingest KGR People'
+  requirements:
+    _permission: 'access content'
+    _role: 'authenticated'
+
