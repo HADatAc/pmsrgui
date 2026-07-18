@@ -6,16 +6,30 @@ pmsr.settings:
   weight: 100
 
 #
-# PMSR INGESTION MENU ITEMS (directly under Repository)
+# PMSR Setup - Submenu under Repository with ingestion options
+#
+
+pmsr.pmsr_setup:
+  title: 'PMSR Setup'
+  description: 'PMSR data ingestion and setup operations'
+  route_name: '<nolink>'
+  parent: rep.top_level
+  menu_name: main
+  weight: 50
+  requirements:
+    _permission: 'access content'
+
+#
+# PMSR INGESTION MENU ITEMS (under PMSR Setup, which is under Repository)
 #
 
 pmsr.ingest_ontologies:
   title: 'Ingest PMSR Ontologies (pmsr, uberon, ncit)'
   description: 'Ingest PMSR, UBERON, and NCIT ontologies from code'
   route_name: pmsr.ingest_ontologies
-  parent: rep.kg
+  parent: pmsr.pmsr_setup
   menu_name: main
-  weight: 51
+  weight: 1
   requirements:
     _permission: 'access content'
 
@@ -23,9 +37,9 @@ pmsr.ingest_instruments:
   title: 'Ingest INS Instruments'
   description: 'Ingest INS instruments into the system'
   route_name: pmsr.ingest_instruments
-  parent: rep.kg
+  parent: pmsr.pmsr_setup
   menu_name: main
-  weight: 52
+  weight: 2
   requirements:
     _permission: 'access content'
 
@@ -33,9 +47,9 @@ pmsr.ingest_geography:
   title: 'Ingest KRG Geography and Organizations'
   description: 'Ingest KRG geography and organizations data'
   route_name: pmsr.ingest_geography
-  parent: rep.kg
+  parent: pmsr.pmsr_setup
   menu_name: main
-  weight: 53
+  weight: 3
   requirements:
     _permission: 'access content'
 
@@ -43,8 +57,8 @@ pmsr.ingest_people:
   title: 'Ingest KGR People'
   description: 'Ingest KGR people data'
   route_name: pmsr.ingest_people
-  parent: rep.kg
+  parent: pmsr.pmsr_setup
   menu_name: main
-  weight: 54
+  weight: 4
   requirements:
     _permission: 'access content'
