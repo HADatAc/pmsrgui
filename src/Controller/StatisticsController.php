@@ -142,12 +142,6 @@ class StatisticsController extends ControllerBase {
     return [
       '#title' => 'Statistics',
       '#markup' => Markup::create($output),
-      '#attached' => [
-        'library' => [
-          'pmsr/bootstrap',
-          'pmsr/styles',
-        ],
-      ],
     ];
   }
 }
