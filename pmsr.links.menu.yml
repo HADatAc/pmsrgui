@@ -13,42 +13,38 @@ pmsr.ingest_ontologies:
   title: 'Ingest PMSR Ontologies (pmsr, uberon, ncit)'
   description: 'Ingest PMSR, UBERON, and NCIT ontologies from code'
   route_name: pmsr.ingest_ontologies
-  parent: rep.top_level
+  parent: rep.kg
   menu_name: main
   weight: 51
   requirements:
     _permission: 'access content'
-    _role: 'authenticated'
 
 pmsr.ingest_instruments:
   title: 'Ingest INS Instruments'
   description: 'Ingest INS instruments into the system'
   route_name: pmsr.ingest_instruments
-  parent: rep.top_level
+  parent: rep.kg
   menu_name: main
   weight: 52
   requirements:
     _permission: 'access content'
-    _role: 'authenticated'
 
 pmsr.ingest_geography:
   title: 'Ingest KRG Geography and Organizations'
   description: 'Ingest KRG geography and organizations data'
   route_name: pmsr.ingest_geography
-  parent: rep.top_level
+  parent: rep.kg
   menu_name: main
   weight: 53
   requirements:
     _permission: 'access content'
-    _role: 'authenticated'
 
 pmsr.ingest_people:
   title: 'Ingest KGR People'
   description: 'Ingest KGR people data'
   route_name: pmsr.ingest_people
-  parent: rep.top_level
+  parent: rep.kg
   menu_name: main
   weight: 54
   requirements:
     _permission: 'access content'
-    _role: 'authenticated'
