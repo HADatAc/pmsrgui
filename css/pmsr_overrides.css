@@ -199,13 +199,13 @@ body.pmsr-module-enabled #navbar-main ul.navbar-nav li.dropdown .dropdown-menu l
   color: #ffffff!important;
 }
 
-/* Legacy support for old selectors */
-body.pmsr-module-enabled li.dropdown-item.active,
-body.pmsr-module-enabled li.dropdown-item:active {
+/* Legacy support for old selectors - BUT NOT for nested dropdown parents */
+body.pmsr-module-enabled li.dropdown-item.active:not(.menu-item--expanded),
+body.pmsr-module-enabled li.dropdown-item:active:not(.menu-item--expanded) {
   background-color: #006600be!important;
 }
 
-body.pmsr-module-enabled li.dropdown-item.active a.is-active {
+body.pmsr-module-enabled li.dropdown-item.active:not(.menu-item--expanded) a.is-active {
   color: #ffffff!important;
   background-color: transparent!important;
 }
@@ -280,3 +280,91 @@ a[href*="user/register"] {
     font-size: 1rem;
   }
 }
+
+/* ============================================================
+   NESTED DROPDOWN SUPPORT FOR BOOTSTRAP 5
+   Enable multilevel dropdowns (e.g., Repository > PMSR Setup > Items)
+   ============================================================ */
+
+/* Show nested dropdown when it has the 'show' class (added by JavaScript) */
+body.pmsr-module-enabled .dropdown-menu .dropdown-menu.show {
+  display: block !important;
+}
+
+/* Show nested dropdown on hover (CSS fallback) */
+body.pmsr-module-enabled .dropdown-menu .dropdown-item.dropdown:hover > .dropdown-menu,
+body.pmsr-module-enabled .dropdown-menu .dropdown-item.menu-item--expanded:hover > .dropdown-menu {
+  display: block !important;
+}
+
+/* Position nested dropdown as a flyout to the right */
+body.pmsr-module-enabled .dropdown-menu .dropdown-menu {
+  position: absolute;
+  left: 100%;
+  top: 0;
+  margin-top: 0;
+  margin-left: 0;
+}
+
+/* Remove default padding from nested dropdown parent LI items and override all backgrounds */
+body.pmsr-module-enabled .dropdown-menu .dropdown-item.dropdown,
+body.pmsr-module-enabled .dropdown-menu .dropdown-item.menu-item--expanded {
+  padding: 0 !important;
+  height: auto !important;
+  line-height: normal !important;
+  background: transparent !important;
+}
+
+/* Override active state backgrounds for nested dropdown parent items */
+body.pmsr-module-enabled .dropdown-menu li.dropdown-item.dropdown.active,
+body.pmsr-module-enabled .dropdown-menu li.dropdown-item.menu-item--expanded.active,
+body.pmsr-module-enabled #navbar-main .dropdown-menu li.dropdown.active,
+body.pmsr-module-enabled #navbar-main .dropdown-menu li.menu-item--expanded.active {
+  background-color: transparent !important;
+}
+
+/* Style nested dropdown parent items - span fills entire LI */
+body.pmsr-module-enabled .dropdown-menu .dropdown-item.dropdown > span,
+body.pmsr-module-enabled .dropdown-menu .dropdown-item.menu-item--expanded > span {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 1rem;
+  width: 100%;
+  text-decoration: none;
+  color: inherit;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+/* Active state styling should go on the SPAN, not the LI */
+body.pmsr-module-enabled .dropdown-menu .dropdown-item.dropdown.active > span,
+body.pmsr-module-enabled .dropdown-menu .dropdown-item.menu-item--expanded.active > span {
+  background-color: #006600be !important;
+  color: #ffffff !important;
+  font-weight: 600;
+}
+
+/* Hover effect for nested dropdown parent spans */
+body.pmsr-module-enabled .dropdown-menu .dropdown-item.dropdown > span:hover,
+body.pmsr-module-enabled .dropdown-menu .dropdown-item.menu-item--expanded > span:hover {
+  background-color: #00660094 !important;
+  color: #ffffff !important;
+}
+
+/* Add right arrow indicator for nested dropdowns */
+body.pmsr-module-enabled .dropdown-menu .dropdown-item.dropdown > span::after,
+body.pmsr-module-enabled .dropdown-menu .dropdown-item.menu-item--expanded > span::after {
+  content: '▶';
+  display: inline-block !important;
+  margin-left: auto;
+  padding-left: 1rem;
+  font-size: 0.7rem;
+  opacity: 0.6;
+  flex-shrink: 0;
+  border: none !important;
+  border-top: none !important;
+  border-bottom: none !important;
+}
+

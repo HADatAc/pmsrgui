@@ -39,6 +39,15 @@ pmsr.ingest_ontologies:
     _permission: 'access content'
     _role: 'authenticated'
 
+pmsr.process_ontology_ingestion:
+  path: '/pmsr/api/ingest/ontologies/process'
+  defaults:
+    _controller: '\Drupal\pmsr\Controller\IngestionController::processOntologyIngestion'
+  requirements:
+    _permission: 'access content'
+    _role: 'authenticated'
+  methods: [POST]
+
 pmsr.ingest_instruments:
   path: '/pmsr/ingest/instruments'
   defaults:

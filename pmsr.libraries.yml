@@ -17,6 +17,12 @@ pmsr-overrides:
   css:
     theme:
       css/pmsr_overrides.css: { weight: 1000 }
+  js:
+    js/nested_dropdown.js: {}
+  dependencies:
+    - core/jquery
+    - core/drupal
+    - core/once
 ingestion:
   js:
     js/ingestion.js: {}
