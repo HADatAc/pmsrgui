@@ -1,0 +1,4 @@
+hasPrefix,hasNameSpace,hasFormat,hasSource
+pmsr,http://pmsr.net/ont/pmsr,text/turtle,
+uberon,http://purl.obolibrary.org/obo/uberon.owl,text/turtle,
+ncit,http://purl.obolibrary.org/obo/ncit.owl,text/turtle,

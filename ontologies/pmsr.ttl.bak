@@ -382,7 +382,7 @@ ncit:C94309 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C100071
 ncit:C100071 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C168175 ,
-                           ncit:C222294 ;
+            rdfs:subClassOf ncit:C222294 ;
             rdfs:label "Cardiac Computerized Tomographic Angiography"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C101217
@@ -393,13 +393,13 @@ ncit:C101217 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C101266
 ncit:C101266 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C15361 ,
-                           ncit:C51698 ;
+            rdfs:subClassOf ncit:C51698 ;
             rdfs:label "Random Periareolar Fine-Needle Aspiration"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C102763
 ncit:C102763 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C15332 ,
-                           ncit:C89340 ;
+            rdfs:subClassOf ncit:C89340 ;
             rdfs:label "Cervical Cerclage"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C103229
@@ -410,20 +410,20 @@ ncit:C103229 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C103242
 ncit:C103242 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C159453 ,
-                                   ncit:C64958 ,
-                           ncit:C78162 ;
+            rdfs:subClassOf ncit:C64958 ,
+            rdfs:subClassOf ncit:C78162 ;
             rdfs:label "Endoscopic Mucosal Resection"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C103512
 ncit:C103512 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C17007 ,
-                           ncit:C17204 ;
+            rdfs:subClassOf ncit:C17204 ;
             rdfs:label "Positron Emission Tomography and Computed Tomography Scan"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C103514
 ncit:C103514 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C16809 ,
-                           ncit:C17007 ;
+            rdfs:subClassOf ncit:C17007 ;
             rdfs:label "Positron Emission Tomography and Magnetic Resonance Imaging"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C104888
@@ -459,43 +459,43 @@ ncit:C111066 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C112221
 ncit:C112221 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C15260 ,
-                           ncit:C209975 ;
+            rdfs:subClassOf ncit:C209975 ;
             rdfs:label "Allergen Skin Response Index Measurement"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C112222
 ncit:C112222 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C15260 ,
-                           ncit:C209975 ;
+            rdfs:subClassOf ncit:C209975 ;
             rdfs:label "Allergen Skin Response Intensity Measurement"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C112281
 ncit:C112281 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C15260 ,
-                           ncit:C209975 ;
+            rdfs:subClassOf ncit:C209975 ;
             rdfs:label "Antigenic Skin Flare Longest Diameter Measurement"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C112282
 ncit:C112282 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C15260 ,
-                           ncit:C209975 ;
+            rdfs:subClassOf ncit:C209975 ;
             rdfs:label "Antigenic Skin Flare Mean Diameter Measurement"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C112283
 ncit:C112283 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C15260 ,
-                           ncit:C209975 ;
+            rdfs:subClassOf ncit:C209975 ;
             rdfs:label "Antigenic Skin Flare Size Measurement"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C112429
 ncit:C112429 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C15260 ,
-                           ncit:C209975 ;
+            rdfs:subClassOf ncit:C209975 ;
             rdfs:label "Wheal Size Measurement"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C112516
 ncit:C112516 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C15389 ,
-                           ncit:C93022 ;
+            rdfs:subClassOf ncit:C93022 ;
             rdfs:label "Endoscopic Ultrasound Biopsy"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C113728
@@ -506,7 +506,7 @@ ncit:C113728 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C113773
 ncit:C113773 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C15190 ,
-                           ncit:C217133 ;
+            rdfs:subClassOf ncit:C217133 ;
             rdfs:label "Transthoracic Needle Biopsy"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C113775
@@ -522,7 +522,7 @@ ncit:C114080 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C114081
 ncit:C114081 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C62781 ,
-                           ncit:C92929 ;
+            rdfs:subClassOf ncit:C92929 ;
             rdfs:label "Fetal Doppler Monitoring"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C114084
@@ -633,7 +633,7 @@ ncit:C116443 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C116444
 ncit:C116444 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C137909 ,
-                           ncit:C51763 ;
+            rdfs:subClassOf ncit:C51763 ;
             rdfs:label "Computed Tomography-Guided Optical Sensor-Guided Percutaneous Needle Biopsy"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C116446
@@ -644,7 +644,7 @@ ncit:C116446 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C116448
 ncit:C116448 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C19337 ,
-                           ncit:C38093 ;
+            rdfs:subClassOf ncit:C38093 ;
             rdfs:label "Ultrasound Tomography"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C116450
@@ -745,7 +745,7 @@ ncit:C116486 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C116488
 ncit:C116488 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C148281 ,
-                           ncit:C19337 ;
+            rdfs:subClassOf ncit:C19337 ;
             rdfs:label "Dynamic Contrast-Enhanced Ultrasound Imaging"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C116490
@@ -791,7 +791,7 @@ ncit:C116501 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C116502
 ncit:C116502 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C148281 ,
-                           ncit:C62781 ;
+            rdfs:subClassOf ncit:C62781 ;
             rdfs:label "Contrast-Enhanced Harmonic Endoscopic Ultrasound"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C116550
@@ -807,7 +807,7 @@ ncit:C116559 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C116560
 ncit:C116560 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C16818 ,
-                           ncit:C62667 ;
+            rdfs:subClassOf ncit:C62667 ;
             rdfs:label "Radiomammography"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C116565
@@ -818,7 +818,7 @@ ncit:C116565 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C116653
 ncit:C116653 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C15330 ,
-                           ncit:C16120 ;
+            rdfs:subClassOf ncit:C16120 ;
             rdfs:label "Pancreatic Surgical Procedure"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C116749
@@ -924,7 +924,7 @@ ncit:C118566 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C118619
 ncit:C118619 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C15687 ,
-                           ncit:C16185 ;
+            rdfs:subClassOf ncit:C16185 ;
             rdfs:label "Image-Guided Local Therapy"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C119012
@@ -1040,7 +1040,7 @@ ncit:C122090 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C122390
 ncit:C122390 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C116477 ,
-                           ncit:C16781 ;
+            rdfs:subClassOf ncit:C16781 ;
             rdfs:label "Confocal Laser Microlaryngoscopy"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C122415
@@ -1101,7 +1101,7 @@ ncit:C124142 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C125609
 ncit:C125609 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C116441 ,
-                           ncit:C17007 ;
+            rdfs:subClassOf ncit:C17007 ;
             rdfs:label "4D PET Scan"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C126289
@@ -1117,14 +1117,14 @@ ncit:C126387 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C128792
 ncit:C128792 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C161601 ,
-                           ncit:C74942 ;
+            rdfs:subClassOf ncit:C74942 ;
             rdfs:label "Surgical Pathology Procedure"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C128880
 ncit:C128880 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C116448 ,
-                                   ncit:C171402 ,
-                           ncit:C20828 ;
+            rdfs:subClassOf ncit:C171402 ,
+            rdfs:subClassOf ncit:C20828 ;
             rdfs:label "Ultrasound-Guided Near-Infrared Optical Tomography"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C128940
@@ -1170,7 +1170,7 @@ ncit:C131579 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C132048
 ncit:C132048 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C148281 ,
-                           ncit:C19337 ;
+            rdfs:subClassOf ncit:C19337 ;
             rdfs:label "Volumetric Contrast-Enhanced Ultrasound Imaging"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C132428
@@ -1181,7 +1181,7 @@ ncit:C132428 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C133723
 ncit:C133723 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C148281 ,
-                           ncit:C62781 ;
+            rdfs:subClassOf ncit:C62781 ;
             rdfs:label "Contrast-Enhanced Subharmonic Ultrasound Imaging"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C135456
@@ -1202,13 +1202,13 @@ ncit:C136238 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C136290
 ncit:C136290 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C15305 ,
-                           ncit:C91061 ;
+            rdfs:subClassOf ncit:C91061 ;
             rdfs:label "Segmental Resection of the Lung"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C136291
 ncit:C136291 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C165599 ,
-                           ncit:C217126 ;
+            rdfs:subClassOf ncit:C217126 ;
             rdfs:label "Abdominal Wall Fat Pad Biopsy"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C136344
@@ -1239,13 +1239,13 @@ ncit:C137814 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C137833
 ncit:C137833 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C15361 ,
-                           ncit:C217443 ;
+            rdfs:subClassOf ncit:C217443 ;
             rdfs:label "Ultrasound-Guided Fine-Needle Aspiration"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C137834
 ncit:C137834 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C15680 ,
-                           ncit:C93022 ;
+            rdfs:subClassOf ncit:C93022 ;
             rdfs:label "Ultrasound-Guided Core Biopsy"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C137848
@@ -1256,7 +1256,7 @@ ncit:C137848 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C137851
 ncit:C137851 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C15680 ,
-                           ncit:C51698 ;
+            rdfs:subClassOf ncit:C51698 ;
             rdfs:label "Core Biopsy of Breast"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C137855
@@ -1277,7 +1277,7 @@ ncit:C137870 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C137871
 ncit:C137871 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C114184 ,
-                           ncit:C178628 ;
+            rdfs:subClassOf ncit:C178628 ;
             rdfs:label "Magnetic Resonance Imaging of the Whole Body without Contrast"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C137872
@@ -1333,7 +1333,7 @@ ncit:C137882 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C137883
 ncit:C137883 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C137805 ,
-                           ncit:C191501 ;
+            rdfs:subClassOf ncit:C191501 ;
             rdfs:label "Computed Tomography of the Chest with Contrast"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C137884
@@ -1409,7 +1409,7 @@ ncit:C137897 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C137898
 ncit:C137898 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C137806 ,
-                           ncit:C191501 ;
+            rdfs:subClassOf ncit:C191501 ;
             rdfs:label "Computed Tomography of the Chest without Contrast"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C137899
@@ -1540,19 +1540,19 @@ ncit:C140888 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C142181
 ncit:C142181 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C15680 ,
-                           ncit:C51701 ;
+            rdfs:subClassOf ncit:C51701 ;
             rdfs:label "8-Core Prostate Biopsy"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C142182
 ncit:C142182 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C15680 ,
-                           ncit:C51701 ;
+            rdfs:subClassOf ncit:C51701 ;
             rdfs:label "12-Core Prostate Biopsy"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C142183
 ncit:C142183 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C15680 ,
-                           ncit:C51701 ;
+            rdfs:subClassOf ncit:C51701 ;
             rdfs:label "Sextant Core Biopsy"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C142335
@@ -1588,7 +1588,7 @@ ncit:C146804 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C146855
 ncit:C146855 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C15359 ,
-                           ncit:C161601 ;
+            rdfs:subClassOf ncit:C161601 ;
             rdfs:label "Salvage Surgery"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C146991
@@ -1599,13 +1599,13 @@ ncit:C146991 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C148079
 ncit:C148079 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C103514 ,
-                           ncit:C93202 ;
+            rdfs:subClassOf ncit:C93202 ;
             rdfs:label "F-18 Sodium Fluoride Positron Emission Tomography and Magnetic Resonance Imaging"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C148080
 ncit:C148080 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C103514 ,
-                           ncit:C192560 ;
+            rdfs:subClassOf ncit:C192560 ;
             rdfs:label "C-11 Choline Positron Emission Tomography and Magnetic Resonance Imaging"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C148191
@@ -1616,7 +1616,7 @@ ncit:C148191 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C148230
 ncit:C148230 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C103512 ,
-                           ncit:C192561 ;
+            rdfs:subClassOf ncit:C192561 ;
             rdfs:label "F-18 Fluciclovine Positron Emission Tomography and Computed Tomography"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C148437
@@ -1667,7 +1667,7 @@ ncit:C150808 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C15177
 ncit:C15177 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C15467 ,
-                           ncit:C16120 ;
+            rdfs:subClassOf ncit:C16120 ;
             rdfs:label "Adrenalectomy"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C15190
@@ -1683,14 +1683,14 @@ ncit:C151934 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C15198
 ncit:C15198 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C15333 ,
-                           ncit:C15467 ;
+            rdfs:subClassOf ncit:C15467 ;
             rdfs:label "Surgical Castration"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C15214
 ncit:C15214 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C126391 ,
-                                   ncit:C15454 ,
-                           ncit:C15656 ;
+            rdfs:subClassOf ncit:C15454 ,
+            rdfs:subClassOf ncit:C15656 ;
             rdfs:label "Craniotomy"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C15217
@@ -1701,7 +1701,7 @@ ncit:C15217 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C15218
 ncit:C15218 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C15290 ,
-                           ncit:C15334 ;
+            rdfs:subClassOf ncit:C15334 ;
             rdfs:label "Cystostomy"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C15220
@@ -1712,19 +1712,19 @@ ncit:C15220 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C15236
 ncit:C15236 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C15330 ,
-                           ncit:C16120 ;
+            rdfs:subClassOf ncit:C16120 ;
             rdfs:label "Gastrectomy"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C15249
 ncit:C15249 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C16120 ,
-                           ncit:C217456 ;
+            rdfs:subClassOf ncit:C217456 ;
             rdfs:label "Hepatectomy"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C15255
 ncit:C15255 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C15454 ,
-                           ncit:C15467 ;
+            rdfs:subClassOf ncit:C15467 ;
             rdfs:label "Hypophysectomy"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C15256
@@ -1735,13 +1735,13 @@ ncit:C15256 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C15260
 ncit:C15260 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C16723 ,
-                           ncit:C18020 ;
+            rdfs:subClassOf ncit:C18020 ;
             rdfs:label "Immunodiagnostic Procedure"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C15265
 ncit:C15265 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C15334 ,
-                           ncit:C191377 ;
+            rdfs:subClassOf ncit:C191377 ;
             rdfs:label "Kidney Transplantation"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C15266
@@ -1757,19 +1757,19 @@ ncit:C15267 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C15274
 ncit:C15274 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C15655 ,
-                           ncit:C191377 ;
+            rdfs:subClassOf ncit:C191377 ;
             rdfs:label "Lung Transplantation"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C15275
 ncit:C15275 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C15227 ,
-                           ncit:C49163 ;
+            rdfs:subClassOf ncit:C49163 ;
             rdfs:label "Lymphadenectomy"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C15277
 ncit:C15277 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C15774 ,
-                           ncit:C157802 ;
+            rdfs:subClassOf ncit:C157802 ;
             rdfs:label "Mastectomy"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C15278
@@ -1785,7 +1785,7 @@ ncit:C15279 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C15280
 ncit:C15280 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C15774 ,
-                           ncit:C157802 ;
+            rdfs:subClassOf ncit:C157802 ;
             rdfs:label "Breast Conservation Treatment"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C15281
@@ -1806,15 +1806,15 @@ ncit:C15288 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C15289
 ncit:C15289 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C15342 ,
-                                   ncit:C49163 ,
-                           ncit:C64982 ;
+            rdfs:subClassOf ncit:C49163 ,
+            rdfs:subClassOf ncit:C64982 ;
             rdfs:label "Organ Transplantation"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C15291
 ncit:C15291 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C15198 ,
-                                   ncit:C15332 ,
-                           ncit:C15691 ;
+            rdfs:subClassOf ncit:C15332 ,
+            rdfs:subClassOf ncit:C15691 ;
             rdfs:label "Oophorectomy"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C15294
@@ -1840,7 +1840,7 @@ ncit:C153181 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C15323
 ncit:C15323 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C15332 ,
-                           ncit:C15691 ;
+            rdfs:subClassOf ncit:C15691 ;
             rdfs:label "Salpingo-Oophorectomy"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C15325
@@ -1896,37 +1896,37 @@ ncit:C15340 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C15341
 ncit:C15341 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C15290 ,
-                           ncit:C15454 ;
+            rdfs:subClassOf ncit:C15454 ;
             rdfs:label "Tracheotomy"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C15343
 ncit:C15343 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C15307 ,
-                           ncit:C15705 ;
+            rdfs:subClassOf ncit:C15705 ;
             rdfs:label "Transurethral Prostatic Resection"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C15345
 ncit:C15345 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C15290 ,
-                           ncit:C15334 ;
+            rdfs:subClassOf ncit:C15334 ;
             rdfs:label "Ureterostomy"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C15348
 ncit:C15348 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C15333 ,
-                           ncit:C37932 ;
+            rdfs:subClassOf ncit:C37932 ;
             rdfs:label "Vasectomy"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C15354
 ncit:C15354 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C157802 ,
-                           ncit:C157969 ;
+            rdfs:subClassOf ncit:C157969 ;
             rdfs:label "Mammoplasty"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C15356
 ncit:C15356 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C15330 ,
-                           ncit:C16120 ;
+            rdfs:subClassOf ncit:C16120 ;
             rdfs:label "Whipple Procedure"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C15357
@@ -1942,8 +1942,8 @@ ncit:C15361 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C15385
 ncit:C15385 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C15189 ,
-                                   ncit:C15232 ,
-                           ncit:C64979 ;
+            rdfs:subClassOf ncit:C15232 ,
+            rdfs:subClassOf ncit:C64979 ;
             rdfs:label "Excisional Biopsy"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C15386
@@ -1959,19 +1959,19 @@ ncit:C15387 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C15389
 ncit:C15389 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C15189 ,
-                           ncit:C64940 ;
+            rdfs:subClassOf ncit:C64940 ;
             rdfs:label "Endoscopic Biopsy"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C15392
 ncit:C15392 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C15310 ,
-                           ncit:C15655 ;
+            rdfs:subClassOf ncit:C15655 ;
             rdfs:label "Thoracentesis"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C15394
 ncit:C15394 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C15249 ,
-                           ncit:C158758 ;
+            rdfs:subClassOf ncit:C158758 ;
             rdfs:label "Partial Hepatectomy"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C15396
@@ -1982,7 +1982,7 @@ ncit:C15396 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C15398
 ncit:C15398 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C15290 ,
-                           ncit:C15334 ;
+            rdfs:subClassOf ncit:C15334 ;
             rdfs:label "Urethrostomy"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C15399
@@ -2003,7 +2003,7 @@ ncit:C15401 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C15402
 ncit:C15402 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C15332 ,
-                           ncit:C51628 ;
+            rdfs:subClassOf ncit:C51628 ;
             rdfs:label "Conization"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C15404
@@ -2039,7 +2039,7 @@ ncit:C154542 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C15455
 ncit:C15455 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C15419 ,
-                           ncit:C15892 ;
+            rdfs:subClassOf ncit:C15892 ;
             rdfs:label "Evaluation of Cancer Risk Factors"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C154791
@@ -2090,7 +2090,7 @@ ncit:C15576 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C155857
 ncit:C155857 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C102743 ,
-                           ncit:C118619 ;
+            rdfs:subClassOf ncit:C118619 ;
             rdfs:label "Ultrasound-Guided Transbronchial Needle-Delivered Interstitial Photodynamic Therapy"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C155997
@@ -2106,7 +2106,7 @@ ncit:C15607 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C15622
 ncit:C15622 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C16185 ,
-                           ncit:C49165 ;
+            rdfs:subClassOf ncit:C49165 ;
             rdfs:label "Radioimmunoguided Surgery"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C15638
@@ -2122,7 +2122,7 @@ ncit:C15641 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C15643
 ncit:C15643 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C15454 ,
-                           ncit:C48935 ;
+            rdfs:subClassOf ncit:C48935 ;
             rdfs:label "Neck Dissection"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C15647
@@ -2183,13 +2183,13 @@ ncit:C15702 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C15703
 ncit:C15703 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C15389 ,
-                           ncit:C217137 ;
+            rdfs:subClassOf ncit:C217137 ;
             rdfs:label "Colposcopic Biopsy"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C15709
 ncit:C15709 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C15419 ,
-                           ncit:C19770 ;
+            rdfs:subClassOf ncit:C19770 ;
             rdfs:label "Genetic Testing"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C15724
@@ -2200,7 +2200,7 @@ ncit:C15724 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C15726
 ncit:C15726 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C15655 ,
-                           ncit:C49165 ;
+            rdfs:subClassOf ncit:C49165 ;
             rdfs:label "Thoracoscopic Surgery"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C157337
@@ -2211,7 +2211,7 @@ ncit:C157337 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C157338
 ncit:C157338 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C157337 ,
-                           ncit:C202408 ;
+            rdfs:subClassOf ncit:C202408 ;
             rdfs:label "Multi-detector Computed Tomography Angiography"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C15741
@@ -2232,7 +2232,7 @@ ncit:C15755 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C157723
 ncit:C157723 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C15454 ,
-                           ncit:C64982 ;
+            rdfs:subClassOf ncit:C64982 ;
             rdfs:label "Otoplasty"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C157725
@@ -2248,7 +2248,7 @@ ncit:C157740 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C15776
 ncit:C15776 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C16210 ,
-                           ncit:C18020 ;
+            rdfs:subClassOf ncit:C18020 ;
             rdfs:label "Cancer Detection"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C157789
@@ -2259,13 +2259,13 @@ ncit:C157789 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C157797
 ncit:C157797 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C15334 ,
-                           ncit:C157740 ;
+            rdfs:subClassOf ncit:C157740 ;
             rdfs:label "Bladder Cancer Surgery"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C157801
 ncit:C157801 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C154268 ,
-                           ncit:C157740 ;
+            rdfs:subClassOf ncit:C157740 ;
             rdfs:label "Brain Tumor Surgery"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C157802
@@ -2281,7 +2281,7 @@ ncit:C157809 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C157810
 ncit:C157810 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C15332 ,
-                           ncit:C157740 ;
+            rdfs:subClassOf ncit:C157740 ;
             rdfs:label "Cervical Cancer Surgery"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C157822
@@ -2307,7 +2307,7 @@ ncit:C157832 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C157835
 ncit:C157835 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C15332 ,
-                           ncit:C157740 ;
+            rdfs:subClassOf ncit:C157740 ;
             rdfs:label "Endometrial Cancer Surgery"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C157838
@@ -2318,7 +2318,7 @@ ncit:C157838 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C157839
 ncit:C157839 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C157725 ,
-                           ncit:C64982 ;
+            rdfs:subClassOf ncit:C64982 ;
             rdfs:label "Endovascular Aneurysm Repair"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C157845
@@ -2349,7 +2349,7 @@ ncit:C157865 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C157871
 ncit:C157871 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C15454 ,
-                           ncit:C157740 ;
+            rdfs:subClassOf ncit:C157740 ;
             rdfs:label "Head and Neck Cancer Surgery"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C157873
@@ -2380,7 +2380,7 @@ ncit:C157911 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C157912
 ncit:C157912 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C15655 ,
-                           ncit:C157740 ;
+            rdfs:subClassOf ncit:C157740 ;
             rdfs:label "Lung Cancer Surgery"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C157913
@@ -2411,7 +2411,7 @@ ncit:C157921 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C157923
 ncit:C157923 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C131579 ,
-                           ncit:C172727 ;
+            rdfs:subClassOf ncit:C172727 ;
             rdfs:label "Minimally Invasive Joint Replacement Surgery"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C157927
@@ -2432,7 +2432,7 @@ ncit:C157931 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C157944
 ncit:C157944 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C15332 ,
-                           ncit:C157740 ;
+            rdfs:subClassOf ncit:C157740 ;
             rdfs:label "Ovarian Cancer Surgery"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C15795
@@ -2458,7 +2458,7 @@ ncit:C157962 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C157970
 ncit:C157970 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C15333 ,
-                           ncit:C209812 ;
+            rdfs:subClassOf ncit:C209812 ;
             rdfs:label "Reproductive Surgery"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C157975
@@ -2524,7 +2524,7 @@ ncit:C15842 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C158498
 ncit:C158498 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C116446 ,
-                           ncit:C62683 ;
+            rdfs:subClassOf ncit:C62683 ;
             rdfs:label "Tomographic Optical Breast Imaging"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C15915
@@ -2550,7 +2550,7 @@ ncit:C159447 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C159453
 ncit:C159453 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C158758 ,
-                           ncit:C16546 ;
+            rdfs:subClassOf ncit:C16546 ;
             rdfs:label "Endoscopic Resection"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C159487
@@ -2566,7 +2566,7 @@ ncit:C15960 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C159879
 ncit:C159879 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C15190 ,
-                           ncit:C217137 ;
+            rdfs:subClassOf ncit:C217137 ;
             rdfs:label "Transvaginal Biopsy"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C159882
@@ -2627,8 +2627,8 @@ ncit:C16107 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C161314
 ncit:C161314 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C146855 ,
-                                   ncit:C51896 ,
-                           ncit:C65003 ;
+            rdfs:subClassOf ncit:C51896 ,
+            rdfs:subClassOf ncit:C65003 ;
             rdfs:label "Robot-Assisted Salvage Pelvic Lymph Node Dissection"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C161315
@@ -2664,7 +2664,7 @@ ncit:C16213 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C16218
 ncit:C16218 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C113420 ,
-                           ncit:C15399 ;
+            rdfs:subClassOf ncit:C15399 ;
             rdfs:label "Nerve-Sparing Prostatectomy"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C162221
@@ -2700,7 +2700,7 @@ ncit:C162707 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C163997
 ncit:C163997 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C15389 ,
-                           ncit:C217133 ;
+            rdfs:subClassOf ncit:C217133 ;
             rdfs:label "Thoracoscopic Biopsy"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C164164
@@ -2721,7 +2721,7 @@ ncit:C16451 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C164678
 ncit:C164678 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C62726 ,
-                           ncit:C62727 ;
+            rdfs:subClassOf ncit:C62727 ;
             rdfs:label "Hypofractionated Image-Guided Radiation Therapy"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C16482
@@ -2732,25 +2732,25 @@ ncit:C16482 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C165180
 ncit:C165180 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C15389 ,
-                           ncit:C64994 ;
+            rdfs:subClassOf ncit:C64994 ;
             rdfs:label "Laparoscopic Biopsy"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C165183
 ncit:C165183 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C116509 ,
-                           ncit:C165184 ;
+            rdfs:subClassOf ncit:C165184 ;
             rdfs:label "Laparoscopic Radical Prostatectomy with Robotics"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C165184
 ncit:C165184 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C15399 ,
-                           ncit:C94452 ;
+            rdfs:subClassOf ncit:C94452 ;
             rdfs:label "Laparoscopic Radical Prostatectomy"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C165188
 ncit:C165188 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C15399 ,
-                           ncit:C92983 ;
+            rdfs:subClassOf ncit:C92983 ;
             rdfs:label "Open Radical Prostatectomy"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C165277
@@ -2791,13 +2791,13 @@ ncit:C166225 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C167213
 ncit:C167213 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C116509 ,
-                           ncit:C15236 ;
+            rdfs:subClassOf ncit:C15236 ;
             rdfs:label "Robotic Bariatric Sleeve Gastrectomy"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C167214
 ncit:C167214 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C116509 ,
-                           ncit:C15256 ;
+            rdfs:subClassOf ncit:C15256 ;
             rdfs:label "Robotic Hysterectomy"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C167263
@@ -2883,7 +2883,7 @@ ncit:C168811 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C169101
 ncit:C169101 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C161405 ,
-                           ncit:C20644 ;
+            rdfs:subClassOf ncit:C20644 ;
             rdfs:label "High Resolution Peripheral Quantitative Computed Tomography"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C16969
@@ -2894,13 +2894,13 @@ ncit:C16969 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C170542
 ncit:C170542 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C112516 ,
-                           ncit:C51638 ;
+            rdfs:subClassOf ncit:C51638 ;
             rdfs:label "Endobronchial Ultrasound-Guided Miniforceps Biopsy"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C170793
 ncit:C170793 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C154542 ,
-                           ncit:C180727 ;
+            rdfs:subClassOf ncit:C180727 ;
             rdfs:label "Precontrast, 3-dimensional, Isotropic, IR-prepped T1-weighted Gradient Echo MRI"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C170797
@@ -2911,20 +2911,20 @@ ncit:C170797 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C170798
 ncit:C170798 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C170797 ,
-                                   ncit:C180729 ,
-                           ncit:C219503 ;
+            rdfs:subClassOf ncit:C180729 ,
+            rdfs:subClassOf ncit:C219503 ;
             rdfs:label "2-dimensional Proton Density, T2-weighted MRI"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C170799
 ncit:C170799 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C154542 ,
-                           ncit:C180727 ;
+            rdfs:subClassOf ncit:C180727 ;
             rdfs:label "Postcontrast, 3-dimensional, Isotropic, IR-prepped T1-weighted Gradient Echo MRI"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C170916
 ncit:C170916 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C116448 ,
-                           ncit:C19341 ;
+            rdfs:subClassOf ncit:C19341 ;
             rdfs:label "Multimodal Ultrasound Tomography"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C171172
@@ -2950,7 +2950,7 @@ ncit:C171402 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C17155
 ncit:C17155 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C16502 ,
-                           ncit:C19236 ;
+            rdfs:subClassOf ncit:C19236 ;
             rdfs:label "Spectroscopy"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C17157
@@ -2981,7 +2981,7 @@ ncit:C17203 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C172115
 ncit:C172115 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C15342 ,
-                           ncit:C15454 ;
+            rdfs:subClassOf ncit:C15454 ;
             rdfs:label "Submandibular Gland Transfer"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C172322
@@ -3017,13 +3017,13 @@ ncit:C172556 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C172560
 ncit:C172560 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C137805 ,
-                           ncit:C20645 ;
+            rdfs:subClassOf ncit:C20645 ;
             rdfs:label "Contrast Enhanced Spiral CT Scan"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C172561
 ncit:C172561 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C137806 ,
-                           ncit:C20645 ;
+            rdfs:subClassOf ncit:C20645 ;
             rdfs:label "Spiral CT Scan Without Contrast"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C173180
@@ -3034,13 +3034,13 @@ ncit:C173180 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C173501
 ncit:C173501 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C113773 ,
-                           ncit:C51749 ;
+            rdfs:subClassOf ncit:C51749 ;
             rdfs:label "Transbronchial Needle Aspiration"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C173545
 ncit:C173545 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C15709 ,
-                           ncit:C18302 ;
+            rdfs:subClassOf ncit:C18302 ;
             rdfs:label "Allele Ratio Measurement"  .
 
 ###  http://purl.obolibrary.org/obo/NCIT_C173553
@@ -3051,7 +3051,7 @@ ncit:C173553 rdf:type owl:Class ;
 ###  http://purl.obolibrary.org/obo/NCIT_C173639
 ncit:C173639 rdf:type owl:Class ;
             rdfs:subClassOf ncit:C140885 ,
-                           ncit:C15277 ;
+            rdfs:subClassOf ncit:C15277 ;
             rdfs:label "Robot-assisted Nipple Sparing Mastectomy"  .
 
 ###  Generated by the OWL API (version 4.5.29.2024-05-13T12:11:03Z) https://github.com/owlcs/owlapi

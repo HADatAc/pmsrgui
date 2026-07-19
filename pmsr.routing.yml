@@ -44,8 +44,9 @@ pmsr.process_ontology_ingestion:
   defaults:
     _controller: '\Drupal\pmsr\Controller\IngestionController::processOntologyIngestion'
   requirements:
-    _permission: 'access content'
-    _role: 'authenticated'
+    _access: 'TRUE'
+  options:
+    no_cache: TRUE
   methods: [POST]
 
 pmsr.ingest_instruments:

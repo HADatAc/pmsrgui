@@ -24,6 +24,9 @@
             // Check if this is the ontology ingestion (special handling)
             const isOntologyIngestion = window.location.pathname.includes('/pmsr/ingest/ontologies');
             
+            // Disable the button during ingestion
+            $(this).prop('disabled', true).addClass('disabled');
+            
             document.getElementById("ingestion-status").style.display = "block";
             document.getElementById("status-message").textContent = message;
             
@@ -32,7 +35,11 @@
               '/pmsr/api/ingest/ontologies/process' : endpoint;
             
             fetch(actualEndpoint, {
-              method: "POST"
+              method: "POST",
+              credentials: "same-origin",
+              headers: {
+                "Content-Type": "application/json"
+              }
             })
             .then(response => response.json())
             .then(data => {
@@ -41,10 +48,15 @@
               const resultsDiv = document.getElementById("ingestion-results");
               resultsDiv.style.display = "block";
               
+              // Re-enable the button after completion
+              $('.btn-start-ingestion').prop('disabled', false).removeClass('disabled');
+              
               // Handle ontology ingestion response (has progress array)
               if (isOntologyIngestion) {
                 if (data.success) {
-                  let progressHTML = '<div class="alert alert-success">' +
+                  let progressHTML = '<div class="alert alert-success alert-dismissable fade show" role="alert">' +
+                    '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+                    '<span aria-hidden="true">&times;</span></button>' +
                     '<h4>✓ Ingestion Completed Successfully</h4>' +
                     '<p>' + (data.message || "All ontologies ingested successfully.") + '</p>';
                   
@@ -58,8 +70,17 @@
                   
                   progressHTML += '</div>';
                   resultsDiv.innerHTML = progressHTML;
+                  
+                  // Add manual close handler for dynamically created alert
+                  $(resultsDiv).find('.alert .close').on('click', function() {
+                    $(this).closest('.alert').fadeOut(300, function() {
+                      $(this).remove();
+                    });
+                  });
                 } else {
-                  let errorHTML = '<div class="alert alert-danger">' +
+                  let errorHTML = '<div class="alert alert-danger alert-dismissable fade show" role="alert">' +
+                    '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+                    '<span aria-hidden="true">&times;</span></button>' +
                     '<h4>✗ Ingestion Failed</h4>' +
                     '<p>' + (data.message || "An error occurred during ingestion.") + '</p>';
                   
@@ -81,31 +102,77 @@
                   
                   errorHTML += '</div>';
                   resultsDiv.innerHTML = errorHTML;
+                  
+                  // Add manual close handler for dynamically created alert
+                  $(resultsDiv).find('.alert .close').on('click', function() {
+                    $(this).closest('.alert').fadeOut(300, function() {
+                      $(this).remove();
+                    });
+                  });
                 }
               } else {
                 // Handle standard hascoapi backend response
                 if (data.isSuccessful) {
                   resultsDiv.innerHTML = 
-                    '<div class="alert alert-success">' +
+                    '<div class="alert alert-success alert-dismissable fade show" role="alert">' +
+                    '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+                    '<span aria-hidden="true">&times;</span></button>' +
                     '<h4>✓ Ingestion Completed Successfully</h4>' +
                     '<p>' + (data.message || "Ingestion completed successfully.") + '</p>' +
                     '</div>';
+                  
+                  // Add manual close handler for dynamically created alert
+                  $(resultsDiv).find('.alert .close').on('click', function() {
+                    $(this).closest('.alert').fadeOut(300, function() {
+                      $(this).remove();
+                    });
+                  });
                 } else {
                   resultsDiv.innerHTML = 
-                    '<div class="alert alert-danger">' +
+                    '<div class="alert alert-danger alert-dismissable fade show" role="alert">' +
+                    '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+                    '<span aria-hidden="true">&times;</span></button>' +
                     '<h4>✗ Ingestion Failed</h4>' +
                     '<p>' + (data.message || "An error occurred during ingestion.") + '</p>' +
                     '</div>';
+                  
+                  // Add manual close handler for dynamically created alert
+                  $(resultsDiv).find('.alert .close').on('click', function() {
+                    $(this).closest('.alert').fadeOut(300, function() {
+                      $(this).remove();
+                    });
+                  });
                 }
               }
+              
+              // Scroll to results
+              resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             })
             .catch(error => {
               document.getElementById("ingestion-status").style.display = "none";
-              document.getElementById("ingestion-results").innerHTML = 
-                '<div class="alert alert-danger">' +
+              
+              // Re-enable the button after error
+              $('.btn-start-ingestion').prop('disabled', false).removeClass('disabled');
+              
+              const resultsDiv = document.getElementById("ingestion-results");
+              resultsDiv.style.display = "block";
+              resultsDiv.innerHTML = 
+                '<div class="alert alert-danger alert-dismissable fade show" role="alert">' +
+                '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+                '<span aria-hidden="true">&times;</span></button>' +
                 '<h4>✗ Error</h4>' +
                 '<p>Failed to connect to the ingestion service: ' + error.message + '</p>' +
                 '</div>';
+              
+              // Add manual close handler for dynamically created alert
+              $(resultsDiv).find('.alert .close').on('click', function() {
+                $(this).closest('.alert').fadeOut(300, function() {
+                  $(this).remove();
+                });
+              });
+              
+              // Scroll to results
+              resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             });
           });
         }
