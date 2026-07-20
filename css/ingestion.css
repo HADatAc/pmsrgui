@@ -1,0 +1,16 @@
+/* Ingestion results styling - limit height to 2/3 of viewport with scrollbar */
+#ingestion-results {
+  max-height: 66vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+#ingestion-results .alert {
+  margin-bottom: 0;
+}
+
+#ingestion-results ul {
+  max-height: 60vh;
+  overflow-y: auto;
+  margin-bottom: 1rem;
+}

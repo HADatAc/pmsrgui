@@ -24,6 +24,9 @@ pmsr-overrides:
     - core/drupal
     - core/once
 ingestion:
+  css:
+    theme:
+      css/ingestion.css: {}
   js:
     js/ingestion.js: {}
   dependencies:

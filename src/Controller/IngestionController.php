@@ -161,63 +161,6 @@ class IngestionController extends ControllerBase {
   }
 
   /**
-   * Ingest KRG geography and organizations.
-   */
-  public function ingestGeography() {
-    $output = '';
-    
-    $output .= '<div class="container-fluid mt-4">';
-    $output .= '<p>This page will ingest geography data and organizational structures from KRG templates.</p>';
-    
-    $output .= '<div class="card mt-4">';
-    $output .= '<div class="card-header bg-primary text-white">';
-    $output .= '<h4>KRG Geography & Organizations</h4>';
-    $output .= '</div>';
-    $output .= '<div class="card-body">';
-    $output .= '<p>This will process KRG (Knowledge Representation for Geography) templates including:</p>';
-    $output .= '<ul>';
-    $output .= '<li>Geographic locations and regions</li>';
-    $output .= '<li>Organizational hierarchies</li>';
-    $output .= '<li>Institutional affiliations</li>';
-    $output .= '</ul>';
-    $output .= '</div>';
-    $output .= '</div>';
-    
-    $output .= '<div class="mt-4">';
-    $output .= '<button class="btn btn-primary btn-lg btn-start-ingestion">Start Ingestion</button>';
-    $output .= '<button class="btn btn-secondary btn-lg ms-2" onclick="history.back()">Cancel</button>';
-    $output .= '</div>';
-    
-    $output .= '<div id="ingestion-status" class="mt-4" style="display:none;">';
-    $output .= '<div class="alert alert-info">';
-    $output .= '<div class="spinner-border text-primary me-2" role="status"></div>';
-    $output .= '<span id="status-message">Processing...</span>';
-    $output .= '</div>';
-    $output .= '</div>';
-    
-    $output .= '<div id="ingestion-results" class="mt-4" style="display:none;"></div>';
-    
-    $output .= '</div>'; // End container
-    
-    return [
-      '#markup' => Markup::create($output),
-      '#attached' => [
-        'library' => [
-          'pmsr/ingestion',
-        ],
-        'drupalSettings' => [
-          'pmsr' => [
-            'ingestion' => [
-              'endpoint' => '/hascoapi/api/pmsr/ingest/geography',
-              'message' => 'Ingesting geography data...',
-            ],
-          ],
-        ],
-      ],
-    ];
-  }
-
-  /**
    * Ingest KGR people.
    */
   public function ingestPeople() {

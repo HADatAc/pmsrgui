@@ -70,24 +70,17 @@ class LandingPageController extends ControllerBase {
       $footer_logo = base_path() . $module_path . '/images/footer.png';
     }
 
-    // Buttons definition
-    $buttons_col1 = [
+    // Buttons definition - 3x2 grid (3 columns, 2 rows)
+    $buttons_row1 = [
       ['icon' => 'fas fa-magnifying-glass fa-2xl', 'label' => 'Search Scenarios and Access Data', 'url' => 'std/search/studies'],
-      ['icon' => 'fas fa-chart-bar fa-2xl', 'label' => 'Manage<br /> Simulator Instances', 'url' => 'dpl/select/instrumentinstance/1/9'],
       ['icon' => 'fas fa-magnifying-glass fa-2xl', 'label' => 'Search Simulator<br /> By Hierarchy', 'url' => 'sir/list'],
+      ['icon' => 'fas fa-cogs fa-2xl', 'label' => 'Generate and Register Formal Scenario (WKF)', 'url' => 'rep/select/mt/wkf/table/1/9/none'],
     ];
 
-    $buttons_col2 = [
-      ['icon' => 'fas fa-chart-bar fa-2xl', 'label' => 'Manage<br /> Simulator Model', 'url' => 'sir/select/instrument/1/9'],
-      ['icon' => 'fas fa-magnifying-glass fa-2xl', 'label' => 'Search Simulator<br /> By Anatomy', 'url' => '#', 'disabled' => true],
+    $buttons_row2 = [
       ['icon' => 'fas fa-chart-simple fa-2xl', 'label' => 'Statistics', 'url' => 'pmsr/statistics'],
-
-    ];
-
-    $buttons_col3 = [
-      ['icon' => 'fas fa-magnifying-glass fa-2xl', 'label' => 'Search Instances<br /> By Geography', 'url' => '#', 'disabled' => true],
-      ['icon' => 'fas fa-magnifying-glass fa-2xl', 'label' => 'Search Organization<br /> By Geography', 'url' => 'sir/list', 'disabled' => true],
-      ['icon' => 'fas fa-magnifying-glass fa-2xl', 'label' => 'Search<br /> People by Geography', 'url' => '#', 'disabled' => true],
+      ['icon' => 'fas fa-magnifying-glass fa-2xl', 'label' => 'Search Organizations and Simulator Instances By Geography', 'url' => 'social/list/organization/2268747470733a2f2f706d73722e67726178696f6d2e636f6d2f6f6e742f504a543137343237383334383133383332353122/_/_/_/_/1/100?view_type=map'],
+      ['icon' => 'fas fa-chart-bar fa-2xl', 'label' => 'Manage<br /> Simulator Instances', 'url' => 'dpl/select/instrumentinstance/1/9'],
     ];
 
     // INIT HTML
@@ -99,17 +92,17 @@ class LandingPageController extends ControllerBase {
 
     //USER IS AUTHENTICATED
     if ($user->isAuthenticated()) {
-      // Column 1
-      $output .= '<div class="col-4 d-flex flex-column justify-content-between">';
-      // For each button, decide if it's disabled.
-      foreach ($buttons_col1 as $button) {
+      // Row 1 - 3 columns
+      foreach ($buttons_row1 as $button) {
+        $output .= '<div class="col-4 d-flex flex-column">';
+        
         // Base classes for styling
         $classes = 'btn btn-primary btn-lg my-2 d-flex align-items-center justify-content-center custom-button';
 
         // If button['disabled'] is set, add our disabled-link class and set href="#"
         if (!empty($button['disabled'])) {
-          $classes .= ' disabled-link'; // so pointer-events: none
-          $href = '#'; // or "javascript:void(0)"
+          $classes .= ' disabled-link';
+          $href = '#';
         } else {
           $href = $button['url'];
         }
@@ -117,21 +110,25 @@ class LandingPageController extends ControllerBase {
         $output .= '<a href="' . $href . '" class="' . $classes . '">';
         $output .= '<i class="' . $button['icon'] . ' me-2"></i>&nbsp;<h5>' . $button['label'] . '</h5>';
         $output .= '</a>';
+        
+        $output .= '</div>';
       }
-
-      $output .= '</div>';
-
-      // Column 2
-      $output .= '<div class="col-4 d-flex flex-column justify-content-between">';
-      // For each button, decide if it's disabled.
-      foreach ($buttons_col2 as $button) {
+      
+      // Close row and start new row for Row 2
+      $output .= '</div>'; // Close first row
+      $output .= '<div class="row">'; // Start second row
+      
+      // Row 2 - 3 columns
+      foreach ($buttons_row2 as $button) {
+        $output .= '<div class="col-4 d-flex flex-column">';
+        
         // Base classes for styling
         $classes = 'btn btn-primary btn-lg my-2 d-flex align-items-center justify-content-center custom-button';
 
         // If button['disabled'] is set, add our disabled-link class and set href="#"
         if (!empty($button['disabled'])) {
-          $classes .= ' disabled-link'; // so pointer-events: none
-          $href = '#'; // or "javascript:void(0)"
+          $classes .= ' disabled-link';
+          $href = '#';
         } else {
           $href = $button['url'];
         }
@@ -139,31 +136,9 @@ class LandingPageController extends ControllerBase {
         $output .= '<a href="' . $href . '" class="' . $classes . '">';
         $output .= '<i class="' . $button['icon'] . ' me-2"></i>&nbsp;<h5>' . $button['label'] . '</h5>';
         $output .= '</a>';
+        
+        $output .= '</div>';
       }
-
-      $output .= '</div>';
-
-      // Column 3
-      $output .= '<div class="col-4 d-flex flex-column justify-content-between">';
-      // For each button, decide if it's disabled.
-      foreach ($buttons_col3 as $button) {
-        // Base classes for styling
-        $classes = 'btn btn-primary btn-lg my-2 d-flex align-items-center justify-content-center custom-button';
-
-        // If button['disabled'] is set, add our disabled-link class and set href="#"
-        if (!empty($button['disabled'])) {
-          $classes .= ' disabled-link'; // so pointer-events: none
-          $href = '#'; // or "javascript:void(0)"
-        } else {
-          $href = $button['url'];
-        }
-
-        $output .= '<a href="' . $href . '" class="' . $classes . '">';
-        $output .= '<i class="' . $button['icon'] . ' me-2"></i>&nbsp;<h5>' . $button['label'] . '</h5>';
-        $output .= '</a>';
-      }
-
-      $output .= '</div>';
     } else {
       // USER IS NOT AUTHENTICATED
 

@@ -52,8 +52,36 @@ pmsr.process_ontology_ingestion:
 pmsr.ingest_instruments:
   path: '/pmsr/ingest/instruments'
   defaults:
-    _controller: '\Drupal\pmsr\Controller\IngestionController::ingestInstruments'
+    _controller: '\Drupal\pmsr\Controller\IngestionINSController::ingestInstruments'
     _title: 'Ingest INS Instruments'
+  requirements:
+    _permission: 'access content'
+    _role: 'authenticated'
+
+pmsr.process_ins_ingestion:
+  path: '/pmsr/api/ingest/ins/process'
+  defaults:
+    _controller: '\Drupal\pmsr\Controller\IngestionINSController::processINSIngestion'
+  requirements:
+    _access: 'TRUE'
+  options:
+    no_cache: TRUE
+  methods: [POST]
+
+pmsr.process_ins_uningest:
+  path: '/pmsr/api/uningest/ins/process'
+  defaults:
+    _controller: '\Drupal\pmsr\Controller\IngestionINSController::processINSUningest'
+  requirements:
+    _access: 'TRUE'
+  options:
+    no_cache: TRUE
+  methods: [POST]
+
+pmsr.refresh_statistics:
+  path: '/pmsr/api/statistics/refresh'
+  defaults:
+    _controller: '\Drupal\pmsr\Controller\IngestionINSController::refreshStatistics'
   requirements:
     _permission: 'access content'
     _role: 'authenticated'
@@ -61,18 +89,38 @@ pmsr.ingest_instruments:
 pmsr.ingest_geography:
   path: '/pmsr/ingest/geography'
   defaults:
-    _controller: '\Drupal\pmsr\Controller\IngestionController::ingestGeography'
+    _controller: '\Drupal\pmsr\Controller\IngestionKgrGeoController::ingestGeography'
     _title: 'Ingest KRG Geography and Organizations'
   requirements:
     _permission: 'access content'
     _role: 'authenticated'
 
+pmsr.process_geography_ingestion:
+  path: '/pmsr/api/ingest/geography/process'
+  defaults:
+    _controller: '\Drupal\pmsr\Controller\IngestionKgrGeoController::processGeographyIngestion'
+  requirements:
+    _access: 'TRUE'
+  options:
+    no_cache: TRUE
+  methods: [POST]
+
 pmsr.ingest_people:
   path: '/pmsr/ingest/people'
   defaults:
-    _controller: '\Drupal\pmsr\Controller\IngestionController::ingestPeople'
+    _controller: '\Drupal\pmsr\Controller\IngestionKgrPeopleController::ingestPeople'
     _title: 'Ingest KGR People'
   requirements:
     _permission: 'access content'
     _role: 'authenticated'
+
+pmsr.process_people_ingestion:
+  path: '/pmsr/api/ingest/people/process'
+  defaults:
+    _controller: '\Drupal\pmsr\Controller\IngestionKgrPeopleController::processPeopleIngestion'
+  requirements:
+    _access: 'TRUE'
+  options:
+    no_cache: TRUE
+  methods: [POST]
 
