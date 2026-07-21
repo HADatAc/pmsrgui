@@ -39,6 +39,120 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 class StatisticsController extends ControllerBase {
 
   /**
+   * Get platform count for an organization.
+   * Counts platform instances where vstoi:partOf equals the organization URI.
+   */
+  private function getPlatformCountByOrganization($api, $orgUri) {
+    $count = 0;
+    $pageSize = 100;
+    $offset = 0;
+    $hasMore = true;
+    
+    try {
+      while ($hasMore) {
+        // Get platform instances (using manager email '_' to get all)
+        $response = $api->listByManagerEmail('platforminstance', '_', $pageSize, $offset);
+        $platforms = $api->parseObjectResponse($response, 'listByManagerEmail');
+        
+        if (!is_array($platforms) || empty($platforms)) {
+          $hasMore = false;
+          break;
+        }
+        
+        // Filter platforms by organization (vstoi:partOf)
+        foreach ($platforms as $platform) {
+          if (is_object($platform) && !empty($platform->partOf) && $platform->partOf === $orgUri) {
+            $count++;
+          }
+        }
+        
+        // Check if we need to fetch more
+        if (count($platforms) < $pageSize) {
+          $hasMore = false;
+        } else {
+          $offset += $pageSize;
+        }
+      }
+    } catch (\Exception $e) {
+      \Drupal::logger('pmsr')->warning('Failed to count platforms for ' . $orgUri . ': ' . $e->getMessage());
+    }
+    
+    return $count;
+  }
+
+  /**
+   * Get simulator count for an organization.
+   * Counts unique instruments deployed on platforms owned by the organization.
+   */
+  private function getSimulatorCountByOrganization($api, $orgUri) {
+    $uniqueInstruments = [];
+    $pageSize = 100;
+    
+    try {
+      // First, get all platform instances for this organization
+      $platforms = [];
+      $offset = 0;
+      $hasMore = true;
+      
+      while ($hasMore) {
+        $response = $api->listByManagerEmail('platforminstance', '_', $pageSize, $offset);
+        $batch = $api->parseObjectResponse($response, 'listByManagerEmail');
+        
+        if (!is_array($batch) || empty($batch)) {
+          $hasMore = false;
+          break;
+        }
+        
+        // Filter platforms by organization
+        foreach ($batch as $platform) {
+          if (is_object($platform) && !empty($platform->partOf) && $platform->partOf === $orgUri && !empty($platform->uri)) {
+            $platforms[] = $platform->uri;
+          }
+        }
+        
+        if (count($batch) < $pageSize) {
+          $hasMore = false;
+        } else {
+          $offset += $pageSize;
+        }
+      }
+      
+      // Now get deployments for each platform and count unique instruments
+      foreach ($platforms as $platformUri) {
+        $depOffset = 0;
+        $hasMoreDep = true;
+        
+        while ($hasMoreDep) {
+          $depResponse = $api->deploymentsByPlatformInstanceWithPage($platformUri, $pageSize, $depOffset);
+          $deployments = $api->parseObjectResponse($depResponse, 'deploymentsByPlatformInstanceWithPage');
+          
+          if (!is_array($deployments) || empty($deployments)) {
+            $hasMoreDep = false;
+            break;
+          }
+          
+          // Extract instrument URIs from deployments
+          foreach ($deployments as $deployment) {
+            if (is_object($deployment) && !empty($deployment->instrumentUri)) {
+              $uniqueInstruments[$deployment->instrumentUri] = true;
+            }
+          }
+          
+          if (count($deployments) < $pageSize) {
+            $hasMoreDep = false;
+          } else {
+            $depOffset += $pageSize;
+          }
+        }
+      }
+    } catch (\Exception $e) {
+      \Drupal::logger('pmsr')->warning('Failed to count simulators for ' . $orgUri . ': ' . $e->getMessage());
+    }
+    
+    return count($uniqueInstruments);
+  }
+
+  /**
    * Get total people count for an organization including all sub-organizations.
    */
   private function getTotalPeopleCount($api, $orgUri) {
@@ -375,6 +489,12 @@ $output .= '</div>'; // End single row with all 5 cards
               // Fetch people count for this organization (including sub-organizations)
               $peopleCount = $this->getTotalPeopleCount($api, $contributorUri);
               
+              // Fetch platform count for this organization
+              $platformCount = $this->getPlatformCountByOrganization($api, $contributorUri);
+              
+              // Fetch simulator count for this organization
+              $simulatorCount = $this->getSimulatorCountByOrganization($api, $contributorUri);
+              
               $members[] = [
                 'uri' => $contributorUri,
                 'label' => $orgData->label ?? 'Unknown Organization',
@@ -382,6 +502,8 @@ $output .= '</div>'; // End single row with all 5 cards
                 'fullName' => $orgData->name ?? $orgData->label ?? 'Unknown Organization',
                 'image' => $imageUrl,
                 'peopleCount' => $peopleCount,
+                'platformCount' => $platformCount,
+                'simulatorCount' => $simulatorCount,
               ];
             }
           } catch (\Exception $e) {
@@ -463,19 +585,27 @@ $output .= '</div>'; // End single row with all 5 cards
       }
       $output .= '</tr>';
       
-      // Row 6: Registered Simulators (placeholder)
+      // Row 6: Registered Simulators
       $output .= '<tr>';
       $output .= '<td class="align-middle" style="padding: 15px; background-color: #f8f9fa;"><strong>Registered Simulators</strong></td>';
       for ($i = 0; $i < $displayCount; $i++) {
-        $output .= '<td class="text-center align-middle text-muted" style="padding: 15px; background-color: white;">-</td>';
+        $member = $members[$i];
+        $simulatorCount = $member['simulatorCount'] ?? 0;
+        $output .= '<td class="text-center align-middle" style="padding: 15px; background-color: white;">';
+        $output .= '<strong style="font-size: 2.4rem; color: #0d6efd;">' . $simulatorCount . '</strong>';
+        $output .= '</td>';
       }
       $output .= '</tr>';
       
-      // Row 7: Registered Laboratories/Rooms (placeholder)
+      // Row 7: Registered Platforms/Laboratories
       $output .= '<tr>';
-      $output .= '<td class="align-middle" style="padding: 15px; background-color: #f8f9fa;"><strong>Registered Laboratories/Rooms</strong></td>';
+      $output .= '<td class="align-middle" style="padding: 15px; background-color: #f8f9fa;"><strong>Registered Platforms</strong></td>';
       for ($i = 0; $i < $displayCount; $i++) {
-        $output .= '<td class="text-center align-middle text-muted" style="padding: 15px; background-color: white;">-</td>';
+        $member = $members[$i];
+        $platformCount = $member['platformCount'] ?? 0;
+        $output .= '<td class="text-center align-middle" style="padding: 15px; background-color: white;">';
+        $output .= '<strong style="font-size: 2.4rem; color: #0d6efd;">' . $platformCount . '</strong>';
+        $output .= '</td>';
       }
       $output .= '</tr>';
       
