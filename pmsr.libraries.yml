@@ -32,3 +32,9 @@ ingestion:
   dependencies:
     - core/jquery
     - core/drupal
+statistics:
+  css:
+    theme:
+      css/statistics.css: {}
+  dependencies:
+    - core/drupal

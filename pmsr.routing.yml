@@ -14,6 +14,14 @@ pmsr.statistics:
   requirements:
     _permission: 'access content'
 
+pmsr.ontologies_list:
+  path: '/pmsr/ontologies/list'
+  defaults:
+    _controller: 'Drupal\pmsr\Controller\StatisticsController::listOntologies'
+    _title: 'Ontologies'
+  requirements:
+    _permission: 'access content'
+
 pmsr.settings:
   path: '/admin/config/pmsr'
   defaults:
@@ -81,10 +89,22 @@ pmsr.process_ins_uningest:
 pmsr.refresh_statistics:
   path: '/pmsr/api/statistics/refresh'
   defaults:
-    _controller: '\Drupal\pmsr\Controller\IngestionINSController::refreshStatistics'
+    _controller: '\Drupal\pmsr\Controller\StatisticsController::refreshStatisticsCache'
   requirements:
-    _permission: 'access content'
-    _role: 'authenticated'
+    _access: 'TRUE'
+  options:
+    no_cache: TRUE
+  methods: [POST]
+
+pmsr.api_statistics_global:
+  path: '/pmsr/api/statistics/global'
+  defaults:
+    _controller: '\Drupal\pmsr\Controller\StatisticsController::getGlobalStatistics'
+  requirements:
+    _access: 'TRUE'
+  options:
+    no_cache: TRUE
+  methods: [GET]
 
 pmsr.ingest_geography:
   path: '/pmsr/ingest/geography'

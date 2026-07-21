@@ -1,0 +1,36 @@
+/**
+ * Statistics Cards Styling
+ * For Global Statistics section (#ontologies, #classes, #instances)
+ */
+
+.statistics-card {
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  border: 1px solid #dee2e6;
+}
+
+.statistics-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.statistics-card .card-title {
+  font-family: 'Courier New', monospace;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.statistics-card .display-4 {
+  font-weight: 700;
+  color: #333;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .statistics-card {
+    margin-bottom: 1rem;
+  }
+  
+  .statistics-card .display-4 {
+    font-size: 2.5rem;
+  }
+}
