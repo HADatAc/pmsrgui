@@ -50,9 +50,9 @@ class StatisticsController extends ControllerBase {
     
     try {
       while ($hasMore) {
-        // Get platform instances (using manager email '_' to get all)
-        $response = $api->listByManagerEmail('platforminstance', '_', $pageSize, $offset);
-        $platforms = $api->parseObjectResponse($response, 'listByManagerEmail');
+        // Get platform instances (using keyword '_' to get all)
+        $response = $api->listByKeyword('platforminstance', '_', $pageSize, $offset);
+        $platforms = $api->parseObjectResponse($response, 'listByKeyword');
         
         if (!is_array($platforms) || empty($platforms)) {
           $hasMore = false;
@@ -95,8 +95,8 @@ class StatisticsController extends ControllerBase {
       $hasMore = true;
       
       while ($hasMore) {
-        $response = $api->listByManagerEmail('platforminstance', '_', $pageSize, $offset);
-        $batch = $api->parseObjectResponse($response, 'listByManagerEmail');
+        $response = $api->listByKeyword('platforminstance', '_', $pageSize, $offset);
+        $batch = $api->parseObjectResponse($response, 'listByKeyword');
         
         if (!is_array($batch) || empty($batch)) {
           $hasMore = false;
@@ -133,8 +133,8 @@ class StatisticsController extends ControllerBase {
           
           // Extract instrument URIs from deployments
           foreach ($deployments as $deployment) {
-            if (is_object($deployment) && !empty($deployment->instrumentUri)) {
-              $uniqueInstruments[$deployment->instrumentUri] = true;
+            if (is_object($deployment) && !empty($deployment->instrumentInstanceUri)) {
+              $uniqueInstruments[$deployment->instrumentInstanceUri] = true;
             }
           }
           
@@ -204,6 +204,69 @@ class StatisticsController extends ControllerBase {
     }
     
     return $totalCount;
+  }
+
+  /**
+   * Get registered PMSR users count for an organization.
+   * Counts only people with user information (hasco:userID populated).
+   */
+  private function getRegisteredUsersCount($api, $orgUri) {
+    $registeredCount = 0;
+    $pageSize = 100;
+    $offset = 0;
+    
+    try {
+      // Fetch all people affiliated with this organization
+      while (true) {
+        $response = $api->getAffiliations($orgUri, $pageSize, $offset);
+        $people = $api->parseObjectResponse($response, 'getAffiliations');
+        
+        if (!is_array($people) || empty($people)) {
+          break;
+        }
+        
+        // Check each person for userID by fetching their full details
+        foreach ($people as $person) {
+          if (is_object($person) && !empty($person->uri)) {
+            // Fetch full person details to check for userID
+            try {
+              $personResponse = $api->getUri($person->uri);
+              $personData = $api->parseObjectResponse($personResponse, 'getUri');
+              
+              // Check if this person has userID (registered PMSR user)
+              if (is_object($personData) && !empty($personData->userID)) {
+                $registeredCount++;
+              }
+            } catch (\Exception $e) {
+              // Skip if person details can't be fetched
+              continue;
+            }
+          }
+        }
+        
+        // Check if we need to fetch more
+        if (count($people) < $pageSize) {
+          break;
+        }
+        $offset += $pageSize;
+      }
+      
+      // Recursively count for sub-organizations
+      $subOrgsResponse = $api->getSubOrganizations($orgUri, 100, 0);
+      $subOrgsData = $api->parseObjectResponse($subOrgsResponse, 'getSubOrganizations');
+      
+      if (is_array($subOrgsData)) {
+        foreach ($subOrgsData as $subOrg) {
+          if (is_object($subOrg) && !empty($subOrg->uri)) {
+            $registeredCount += $this->getRegisteredUsersCount($api, $subOrg->uri);
+          }
+        }
+      }
+    } catch (\Exception $e) {
+      \Drupal::logger('pmsr')->warning('Failed to fetch registered users for ' . $orgUri . ': ' . $e->getMessage());
+    }
+    
+    return $registeredCount;
   }
 
   /**
@@ -489,6 +552,9 @@ $output .= '</div>'; // End single row with all 5 cards
               // Fetch people count for this organization (including sub-organizations)
               $peopleCount = $this->getTotalPeopleCount($api, $contributorUri);
               
+              // Fetch registered PMSR users count (people with user information)
+              $registeredUsersCount = $this->getRegisteredUsersCount($api, $contributorUri);
+              
               // Fetch platform count for this organization
               $platformCount = $this->getPlatformCountByOrganization($api, $contributorUri);
               
@@ -502,6 +568,7 @@ $output .= '</div>'; // End single row with all 5 cards
                 'fullName' => $orgData->name ?? $orgData->label ?? 'Unknown Organization',
                 'image' => $imageUrl,
                 'peopleCount' => $peopleCount,
+                'registeredUsersCount' => $registeredUsersCount,
                 'platformCount' => $platformCount,
                 'simulatorCount' => $simulatorCount,
               ];
@@ -515,7 +582,7 @@ $output .= '</div>'; // End single row with all 5 cards
       \Drupal::logger('pmsr')->error('Failed to fetch PMSR project: ' . $e->getMessage());
     }
 
-    // Display members table (up to 10 columns + Description column)
+    // Display members table (up to 10 columns + Description column + Total column)
     if (!empty($members)) {
       $output .= '<div class="row mt-3">';
       $output .= '<div class="col-12">';
@@ -523,6 +590,19 @@ $output .= '</div>'; // End single row with all 5 cards
       $output .= '<table class="table table-bordered" style="border-color: #adb5bd;">';
       
       $displayCount = min(count($members), 10);
+      
+      // Calculate totals across ALL members (not just displayed ones)
+      $totalRegisteredUsers = 0;
+      $totalPeople = 0;
+      $totalSimulators = 0;
+      $totalPlatforms = 0;
+      
+      foreach ($members as $member) {
+        $totalRegisteredUsers += $member['registeredUsersCount'] ?? 0;
+        $totalPeople += $member['peopleCount'] ?? 0;
+        $totalSimulators += $member['simulatorCount'] ?? 0;
+        $totalPlatforms += $member['platformCount'] ?? 0;
+      }
       
       // Row 1: Logo
       $output .= '<tr>';
@@ -536,6 +616,10 @@ $output .= '</div>'; // End single row with all 5 cards
         $output .= 'style="max-height: 80px; max-width: 100%; object-fit: contain;" />';
         $output .= '</td>';
       }
+      // Total column - Logo row
+      $output .= '<td class="text-center align-middle" style="padding: 20px; background-color: #e9ecef; border-left: 3px solid #0d6efd;">';
+      $output .= '<strong style="color: #0d6efd;">TOTAL</strong>';
+      $output .= '</td>';
       $output .= '</tr>';
       
       // Row 2: Link (Internal name as clickable link)
@@ -552,6 +636,10 @@ $output .= '</div>'; // End single row with all 5 cards
         $output .= '</a>';
         $output .= '</td>';
       }
+      // Total column - Link row
+      $output .= '<td class="text-center align-middle" style="padding: 15px; background-color: #e9ecef; border-left: 3px solid #0d6efd;">';
+      $output .= '<strong style="color: #0d6efd;">TOTAL</strong>';
+      $output .= '</td>';
       $output .= '</tr>';
       
       // Row 3: Full Name
@@ -563,11 +651,31 @@ $output .= '</div>'; // End single row with all 5 cards
         $output .= '<span>' . htmlspecialchars($member['fullName']) . '</span>';
         $output .= '</td>';
       }
+      // Total column - Full Name row
+      $output .= '<td class="text-center align-middle" style="padding: 15px; background-color: #e9ecef; border-left: 3px solid #0d6efd;">';
+      $output .= '<strong style="color: #0d6efd;">All Members</strong>';
+      $output .= '</td>';
       $output .= '</tr>';
       
-      // Row 4: People Registered in PMSR
+      // Row 4: Registered PMSR Users
       $output .= '<tr>';
-      $output .= '<td class="align-middle" style="padding: 15px; background-color: #f8f9fa;"><strong>People Registered in PMSR</strong></td>';
+      $output .= '<td class="align-middle" style="padding: 15px; background-color: #f8f9fa;"><strong>Registered PMSR Users</strong></td>';
+      for ($i = 0; $i < $displayCount; $i++) {
+        $member = $members[$i];
+        $registeredUsersCount = $member['registeredUsersCount'] ?? 0;
+        $output .= '<td class="text-center align-middle" style="padding: 15px; background-color: white;">';
+        $output .= '<strong style="font-size: 2.4rem; color: #0d6efd;">' . $registeredUsersCount . '</strong>';
+        $output .= '</td>';
+      }
+      // Total column - Registered Users
+      $output .= '<td class="text-center align-middle" style="padding: 15px; background-color: #e9ecef; border-left: 3px solid #0d6efd;">';
+      $output .= '<strong style="font-size: 2.4rem; color: #0d6efd;">' . $totalRegisteredUsers . '</strong>';
+      $output .= '</td>';
+      $output .= '</tr>';
+      
+      // Row 5: People in Knowledge Graph
+      $output .= '<tr>';
+      $output .= '<td class="align-middle" style="padding: 15px; background-color: #f8f9fa;"><strong>People in Knowledge Graph</strong></td>';
       for ($i = 0; $i < $displayCount; $i++) {
         $member = $members[$i];
         $peopleCount = $member['peopleCount'] ?? 0;
@@ -575,17 +683,23 @@ $output .= '</div>'; // End single row with all 5 cards
         $output .= '<strong style="font-size: 2.4rem; color: #0d6efd;">' . $peopleCount . '</strong>';
         $output .= '</td>';
       }
+      // Total column - People in KG
+      $output .= '<td class="text-center align-middle" style="padding: 15px; background-color: #e9ecef; border-left: 3px solid #0d6efd;">';
+      $output .= '<strong style="font-size: 2.4rem; color: #0d6efd;">' . $totalPeople . '</strong>';
+      $output .= '</td>';
       $output .= '</tr>';
       
-      // Row 5: Registered Scenarios (placeholder)
+      // Row 6: Registered Scenarios (placeholder)
       $output .= '<tr>';
       $output .= '<td class="align-middle" style="padding: 15px; background-color: #f8f9fa;"><strong>Registered Scenarios</strong></td>';
       for ($i = 0; $i < $displayCount; $i++) {
         $output .= '<td class="text-center align-middle text-muted" style="padding: 15px; background-color: white;">-</td>';
       }
+      // Total column - Scenarios
+      $output .= '<td class="text-center align-middle text-muted" style="padding: 15px; background-color: #e9ecef; border-left: 3px solid #0d6efd;">-</td>';
       $output .= '</tr>';
       
-      // Row 6: Registered Simulators
+      // Row 7: Registered Simulators
       $output .= '<tr>';
       $output .= '<td class="align-middle" style="padding: 15px; background-color: #f8f9fa;"><strong>Registered Simulators</strong></td>';
       for ($i = 0; $i < $displayCount; $i++) {
@@ -595,11 +709,15 @@ $output .= '</div>'; // End single row with all 5 cards
         $output .= '<strong style="font-size: 2.4rem; color: #0d6efd;">' . $simulatorCount . '</strong>';
         $output .= '</td>';
       }
+      // Total column - Simulators
+      $output .= '<td class="text-center align-middle" style="padding: 15px; background-color: #e9ecef; border-left: 3px solid #0d6efd;">';
+      $output .= '<strong style="font-size: 2.4rem; color: #0d6efd;">' . $totalSimulators . '</strong>';
+      $output .= '</td>';
       $output .= '</tr>';
       
-      // Row 7: Registered Platforms/Laboratories
+      // Row 8: Registered Simulation Laboratories
       $output .= '<tr>';
-      $output .= '<td class="align-middle" style="padding: 15px; background-color: #f8f9fa;"><strong>Registered Platforms</strong></td>';
+      $output .= '<td class="align-middle" style="padding: 15px; background-color: #f8f9fa;"><strong>Registered Simulation Laboratories</strong></td>';
       for ($i = 0; $i < $displayCount; $i++) {
         $member = $members[$i];
         $platformCount = $member['platformCount'] ?? 0;
@@ -607,6 +725,10 @@ $output .= '</div>'; // End single row with all 5 cards
         $output .= '<strong style="font-size: 2.4rem; color: #0d6efd;">' . $platformCount . '</strong>';
         $output .= '</td>';
       }
+      // Total column - Platforms
+      $output .= '<td class="text-center align-middle" style="padding: 15px; background-color: #e9ecef; border-left: 3px solid #0d6efd;">';
+      $output .= '<strong style="font-size: 2.4rem; color: #0d6efd;">' . $totalPlatforms . '</strong>';
+      $output .= '</td>';
       $output .= '</tr>';
       
       $output .= '</table>';
@@ -629,6 +751,16 @@ $output .= '</div>'; // End single row with all 5 cards
       $output .= '</div>';
     }
 
+    // Add refresh button at the bottom
+    $output .= '<div class="row mt-5 mb-4">';
+    $output .= '<div class="col-12 text-center">';
+    $output .= '<a href="/pmsr/statistics/refresh" class="btn btn-primary btn-lg">';
+    $output .= '<i class="fas fa-sync-alt me-2"></i>Refresh Statistics';
+    $output .= '</a>';
+    $output .= '<p class="text-muted small mt-2">Click to clear cache and reload the latest data from the knowledge graph</p>';
+    $output .= '</div>';
+    $output .= '</div>';
+
     $output .= '</div>'; // End container
 
     return [
@@ -638,6 +770,17 @@ $output .= '</div>'; // End single row with all 5 cards
         'library' => [
           'pmsr/statistics',
         ],
+      ],
+      '#cache' => [
+        'contexts' => ['url'],
+        'tags' => [
+          'pmsr_statistics:global',
+          'pmsr_statistics:ontologies',
+          'pmsr_statistics:classes',
+          'pmsr_statistics:instances',
+          'pmsr_statistics:people',
+        ],
+        'max-age' => 0,  // Disable caching to ensure fresh data
       ],
     ];
   }
@@ -741,6 +884,11 @@ $output .= '</div>'; // End single row with all 5 cards
       'pmsr_statistics:ontologies',
       'pmsr_statistics:classes',
       'pmsr_statistics:instances',
+      'pmsr_statistics:people',
+      'pmsr_statistics:instruments',
+      'pmsr_statistics:procedures',
+      'pmsr_statistics:anatomy',
+      'pmsr_statistics:devices',
     ];
     
     \Drupal\Core\Cache\Cache::invalidateTags($tags);
@@ -750,6 +898,37 @@ $output .= '</div>'; // End single row with all 5 cards
       'message' => 'Statistics cache invalidated',
       'cache_tags' => $tags,
     ]);
+  }
+  
+  /**
+   * Refresh statistics page (clears cache and redirects back).
+   * 
+   * GET /pmsr/statistics/refresh
+   */
+  public function refreshStatisticsPage() {
+    // Invalidate all statistics cache tags
+    $tags = [
+      'pmsr_statistics:global',
+      'pmsr_statistics:ontologies',
+      'pmsr_statistics:classes',
+      'pmsr_statistics:instances',
+      'pmsr_statistics:people',
+      'pmsr_statistics:instruments',
+      'pmsr_statistics:procedures',
+      'pmsr_statistics:anatomy',
+      'pmsr_statistics:devices',
+    ];
+    
+    \Drupal\Core\Cache\Cache::invalidateTags($tags);
+    
+    // Also clear render cache to ensure page refreshes
+    \Drupal::cache('render')->deleteAll();
+    
+    // Set a success message
+    \Drupal::messenger()->addStatus('Statistics cache cleared successfully. Data has been refreshed from the knowledge graph.');
+    
+    // Redirect back to statistics page
+    return $this->redirect('pmsr.statistics');
   }
   
   /**

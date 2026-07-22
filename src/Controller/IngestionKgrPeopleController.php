@@ -177,9 +177,9 @@ class IngestionKgrPeopleController extends ControllerBase {
                   $progress[] = "    ✓ Deleted DataFile and all ingested RDF triples";
                   \Drupal::logger('pmsr')->info("KGR: Deleted DataFile and RDF data: " . $existing_datafile_uri);
                 } else {
-                  $error_msg = isset($delete_df_response->message) ? $delete_df_response->message : 'Unknown error';
-                  $progress[] = "    ⚠ Could not delete DataFile: " . $error_msg;
-                  \Drupal::logger('pmsr')->warning("KGR: Could not delete DataFile: " . $error_msg);
+                  $error_msg = isset($delete_df_response->message) ? $delete_df_response->message : 'DataFile may already be deleted or named graph no longer exists';
+                  $progress[] = "    ⚠ Could not delete DataFile: " . $error_msg . " (non-critical - will proceed with ingestion)";
+                  \Drupal::logger('pmsr')->info("KGR: DataFile delete skipped: " . $error_msg . " for URI: " . $existing_datafile_uri);
                 }
               }
               
@@ -318,6 +318,25 @@ class IngestionKgrPeopleController extends ControllerBase {
                 $progress[] = "  ✓ $filename ingested successfully";
                 $progress[] = "    → Persons, memberships, and emails loaded into knowledge graph";
                 \Drupal::logger('pmsr')->info("KGR: Successfully ingested $filename");
+                
+                // Retrieve ingestion log to show verification results
+                $dataFile = $api->parseObjectResponse($api->getUri($newDataFileUri), 'getUri');
+                if ($dataFile && isset($dataFile->log)) {
+                  // Parse log to find verification messages
+                  $log_lines = explode('<br>', $dataFile->log);
+                  foreach ($log_lines as $log_line) {
+                    // Look for PersonGenerator verification messages
+                    if (strpos($log_line, '[PersonGenerator] Ingestion verification:') !== false ||
+                        strpos($log_line, '[SUCCESS] PersonGenerator:') !== false ||
+                        strpos($log_line, '[WARNING] PersonGenerator:') !== false ||
+                        strpos($log_line, '[INFO] PersonGenerator:') !== false) {
+                      // Remove timestamp prefix (format: YYYY-MM-DD HH:MM:SS)
+                      $cleaned_line = preg_replace('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} \[LOG\] /', '', $log_line);
+                      $progress[] = "    → " . trim($cleaned_line);
+                    }
+                  }
+                }
+                
                 $kgr_success_count++;
               }
             }
@@ -395,9 +414,9 @@ class IngestionKgrPeopleController extends ControllerBase {
                       $progress[] = "    ✓ Deleted DataFile and all ingested RDF triples";
                       \Drupal::logger('pmsr')->info("DP2: Deleted DataFile and RDF data: " . $existing_datafile_uri);
                     } else {
-                      $error_msg = isset($delete_df_response->message) ? $delete_df_response->message : 'Unknown error';
-                      $progress[] = "    ⚠ Could not delete DataFile: " . $error_msg;
-                      \Drupal::logger('pmsr')->warning("DP2: Could not delete DataFile: " . $error_msg);
+                      $error_msg = isset($delete_df_response->message) ? $delete_df_response->message : 'DataFile may already be deleted or named graph no longer exists';
+                      $progress[] = "    ⚠ Could not delete DataFile: " . $error_msg . " (non-critical - will proceed with ingestion)";
+                      \Drupal::logger('pmsr')->info("DP2: DataFile delete skipped: " . $error_msg . " for URI: " . $existing_datafile_uri);
                     }
                   }
                   

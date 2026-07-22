@@ -14,6 +14,15 @@ pmsr.statistics:
   requirements:
     _permission: 'access content'
 
+pmsr.statistics_refresh_page:
+  path: '/pmsr/statistics/refresh'
+  defaults:
+    _controller: 'Drupal\pmsr\Controller\StatisticsController::refreshStatisticsPage'
+  requirements:
+    _permission: 'access content'
+  options:
+    no_cache: TRUE
+
 pmsr.ontologies_list:
   path: '/pmsr/ontologies/list'
   defaults:
