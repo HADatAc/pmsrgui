@@ -27,13 +27,31 @@ class IngestionController extends ControllerBase {
    */
   public static function invalidateStatisticsCache(array $ontologies) {
     $cache_invalidator = \Drupal::service('cache_tags.invalidator');
-    $tags_to_invalidate = [];
+    $tags_to_invalidate = [
+      'pmsr_statistics:global',
+      'pmsr_statistics:ontologies',
+      'pmsr_statistics:classes',
+      'pmsr_statistics:instances',
+    ];
+
+    $stats_by_ontology = [
+      'ins' => 'pmsr_statistics:instruments',
+      'pmsr' => 'pmsr_statistics:procedures',
+      'uberon' => 'pmsr_statistics:anatomy',
+      'ncit' => 'pmsr_statistics:devices',
+    ];
     
     // Map ontology abbreviations to cache tags
     foreach ($ontologies as $abbrev) {
-      $tags_to_invalidate[] = 'pmsr_ontology:' . strtolower($abbrev);
+      $lower = strtolower($abbrev);
+      $tags_to_invalidate[] = 'pmsr_ontology:' . $lower;
+      if (isset($stats_by_ontology[$lower])) {
+        $tags_to_invalidate[] = $stats_by_ontology[$lower];
+      }
     }
-    
+
+    $tags_to_invalidate = array_values(array_unique($tags_to_invalidate));
+
     if (!empty($tags_to_invalidate)) {
       $cache_invalidator->invalidateTags($tags_to_invalidate);
       \Drupal::logger('pmsr')->info('Invalidated statistics cache for ontologies: @ontologies', [
@@ -99,7 +117,7 @@ class IngestionController extends ControllerBase {
         'drupalSettings' => [
           'pmsr' => [
             'ingestion' => [
-              'endpoint' => '/hascoapi/api/pmsr/ingest/ontologies',
+              'endpoint' => '/pmsr/api/ingest/ontologies/process',
               'message' => 'Ingesting ontologies...',
             ],
           ],
@@ -218,6 +236,125 @@ class IngestionController extends ControllerBase {
   }
 
   /**
+   * Validate and check namespace before ingestion.
+   * 
+   * Returns array with:
+   * - 'exists' => bool (true if namespace with exact abbreviation exists)
+   * - 'errors' => array (critical errors that should stop ingestion)
+   * - 'needs_mime_update' => bool (true if MIME type needs to be added/updated)
+   * 
+   * Policy:
+   * - If namespace with exact abbreviation exists with same URI: OK, proceed with ingestion
+   * - If namespace exists but URI differs: ERROR, stop ingestion  
+   * - If namespace exists, existing MIME is empty, new MIME provided: Update MIME
+   * - If namespace exists, both have MIME but differ: ERROR, stop ingestion (user must decide)
+   * - If namespace doesn't exist: OK, will be created
+   */
+  private function validateNamespace($api, $abbrev, $expectedUri, $expectedMime) {
+    $result = [
+      'exists' => false,
+      'errors' => [],
+      'needs_mime_update' => false,
+      'existing_ns' => null,
+    ];
+    
+    // Get current namespace list
+    $namespace_list_response = $api->namespaceList();
+    $namespace_data = json_decode($namespace_list_response);
+    
+    if (!$namespace_data || !$namespace_data->isSuccessful || !is_array($namespace_data->body)) {
+      $result['errors'][] = "Failed to retrieve namespace list from hascoapi";
+      return $result;
+    }
+    
+    // Check if namespace with exact abbreviation exists
+    foreach ($namespace_data->body as $ns) {
+      if ($ns->label === $abbrev) {
+        $result['exists'] = true;
+        $result['existing_ns'] = $ns;
+        
+        // Validate URI matches exactly
+        if ($ns->uri !== $expectedUri) {
+          $result['errors'][] = "CRITICAL ERROR: Namespace '$abbrev' exists but URI MISMATCH";
+          $result['errors'][] = "  Expected URI: $expectedUri";
+          $result['errors'][] = "  Existing URI: {$ns->uri}";
+          $result['errors'][] = "  ACTION: Delete namespace '$abbrev' or correct the expected URI";
+          $result['errors'][] = "  INGESTION STOPPED - User must resolve conflict";
+          return $result;
+        }
+        
+        // Check MIME type compatibility
+        $existingMime = $ns->sourceMime ?? '';
+        if (empty($existingMime) && !empty($expectedMime)) {
+          // Existing has no MIME, we have one -> will update
+          $result['needs_mime_update'] = true;
+        } elseif (!empty($existingMime) && !empty($expectedMime) && $existingMime !== $expectedMime) {
+          // Both have MIME but they differ
+          $result['errors'][] = "CRITICAL ERROR: Namespace '$abbrev' has CONFLICTING MIME type";
+          $result['errors'][] = "  Expected MIME: $expectedMime";
+          $result['errors'][] = "  Existing MIME: $existingMime";
+          $result['errors'][] = "  ACTION: User must decide which MIME type is correct";
+          $result['errors'][] = "  INGESTION STOPPED - User must resolve conflict";
+          return $result;
+        }
+        
+        break;
+      }
+    }
+    
+    return $result;
+  }
+  
+  /**
+   * Detect unwanted namespaces created after ingestion.
+   * 
+   * Policy: hascoapi should NEVER auto-create namespaces from TTL content.
+   * We explicitly create the namespace with exact abbreviation before ingestion.
+   * If additional namespaces appear after ingestion, this is an ERROR.
+   */
+  private function detectUnwantedNamespaces($api, $abbrev, $expectedUri) {
+    $errors = [];
+    
+    // Get current namespace list
+    $namespace_list_response = $api->namespaceList();
+    $namespace_data = json_decode($namespace_list_response);
+    
+    if (!$namespace_data || !$namespace_data->isSuccessful || !is_array($namespace_data->body)) {
+      return $errors;
+    }
+    
+    // Look for unexpected namespaces
+    foreach ($namespace_data->body as $ns) {
+      $nsLabel = $ns->label ?? '';
+      $nsUri = $ns->uri ?? '';
+      
+      // For pmsr: any pmsr.net namespace that isn't our expected one is wrong
+      if ($abbrev === 'pmsr' && strpos($nsUri, 'pmsr.net') !== false) {
+        if ($nsLabel !== $abbrev || $nsUri !== $expectedUri) {
+          $errors[] = "CRITICAL ERROR: Unexpected namespace created: '$nsLabel' → $nsUri";
+          $errors[] = "  Expected only: '$abbrev' → $expectedUri";
+          $errors[] = "  CAUSE: hascoapi auto-created namespace from TTL metadata (rdfs:label or @prefix)";
+          $errors[] = "  ROOT CAUSE: hascoapi should NOT create namespaces from TTL content";
+          $errors[] = "  ACTION: Fix hascoapi to respect only explicitly created namespaces";
+        }
+      }
+      
+      // For uberon/ncit: namespace with correct URI but wrong abbreviation is wrong
+      if (($abbrev === 'uberon' || $abbrev === 'ncit') && $nsUri === $expectedUri) {
+        if ($nsLabel !== $abbrev) {
+          $errors[] = "CRITICAL ERROR: Namespace has WRONG abbreviation: '$nsLabel' (should be '$abbrev')";
+          $errors[] = "  URI: $nsUri (correct)";
+          $errors[] = "  CAUSE: hascoapi modified the abbreviation we provided";
+          $errors[] = "  ROOT CAUSE: hascoapi should use exact abbreviation, not modify it";
+          $errors[] = "  ACTION: Fix hascoapi to preserve exact abbreviation from namespace creation";
+        }
+      }
+    }
+    
+    return $errors;
+  }
+
+  /**
    * Process PMSR ontology ingestion (AJAX endpoint).
    */
   public function processOntologyIngestion(Request $request) {
@@ -230,23 +367,23 @@ class IngestionController extends ControllerBase {
       'pmsr' => [
         'file' => 'pmsr.ttl',
         'label' => 'pmsr',
-        'namespace' => 'http://pmsr.net/ont/pmsr',
+        'namespace' => 'https://pmsr.net/ont/',
         'mime' => 'text/turtle',
         'source' => 'https://hadatac.org/ont/pmsr/pmsr.ttl',
       ],
       'uberon' => [
         'file' => 'uberon.ttl',
         'label' => 'uberon',
-        'namespace' => 'http://purl.obolibrary.org/obo/uberon.owl',
+        'namespace' => 'http://purl.obolibrary.org/obo/UBERON_',
         'mime' => 'text/turtle',
-        'source' => 'http://purl.obolibrary.org/obo/uberon.owl',
+        'source' => '', // Local file, no remote source
       ],
       'ncit' => [
         'file' => 'ncit-pmsr.ttl',
         'label' => 'ncit',
-        'namespace' => 'http://purl.obolibrary.org/obo/ncit.owl',
+        'namespace' => 'http://purl.obolibrary.org/obo/NCIT_',
         'mime' => 'text/turtle',
-        'source' => 'https://hadatac.org/ont/ncit/ncit-pmsr.ttl',
+        'source' => '', // Local file, no remote source
       ],
     ];
     
@@ -273,30 +410,63 @@ class IngestionController extends ControllerBase {
     // Get API connector service
     $api = \Drupal::service('rep.api_connector');
     
-    // Get current namespace list
-    $namespace_list_response = $api->namespaceList();
-    $namespace_data = json_decode($namespace_list_response);
-    $existing_namespaces = [];
-    
-    if ($namespace_data && $namespace_data->isSuccessful && is_array($namespace_data->body)) {
-      foreach ($namespace_data->body as $ns) {
-        $existing_namespaces[strtolower($ns->label)] = $ns;
-      }
-    }
-    
     // Process each ontology
     $step = 0;
-    $total_steps = (count($ontologies) * 3) + 1; // 3 steps per ontology + 1 for entry points
+    $total_steps = (count($ontologies) * 4) + 1; // 4 steps per ontology + 1 for entry points
     
     foreach ($ontologies as $abbrev => $onto) {
       $ontology_progress = [];
       
-      // Step (a): Verify/Add namespace
+      // Step (a): Validate namespace before ingestion
       $step++;
-      $ontology_progress[] = "[$step/$total_steps] Checking if $abbrev ontology is registered...";
+      $ontology_progress[] = "[$step/$total_steps] Validating namespace for $abbrev...";
       
-      if (!isset($existing_namespaces[strtolower($onto['label'])])) {
-        // Create namespace
+      $validation = $this->validateNamespace($api, $onto['label'], $onto['namespace'], $onto['mime']);
+      
+      if (!empty($validation['errors'])) {
+        // Critical errors detected - check if it's a URI mismatch we can fix
+        if ($validation['exists'] && isset($validation['existing_ns'])) {
+          $existingUri = $validation['existing_ns']->uri ?? '';
+          if ($existingUri !== $onto['namespace']) {
+            // URI mismatch - delete the old namespace and recreate
+            $ontology_progress[] = "  ⚠️ Namespace '$onto[label]' exists with wrong URI";
+            $ontology_progress[] = "  Expected URI: $onto[namespace]";
+            $ontology_progress[] = "  Existing URI: $existingUri";
+            $ontology_progress[] = "  ⚙️ Deleting old namespace...";
+            
+            $delete_response = $api->repoDeleteSelectedNamespace($onto['label']);
+            $delete_data = json_decode($delete_response);
+            
+            if (!$delete_data || !$delete_data->isSuccessful) {
+              $errors[] = "Failed to delete conflicting namespace '$abbrev': " . ($delete_data->body ?? 'Unknown error');
+              $progress = array_merge($progress, $ontology_progress);
+              continue;
+            }
+            
+            $ontology_progress[] = "  ✓ Old namespace deleted";
+            
+            // Force refresh namespace cache
+            $api->repoResetNamespaces();
+            sleep(1);
+            
+            // Clear the validation error - we fixed it
+            $validation['errors'] = [];
+            $validation['exists'] = false;
+          }
+        }
+        
+        // If still have errors after attempted fix, stop
+        if (!empty($validation['errors'])) {
+          foreach ($validation['errors'] as $error) {
+            $errors[] = $error;
+          }
+          $progress = array_merge($progress, $ontology_progress);
+          continue; // Skip this ontology
+        }
+      }
+      
+      if (!$validation['exists']) {
+        // Create namespace with exact abbreviation
         $json_payload = json_encode([
           'label' => $onto['label'],
           'uri' => $onto['namespace'],
@@ -309,26 +479,32 @@ class IngestionController extends ControllerBase {
         
         if (!$create_data || !$create_data->isSuccessful) {
           $errors[] = "Failed to create namespace for $abbrev";
+          $progress = array_merge($progress, $ontology_progress);
           continue;
         }
         
-        $ontology_progress[] = "  ✓ Created namespace for $abbrev";
+        $ontology_progress[] = "  ✓ Created namespace '$onto[label]' with URI: $onto[namespace]";
       } else {
-        $ontology_progress[] = "  ✓ Namespace for $abbrev already exists";
+        $ontology_progress[] = "  ✓ Namespace '$onto[label]' already exists with correct URI";
+        
+        if ($validation['needs_mime_update']) {
+          $ontology_progress[] = "  ℹ Adding MIME type: $onto[mime]";
+          // TODO: Implement MIME type update if needed
+        }
       }
       
       // Step (b): Check and clear existing triples
       $step++;
       $ontology_progress[] = "[$step/$total_steps] Checking for existing triples in $abbrev...";
       
-      // Refresh namespace list to get triple counts
+      // Check if namespace has triples
       $namespace_list_response = $api->namespaceList();
       $namespace_data = json_decode($namespace_list_response);
       $has_triples = false;
       
       if ($namespace_data && $namespace_data->isSuccessful && is_array($namespace_data->body)) {
         foreach ($namespace_data->body as $ns) {
-          if (strtolower($ns->label) === strtolower($onto['label'])) {
+          if ($ns->label === $onto['label']) {
             if (isset($ns->numberOfLoadedTriples) && $ns->numberOfLoadedTriples > 0) {
               $has_triples = true;
               break;
@@ -364,8 +540,21 @@ class IngestionController extends ControllerBase {
         continue;
       }
       
-      // Upload to hascoapi (NOT directly to Fuseki)
-      $ingest_result = $api->repoIngestNamespaceOntology($onto['namespace'], $file_content, $onto['mime']);
+      // Upload to hascoapi
+      // IMPORTANT: hascoapi may auto-create namespaces from TTL @prefix declarations
+      // and rdfs:label values found in the ontology file. This can create unwanted
+      // duplicate namespaces with incorrect abbreviations.
+      // 
+      // Example issues:
+      // - pmsr.ttl contains @prefix pmsr: <https://pmsr.net/ont/> (correct)
+      //   → hascoapi should use this exact URI
+      // - pmsr.ttl contains rdfs:label "PMSR Ontology v0.5"
+      //   → hascoapi creates namespace with abbreviation "PMSR_Ontology_v0_5"
+      // - uberon.ttl may have @prefix UBERON_: which creates "uberon_" abbreviation
+      //
+      // We validate after ingestion to detect these issues and report them as errors.
+      // The ontology files should be fixed at the source to avoid these conflicts.
+      $ingest_result = $api->repoIngestNamespaceOntology($onto['label'], $onto['namespace'], $file_content, $onto['mime']);
       $ingest_data = json_decode($ingest_result);
       
       if (!$ingest_data || !$ingest_data->isSuccessful) {
@@ -376,6 +565,23 @@ class IngestionController extends ControllerBase {
       // Wait for ingestion to complete
       sleep(2);
       
+      // Step (d): Detect unwanted namespaces created by hascoapi during ingestion
+      $step++;
+      $ontology_progress[] = "[$step/$total_steps] Validating namespace integrity after ingestion...";
+      
+      $unwanted_ns_errors = $this->detectUnwantedNamespaces($api, $abbrev, $onto['namespace']);
+      if (!empty($unwanted_ns_errors)) {
+        foreach ($unwanted_ns_errors as $error) {
+          $errors[] = $error;
+        }
+        $ontology_progress[] = "  ✗ CRITICAL: hascoapi created unexpected namespaces";
+        $ontology_progress[] = "  ✗ INGESTION STOPPED - Fix hascoapi behavior";
+        $progress = array_merge($progress, $ontology_progress);
+        continue; // Don't count triples or mark as successful
+      }
+      
+      $ontology_progress[] = "  ✓ No unexpected namespaces detected";
+      
       // Query namespace to get triple count
       $triple_count = 0;
       try {
@@ -383,7 +589,7 @@ class IngestionController extends ControllerBase {
         $namespace_data = json_decode($namespace_list_response);
         if ($namespace_data && $namespace_data->isSuccessful && is_array($namespace_data->body)) {
           foreach ($namespace_data->body as $ns) {
-            if (strtolower($ns->label) === strtolower($onto['label'])) {
+            if ($ns->label === $onto['label']) {  // Exact match, not lowercase
               $triple_count = $ns->numberOfLoadedTriples ?? 0;
               break;
             }
@@ -472,7 +678,7 @@ class IngestionController extends ControllerBase {
     // Define entry point mappings
     $mappings = [
       [
-        'external_uri' => 'http://pmsr.net/ont/pmsr#MedicalSimulationProcessStem', // Medical Simulation Process Stem
+        'external_uri' => 'https://pmsr.net/ont/MedicalSimulationProcessStem', // Medical Simulation Process Stem
         'parent_uri' => 'http://hadatac.org/ont/hasco/WorkflowStemEntryPoint',
         'label' => 'PMSR Medical Simulation Process Stem',
       ],
@@ -764,7 +970,7 @@ class IngestionController extends ControllerBase {
       // This endpoint will DELETE existing triples and load new ones from the file
       // IMPORTANT: The file MUST contain all entry point definitions + external bindings
       $namespace_uri = 'http://hadatac.org/ont/hasco/';
-      $ingest_result = $api->repoIngestNamespaceOntology($namespace_uri, $file_content, 'text/turtle');
+      $ingest_result = $api->repoIngestNamespaceOntology('hasco', $namespace_uri, $file_content, 'text/turtle');
       $ingest_data = json_decode($ingest_result);
       
       if (!$ingest_data || !$ingest_data->isSuccessful) {
@@ -800,7 +1006,7 @@ class IngestionController extends ControllerBase {
           // Attempt to restore from backup
           if (file_exists($backup_result['backup_path'])) {
             $backup_content = file_get_contents($backup_result['backup_path']);
-            $restore_result = $api->repoIngestNamespaceOntology($namespace_uri, $backup_content, 'text/turtle');
+            $restore_result = $api->repoIngestNamespaceOntology('hasco', $namespace_uri, $backup_content, 'text/turtle');
             sleep(2);
             
             \Drupal::logger('pmsr')->notice('Emergency restore attempted from backup');

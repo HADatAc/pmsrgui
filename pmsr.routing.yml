@@ -39,6 +39,32 @@ pmsr.settings:
   requirements:
     _permission: 'administer site configuration'
 
+pmsr.config_bootstrap:
+  path: '/pmsr/config/bootstrap'
+  defaults:
+    _form: '\Drupal\pmsr\Form\ConfigBootstrapForm'
+    _title: 'PMSR Config Bootstrap'
+  requirements:
+    _permission: 'administer site configuration'
+
+pmsr.bootstrap_localhost_page:
+  path: '/pmsr/bootstrap/localhost/page'
+  defaults:
+    _controller: '\Drupal\pmsr\Controller\BootstrapController::bootstrapLocalhostPage'
+    _title: 'Bootstrap Localhost'
+  requirements:
+    _permission: 'administer site configuration'
+
+pmsr.bootstrap_execute_localhost:
+  path: '/pmsr/api/bootstrap/localhost/execute'
+  defaults:
+    _controller: '\Drupal\pmsr\Controller\BootstrapController::executeLocalhostBootstrap'
+  requirements:
+    _permission: 'administer site configuration'
+  options:
+    no_cache: TRUE
+  methods: [POST]
+
 pmsr.access_denied:
   path: '/acess-denied'
   defaults:

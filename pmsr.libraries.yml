@@ -38,3 +38,13 @@ statistics:
       css/statistics.css: {}
   dependencies:
     - core/drupal
+
+bootstrap-progress:
+  css:
+    theme:
+      css/bootstrap-progress.css: {}
+  js:
+    js/bootstrap-progress.js: {}
+  dependencies:
+    - core/drupal
+    - core/drupalSettings

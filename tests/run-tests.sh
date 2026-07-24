@@ -117,6 +117,24 @@ case "$TEST_TYPE" in
             modules/custom/rep/tests/src/FunctionalJavascript/EntryPointColorCodingTest.php
         ;;
     
+    setup)
+        echo -e "${BLUE}Running PMSR Setup Tests...${NC}"
+        echo ""
+        php modules/custom/pmsrgui/tests/test_pmsr_setup.php all
+        ;;
+    
+    setup-regression)
+        echo -e "${BLUE}Running PMSR Setup Regression Tests...${NC}"
+        echo ""
+        php modules/custom/pmsrgui/tests/test_pmsr_setup.php regression
+        ;;
+    
+    setup-rerun)
+        echo -e "${BLUE}Running PMSR Setup Rerun-Safety Tests...${NC}"
+        echo ""
+        php modules/custom/pmsrgui/tests/test_pmsr_setup.php rerun-safe
+        ;;
+    
     critical)
         echo -e "${BLUE}Running Critical Data Loss Prevention Tests...${NC}"
         echo ""
@@ -147,22 +165,29 @@ case "$TEST_TYPE" in
         else
             echo -e "${YELLOW}Skipping JavaScript tests - ChromeDriver not found${NC}"
         fi
+        
+        echo ""
+        echo -e "${YELLOW}4. PMSR Setup Tests${NC}"
+        php modules/custom/pmsrgui/tests/test_pmsr_setup.php all || true
         ;;
     
     help|--help|-h)
         echo "Usage: $0 [test-type] [--verbose]"
         echo ""
         echo "Test Types:"
-        echo "  all         - Run all tests (default)"
-        echo "  unit        - Run unit tests only"
-        echo "  functional  - Run functional tests only"
-        echo "  javascript  - Run JavaScript tests only"
-        echo "  validator   - Run HascoIntegrityValidator tests"
-        echo "  integrity   - Run ingestion integrity tests"
-        echo "  api         - Run API endpoint tests"
-        echo "  color       - Run color-coding tests"
-        echo "  critical    - Run critical data loss prevention tests"
-        echo "  help        - Show this help message"
+        echo "  all              - Run all tests (default)"
+        echo "  unit             - Run unit tests only"
+        echo "  functional       - Run functional tests only"
+        echo "  javascript       - Run JavaScript tests only"
+        echo "  validator        - Run HascoIntegrityValidator tests"
+        echo "  integrity        - Run ingestion integrity tests"
+        echo "  api              - Run API endpoint tests"
+        echo "  color            - Run color-coding tests"
+        echo "  setup            - Run PMSR Setup tests (all)"
+        echo "  setup-regression - Run PMSR Setup regression tests"
+        echo "  setup-rerun      - Run PMSR Setup rerun-safety tests"
+        echo "  critical         - Run critical data loss prevention tests"
+        echo "  help             - Show this help message"
         echo ""
         echo "Options:"
         echo "  --verbose   - Show detailed test output"

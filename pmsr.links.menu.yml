@@ -23,6 +23,16 @@ pmsr.pmsr_setup:
 # PMSR INGESTION MENU ITEMS (under PMSR Setup, which is under Repository)
 #
 
+pmsr.config_bootstrap:
+  title: 'PMSR Config Bootstrap'
+  description: 'Bootstrap PMSR configuration and ontologies'
+  route_name: pmsr.config_bootstrap
+  parent: pmsr.pmsr_setup
+  menu_name: main
+  weight: 0
+  requirements:
+    _permission: 'administer site configuration'
+
 pmsr.ingest_ontologies:
   title: 'Ingest PMSR Ontologies (pmsr, uberon, ncit)'
   description: 'Ingest PMSR, UBERON, and NCIT ontologies from code'

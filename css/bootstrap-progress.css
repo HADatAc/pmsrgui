@@ -1,0 +1,295 @@
+/* PMSR Bootstrap Progress Styles - Card Layout */
+
+.pmsr-bootstrap-intro {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 30px;
+  border-left: 4px solid #0066cc;
+}
+
+.pmsr-bootstrap-intro h2 {
+  margin-top: 0;
+  color: #0066cc;
+}
+
+.pmsr-bootstrap-intro ul {
+  margin: 15px 0;
+}
+
+.pmsr-bootstrap-intro .warning {
+  background: #d1ecf1;
+  padding: 10px;
+  border-radius: 4px;
+  border-left: 4px solid #17a2b8;
+  margin-top: 15px;
+}
+
+.bootstrap-buttons {
+  display: flex;
+  gap: 15px;
+  margin: 20px 0;
+}
+
+.bootstrap-btn {
+  padding: 12px 24px;
+  font-size: 16px;
+  border-radius: 6px;
+  min-width: 200px;
+}
+
+.bootstrap-header {
+  background: #0066cc;
+  color: white;
+  padding: 30px;
+  border-radius: 8px 8px 0 0;
+  margin: -20px -20px 0 -20px;
+}
+
+.bootstrap-header h1 {
+  margin: 0 0 10px 0;
+}
+
+#bootstrap-live-progress {
+  max-width: 1200px;
+  margin: 20px auto;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  min-height: 200px;
+}
+
+/* Ontology Cards Container */
+.ontology-cards-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 15px;
+  margin-bottom: 30px;
+}
+
+/* Individual Ontology Card */
+.ontology-card {
+  background: #e9ecef;
+  border-radius: 8px;
+  padding: 12px;
+  border: 2px solid transparent;
+  transition: all 0.3s ease;
+  animation: slideIn 0.3s ease-out;
+}
+
+.ontology-card.pending {
+  background: #e9ecef;
+  border-color: #ced4da;
+}
+
+.ontology-card.loading {
+  background: #fff3cd;
+  border-color: #ffc107;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.ontology-card.success,
+.ontology-card.verified {
+  background: #d4edda;
+  border-color: #28a745;
+}
+
+.ontology-card.error {
+  background: #f8d7da;
+  border-color: #dc3545;
+}
+
+.ontology-card.warning {
+  background: #fff3cd;
+  border-color: #ff9800;
+}
+
+.ontology-card.info {
+  background: #d1ecf1;
+  border-color: #17a2b8;
+}
+
+.ontology-card.skipped {
+  background: #f8f9fa;
+  border-color: #dee2e6;
+  opacity: 0.6;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.card-icon {
+  font-size: 24px;
+  margin-right: 10px;
+}
+
+.card-label {
+  font-weight: 700;
+  font-size: 16px;
+  font-family: monospace;
+  color: #212529;
+}
+
+.card-body {
+  font-size: 13px;
+}
+
+.card-comment {
+  color: #6c757d;
+  margin-bottom: 6px;
+  min-height: 18px;
+  font-style: italic;
+}
+
+.card-status {
+  color: #495057;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.card-triples {
+  color: #28a745;
+  font-weight: 700;
+  font-size: 14px;
+  display: none;
+}
+
+/* Status Message Area */
+.status-message-area {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  min-height: 80px;
+}
+
+.status-message {
+  display: flex;
+  align-items: flex-start;
+  padding: 12px;
+  border-radius: 6px;
+  border-left: 4px solid #6c757d;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.status-message.success {
+  background: #d4edda;
+  border-left-color: #28a745;
+}
+
+.status-message.info {
+  background: #d1ecf1;
+  border-left-color: #17a2b8;
+}
+
+.status-message.error {
+  background: #f8d7da;
+  border-left-color: #dc3545;
+}
+
+.status-message.warning {
+  background: #fff3cd;
+  border-left-color: #ff9800;
+}
+
+.status-message.complete {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 30px;
+  text-align: center;
+}
+
+.status-message.complete.error {
+  background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+}
+
+.status-icon {
+  font-size: 24px;
+  margin-right: 12px;
+  min-width: 30px;
+  text-align: center;
+}
+
+.status-text {
+  flex: 1;
+  font-size: 16px;
+  color: #212529;
+}
+
+.status-message.complete .status-text,
+.status-message.complete h2 {
+  color: white;
+}
+
+.status-details {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 4px;
+  font-size: 14px;
+  width: 100%;
+  color: #495057;
+}
+
+.status-message.complete h2 {
+  margin: 0;
+  font-size: 28px;
+}
+
+.complete-details {
+  margin-top: 12px;
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* Animations */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .ontology-cards-container {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 10px;
+  }
+  
+  .card-icon {
+    font-size: 20px;
+  }
+  
+  .card-label {
+    font-size: 14px;
+  }
+}

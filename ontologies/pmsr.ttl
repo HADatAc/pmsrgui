@@ -1,4 +1,4 @@
-@prefix : <http://pmsr.net/ont/pmsr#> .
+@prefix : <https://pmsr.net/ont/> .
 @prefix dc: <http://purl.org/dc/elements/1.1/> .
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
@@ -7,14 +7,14 @@
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 @prefix xsp: <http://www.owl-ontologies.com/2005/08/07/xsp.owl#> .
 @prefix ncit: <http://ncicb.nci.nih.gov/xml/owl/EVS/Thesaurus.owl#> .
-@prefix pmsr: <http://pmsr.net/ont/pmsr#> .
+@prefix pmsr: <https://pmsr.net/ont/> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix hasco: <http://hadatac.org/ont/hasco/> .
 @prefix vstoi: <http://hadatac.org/ont/vstoi#> .
-@base <http://pmsr.net/ont/pmsr#> .
+@base <https://pmsr.net/ont/> .
 
-<http://pmsr.net/ont/pmsr> rdf:type owl:Ontology ;
-                               owl:versionIRI <http://pmsr.net/ont/pmsr/0.5> ;
+<https://pmsr.net/ont/> rdf:type owl:Ontology ;
+                               owl:versionIRI <https://pmsr.net/ont/0.5> ;
                                owl:imports <http://hadatac.org/ont/hasco> ;
                                rdfs:label "PMSR Ontology v0.5" .
 
@@ -30,35 +30,35 @@ hasco:hascoType rdf:type owl:AnnotationProperty .
 #    Classes
 #################################################################
 
-###  http://pmsr.net/ont/pmsr#PhysicalMedicalSimulator
+###  https://pmsr.net/ont/PhysicalMedicalSimulator
 pmsr:PhysicalMedicalSimulator rdf:type owl:Class ;
                               rdfs:subClassOf vstoi:PhysicalInstrument ;
                               hasco:hascoType vstoi:Instrument ;
                               rdfs:comment "A training physical equipment capable of performing one or more medical simulation processes. Medical simulators may be able to provide feedback about simulation processes performed with their assistence."@en ;
                               rdfs:label "Physical Medical Simulator" .
 
-###  http://pmsr.net/ont/pmsr#PhysicalMedicalDevice
+###  https://pmsr.net/ont/PhysicalMedicalDevice
 pmsr:PhysicalMedicalDevice rdf:type owl:Class ;
                               rdfs:subClassOf vstoi:PhysicalInstrument ;
                               hasco:hascoType vstoi:Instrument ;
                               rdfs:comment "A physical equipment capable of performing one or more medical procedures."@en ;
                               rdfs:label "Physical Medical Device" .
 
-###  http://pmsr.net/ont/pmsr#SimulationProcessStem
+###  https://pmsr.net/ont/SimulationProcessStem
 pmsr:SimulationProcessStem rdf:type owl:Class ;
                              rdfs:subClassOf vstoi:ProcessStem ;
                              hasco:hascoType vstoi:ProcessStem ;
                              rdfs:comment "An interactive, guided technique capable of replacing and/or amplifying real life techniques."@en ;
                              rdfs:label "Simulation Process Stem" .
 
-###  http://pmsr.net/ont/pmsr#SimulationProcessStem
+###  https://pmsr.net/ont/MedicalSimulationProcessStem
 pmsr:MedicalSimulationProcessStem rdf:type owl:Class ;
                              rdfs:subClassOf pmsr:SimulationProcessStem ;
                              hasco:hascoType vstoi:ProcessStem ;
                              rdfs:comment "An interactive, guided technique capable of replacing and/or amplifying real life techniques."@en ;
                              rdfs:label "Medical Simulation Process Stem" .
 
-###  http://pmsr.net/ont/pmsr#VirtualMedicalSimulator
+###  https://pmsr.net/ont/VirtualMedicalSimulator
 pmsr:VirtualMedicalSimulator rdf:type owl:Class ;
                              rdfs:subClassOf vstoi:Model ;
                              hasco:hascoType vstoi:Instrument ;

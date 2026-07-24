@@ -35,7 +35,7 @@ class IngestionKgrPeopleController extends ControllerBase {
     $output .= '<li>Organization memberships (foaf:member)</li>';
     $output .= '<li>Email addresses (foaf:mbox)</li>';
     $output .= '</ul>';
-    $output .= '<p class="mt-3">After KGR-PEOPLE.xlsx ingestion, DP2-PMSR.xlsx will be ingested using generic MT ingestion endpoints with type <code>dp2</code>.</p>';
+    $output .= '<p class="mt-3">After KGR-PEOPLE.xlsx ingestion, DP2-PMSR.xlsx and then DP2-PIAGET.xlsx will be ingested using generic MT ingestion endpoints with type <code>dp2</code>.</p>';
     $output .= '</div>';
     $output .= '</div>';
     
@@ -75,11 +75,12 @@ class IngestionKgrPeopleController extends ControllerBase {
   }
 
   /**
-   * Process KGR people and DP2-PMSR ingestion.
+  * Process KGR people and DP2 ingestion.
    * 
    * Ingests:
    * 1. KGR-PEOPLE.xlsx - Person profiles, memberships, and emails
-   * 2. DP2-PMSR.xlsx - Instrument instances, platforms, and deployments
+  * 2. DP2-PMSR.xlsx - Instrument instances, platforms, and deployments
+  * 3. DP2-PIAGET.xlsx - Instrument instances, platforms, and deployments
    */
   public function processPeopleIngestion(Request $request) {
     // Increase execution time limit for long-running ingestion (5 minutes)
@@ -358,53 +359,56 @@ class IngestionKgrPeopleController extends ControllerBase {
     }
     
     // ========================================================================
-    // PART 2: DP2-PMSR.xlsx INGESTION (after KGR-PEOPLE.xlsx)
+    // PART 2: DP2 FILES INGESTION (after KGR-PEOPLE.xlsx)
     // ========================================================================
     
     $progress[] = "";
-    $progress[] = "=== Ingesting DP2-PMSR Data ===";
+    $progress[] = "=== Ingesting DP2 Data ===";
     $progress[] = "";
-    
-    $dp2File = 'DP2-PMSR.xlsx';
+
+    $dp2Files = ['DP2-PMSR.xlsx', 'DP2-PIAGET.xlsx'];
     $dp2_success_count = 0;
     $dp2_error_count = 0;
     
     // Only proceed with DP2 if KGR succeeded
     if ($kgr_success_count > 0) {
-      $progress[] = "[Step 1/3] Processing $dp2File...";
-      $progress[] = "";
-      
-      $filename = $dp2File;
-      $dp2_label = str_replace('.xlsx', '', $filename);
-      $filePath = $mts_dir . '/' . $filename;
-      
-      if (!file_exists($filePath)) {
-        $errors[] = "File not found: $filename at $filePath";
-        $progress[] = "  ✗ File not found: $filePath";
-        $dp2_error_count++;
-      } else {
+      foreach ($dp2Files as $dp2File) {
+        $progress[] = "[Step 1/3] Processing $dp2File...";
+        $progress[] = "";
+
+        $filename = $dp2File;
+        $dp2_label = str_replace('.xlsx', '', $filename);
+        $filePath = $mts_dir . '/' . $filename;
+
+        if (!file_exists($filePath)) {
+          $errors[] = "File not found: $filename at $filePath";
+          $progress[] = "  ✗ File not found: $filePath";
+          $dp2_error_count++;
+          continue;
+        }
+
         $filesize = filesize($filePath);
         $progress[] = "  ✓ Found $filename (" . round($filesize / 1024, 2) . " KB)";
-        
+
         try {
           // STEP 0: Delete existing DataFile and DP2 entity if they exist
           $progress[] = "";
           $progress[] = "[Step 2/3] Checking for existing $dp2_label...";
-          
+
           try {
             // Search for existing DP2 with matching label
             $existing_dp2_response = $api->listByKeyword('dp2', $dp2_label, 100, 0);
             $existing_dp2_data = json_decode($existing_dp2_response);
-            
+
             if ($existing_dp2_data && isset($existing_dp2_data->body) && is_array($existing_dp2_data->body) && count($existing_dp2_data->body) > 0) {
               foreach ($existing_dp2_data->body as $existing_dp2) {
                 if (isset($existing_dp2->uri) && isset($existing_dp2->label) && $existing_dp2->label === $dp2_label) {
                   $progress[] = "  → Found existing DP2: " . $existing_dp2->uri;
                   \Drupal::logger('pmsr')->info("DP2: Found existing DP2 to delete: " . $existing_dp2->uri);
-                  
+
                   // Get the DataFile URI
                   $existing_datafile_uri = isset($existing_dp2->hasDataFileUri) ? $existing_dp2->hasDataFileUri : null;
-                  
+
                   // Delete the associated DataFile FIRST
                   if ($existing_datafile_uri) {
                     $progress[] = "  → Deleting DataFile and its RDF data: " . $existing_datafile_uri;
@@ -419,7 +423,7 @@ class IngestionKgrPeopleController extends ControllerBase {
                       \Drupal::logger('pmsr')->info("DP2: DataFile delete skipped: " . $error_msg . " for URI: " . $existing_datafile_uri);
                     }
                   }
-                  
+
                   // Then delete the DP2 entity metadata
                   $delete_dp2_result = $api->elementDel('dp2', $existing_dp2->uri);
                   $delete_dp2_response = json_decode($delete_dp2_result);
@@ -439,18 +443,18 @@ class IngestionKgrPeopleController extends ControllerBase {
             $progress[] = "  ⚠ Error checking for existing DP2: " . $e->getMessage();
             \Drupal::logger('pmsr')->warning("DP2: Error checking for existing DP2: " . $e->getMessage());
           }
-          
+
           // Create temporary location for file
           $progress[] = "";
           $progress[] = "[Step 3/3] Uploading and ingesting $filename...";
-          
+
           $destination = 'public://dp2/' . $filename;
           $directory = dirname($destination);
           \Drupal::service('file_system')->prepareDirectory($directory, \Drupal\Core\File\FileSystemInterface::CREATE_DIRECTORY);
-          
+
           $file_content = file_get_contents($filePath);
           file_put_contents(\Drupal::service('file_system')->realpath($destination), $file_content);
-          
+
           // Create Drupal managed file
           $file_entity = \Drupal\file\Entity\File::create([
             'uri' => $destination,
@@ -460,14 +464,14 @@ class IngestionKgrPeopleController extends ControllerBase {
           $file_entity->setPermanent();
           $file_entity->save();
           \Drupal::logger('pmsr')->info("DP2: Created Drupal file entity for $filename (ID: " . $file_entity->id() . ")");
-          
+
           // Generate URIs for DataFile and DP2
           $newDataFileUri = \Drupal\rep\Utils::uriGen('datafile');
           $newDP2Uri = str_replace("DFL", \Drupal\rep\Utils::elementPrefix('dp2'), $newDataFileUri);
           \Drupal::logger('pmsr')->info("DP2: Generated URIs - DFL: $newDataFileUri, DP2: $newDP2Uri");
-          
+
           $useremail = \Drupal::currentUser()->getEmail();
-          
+
           // Create DataFile
           $datafileJSON = json_encode([
             "uri" => $newDataFileUri,
@@ -478,7 +482,7 @@ class IngestionKgrPeopleController extends ControllerBase {
             "fileStatus" => \Drupal\rep\Constant::FILE_STATUS_UNPROCESSED,
             "hasSIRManagerEmail" => $useremail,
           ]);
-          
+
           $msg1 = $api->parseObjectResponse($api->datafileAdd($datafileJSON), 'datafileAdd');
           if ($msg1 == NULL) {
             $errors[] = "Failed to create DataFile for $filename";
@@ -487,7 +491,7 @@ class IngestionKgrPeopleController extends ControllerBase {
             $dp2_error_count++;
           } else {
             \Drupal::logger('pmsr')->info("DP2: DataFile created successfully for $filename");
-            
+
             // Create DP2 entity
             $dp2JSON = json_encode([
               "uri" => $newDP2Uri,
@@ -497,7 +501,7 @@ class IngestionKgrPeopleController extends ControllerBase {
               "hasDataFileUri" => $newDataFileUri,
               "hasSIRManagerEmail" => $useremail,
             ]);
-            
+
             $msg2 = $api->parseObjectResponse($api->elementAdd('dp2', $dp2JSON), 'elementAdd');
             if ($msg2 == NULL) {
               $errors[] = "Failed to create DP2 entity for $filename";
@@ -506,7 +510,7 @@ class IngestionKgrPeopleController extends ControllerBase {
               $dp2_error_count++;
             } else {
               \Drupal::logger('pmsr')->info("DP2: DP2 entity created successfully for $filename");
-              
+
               // Upload file content
               $upload_result = $api->uploadFile($newDP2Uri, $file_entity->id());
               if ($upload_result === false || $upload_result === NULL) {
@@ -516,7 +520,7 @@ class IngestionKgrPeopleController extends ControllerBase {
                 $dp2_error_count++;
               } else {
                 \Drupal::logger('pmsr')->info("DP2: File uploaded successfully for $filename");
-                
+
                 // Trigger ingestion using 'dp2' type
                 $template = new \stdClass();
                 $template->uri = $newDP2Uri;
@@ -524,16 +528,16 @@ class IngestionKgrPeopleController extends ControllerBase {
                 $template->hasDataFile = new \stdClass();
                 $template->hasDataFile->id = $file_entity->id();
                 $template->hasDataFile->filename = $filename;
-                
+
                 $ingest_result = $api->uploadTemplate('dp2', $template, '_');
-                
+
                 if ($ingest_result === NULL || $ingest_result === FALSE || $ingest_result === '') {
                   $errors[] = "Ingestion failed for $filename: No response from API";
                   $progress[] = "  ✗ Ingestion trigger failed: No response";
                   $dp2_error_count++;
                 } else {
                   $template_data = json_decode($ingest_result);
-                  
+
                   if (!$template_data) {
                     $errors[] = "Ingestion failed for $filename: Invalid JSON response";
                     $progress[] = "  ✗ Ingestion trigger failed: Invalid response";
@@ -560,10 +564,10 @@ class IngestionKgrPeopleController extends ControllerBase {
               }
             }
           }
-          
+
           // Delete temporary Drupal file
           $file_entity->delete();
-          
+
         } catch (\Exception $e) {
           $error_detail = $e->getMessage() . " (File: " . $e->getFile() . " Line: " . $e->getLine() . ")";
           $errors[] = "Exception processing $filename: " . $error_detail;
@@ -573,9 +577,11 @@ class IngestionKgrPeopleController extends ControllerBase {
           \Drupal::logger('pmsr')->error("DP2: Stack trace: " . $e->getTraceAsString());
           $dp2_error_count++;
         }
+
+        $progress[] = "";
       }
     } else {
-      $progress[] = "⚠ Skipping DP2-PMSR.xlsx ingestion because KGR-PEOPLE.xlsx failed";
+      $progress[] = "⚠ Skipping DP2 ingestion because KGR-PEOPLE.xlsx failed";
     }
     
     $progress[] = "";
@@ -588,7 +594,7 @@ class IngestionKgrPeopleController extends ControllerBase {
     }
     
     if ($dp2_success_count > 0) {
-      $progress[] = "✓ DP2-PMSR.xlsx ingested successfully";
+      $progress[] = "✓ DP2 files ingested successfully";
       $progress[] = "✓ Instrument instances, platforms, and deployments loaded";
     }
     
@@ -599,9 +605,17 @@ class IngestionKgrPeopleController extends ControllerBase {
     // Final log
     \Drupal::logger('pmsr')->info("People ingestion completed - KGR Success: $kgr_success_count, KGR Errors: $kgr_error_count, DP2 Success: $dp2_success_count, DP2 Errors: $dp2_error_count");
     
-    // Invalidate cached people lists
-    \Drupal\Core\Cache\Cache::invalidateTags(['kgr_people', 'dp2_pmsr']);
-    \Drupal::logger('pmsr')->info("Cleared cached data tagged with 'kgr_people' and 'dp2_pmsr'");
+    // Invalidate cached people/project/member statistics and related lists.
+    \Drupal\Core\Cache\Cache::invalidateTags([
+      'kgr_people',
+      'dp2_pmsr',
+      'pmsr_statistics:global',
+      'pmsr_statistics:instances',
+      'pmsr_statistics:people',
+      'pmsr_statistics:projects',
+      'pmsr_statistics:organizations',
+    ]);
+    \Drupal::logger('pmsr')->info("Cleared cached data tagged with kgr_people, dp2_pmsr, and statistics tags");
     $progress[] = "✓ Cleared cached data to reflect new information";
     
     $total_errors = $kgr_error_count + $dp2_error_count;

@@ -54,6 +54,29 @@ Browser automation tests for UI features:
 - Tree interaction
 - CSS styling
 
+### PMSR Setup Tests
+```bash
+# Run all PMSR Setup tests (rerun-safe + regression)
+./modules/custom/pmsrgui/tests/run-tests.sh setup
+
+# Run only rerun-safety tests
+./modules/custom/pmsrgui/tests/run-tests.sh setup-rerun
+
+# Run only regression tests
+./modules/custom/pmsrgui/tests/run-tests.sh setup-regression
+
+# Or run directly with PHP:
+php modules/custom/pmsrgui/tests/test_pmsr_setup.php all
+php modules/custom/pmsrgui/tests/test_pmsr_setup.php rerun-safe
+php modules/custom/pmsrgui/tests/test_pmsr_setup.php regression
+```
+Integration tests for PMSR Setup ingestion processes:
+- Ontology ingestion rerun-safety (4 tests)
+- INS ingestion rerun-safety (4 tests)
+- Geography ingestion rerun-safety (4 tests)
+- People ingestion rerun-safety (4 tests)
+- Bootstrap regression (5 tests)
+
 ## Individual Test Classes
 
 ```bash
@@ -100,6 +123,29 @@ grep -A 2 "pmsr:MedicalSimulationProcessStem" /Users/Shared/drupal_private/ont/h
 # Verify ProcessEntryPoint doesn't exist
 grep -c "ProcessEntryPoint" /Users/Shared/drupal_private/ont/hasco.ttl
 # Should output: 0
+```
+
+### Verify PMSR Setup Ingestion
+```bash
+# Check namespace URIs (correct underscore suffix, not .owl)
+curl -s "http://localhost:9001/hascoapi/api/statistics/namespaces" | python3 -m json.tool | grep -E "(ncit|uberon|pmsr)"
+# Should show: http://purl.obolibrary.org/obo/NCIT_
+# Should show: http://purl.obolibrary.org/obo/UBERON_
+
+# Count ontology triples
+curl -s "http://localhost:9001/hascoapi/api/statistics/namespaces" | \
+  python3 -c "import sys, json; data=json.load(sys.stdin); [print(f\"{n['abbreviation']}: {n['numberOfTriples']}\") for n in data if n['abbreviation'] in ['pmsr', 'ncit', 'uberon']]"
+# Should show: pmsr: 1876, ncit: 21218, uberon: 180667
+
+# Check INS DataFile count
+curl -s "http://localhost:9001/hascoapi/api/datafiles/by-manager-email?email=user@example.com&elementType=ins" | \
+  python3 -c "import sys, json; print(f\"{len(json.load(sys.stdin))} INS DataFiles\")"
+# Should show: 1 INS DataFiles (not 2 or more)
+
+# Check KGR Geography DataFiles
+curl -s "http://localhost:9001/hascoapi/api/datafiles/by-manager-email?email=user@example.com&elementType=kgr" | \
+  python3 -c "import sys, json; files = json.load(sys.stdin); geography = [f for f in files if 'GEO' in f.get('filename','').upper()]; print(f\"{len(geography)} Geography files\")"
+# Should show: 10+ Geography files
 ```
 
 ### Verify Graph Isolation

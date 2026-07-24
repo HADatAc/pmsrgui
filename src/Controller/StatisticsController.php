@@ -524,62 +524,76 @@ $output .= '</div>'; // End single row with all 5 cards
     $output .= '</div>';
     $output .= '</div>';
 
-    // Fetch PMSR project and its members
+    // Fetch PMSR project and its members (cached because this section is expensive).
     $projectUri = 'https://pmsr.net/ont/PJT1742783481383251';
     $members = [];
-    
-    try {
-      $projectResponse = $api->getUri($projectUri);
-      $projectData = $api->parseObjectResponse($projectResponse, 'getUri');
-      
-      if ($projectData && isset($projectData->contributorUris) && is_array($projectData->contributorUris)) {
-        // Fetch each contributor organization
-        foreach ($projectData->contributorUris as $contributorUri) {
-          try {
-            $orgResponse = $api->getUri($contributorUri);
-            $orgData = $api->parseObjectResponse($orgResponse, 'getUri');
-            if ($orgData) {
-              // Use Utils::getAPIImage() to properly construct image URL
-              $rep_module_path = \Drupal::service('extension.list.module')->getPath('rep');
-              $placeholderImage = base_path() . $rep_module_path . '/images/organization_placeholder.png';
-              $imageUrl = null;
-              if (!empty($orgData->hasImageUri)) {
-                $imageUrl = Utils::getAPIImage($contributorUri, $orgData->hasImageUri, $placeholderImage);
-              } else {
-                $imageUrl = $placeholderImage;
+    $members_cache_cid = 'pmsr_statistics:project_members_data';
+    $members_cache = $cache->get($members_cache_cid);
+
+    if ($members_cache && isset($members_cache->data) && is_array($members_cache->data)) {
+      $members = $members_cache->data;
+    } else {
+      try {
+        $projectResponse = $api->getUri($projectUri);
+        $projectData = $api->parseObjectResponse($projectResponse, 'getUri');
+
+        if ($projectData && isset($projectData->contributorUris) && is_array($projectData->contributorUris)) {
+          // Fetch each contributor organization
+          foreach ($projectData->contributorUris as $contributorUri) {
+            try {
+              $orgResponse = $api->getUri($contributorUri);
+              $orgData = $api->parseObjectResponse($orgResponse, 'getUri');
+              if ($orgData) {
+                // Use Utils::getAPIImage() to properly construct image URL
+                $rep_module_path = \Drupal::service('extension.list.module')->getPath('rep');
+                $placeholderImage = base_path() . $rep_module_path . '/images/organization_placeholder.png';
+                $imageUrl = null;
+                if (!empty($orgData->hasImageUri)) {
+                  $imageUrl = Utils::getAPIImage($contributorUri, $orgData->hasImageUri, $placeholderImage);
+                } else {
+                  $imageUrl = $placeholderImage;
+                }
+
+                // Fetch people count for this organization (including sub-organizations)
+                $peopleCount = $this->getTotalPeopleCount($api, $contributorUri);
+
+                // Fetch registered PMSR users count (people with user information)
+                $registeredUsersCount = $this->getRegisteredUsersCount($api, $contributorUri);
+
+                // Fetch platform count for this organization
+                $platformCount = $this->getPlatformCountByOrganization($api, $contributorUri);
+
+                // Fetch simulator count for this organization
+                $simulatorCount = $this->getSimulatorCountByOrganization($api, $contributorUri);
+
+                $members[] = [
+                  'uri' => $contributorUri,
+                  'label' => $orgData->label ?? 'Unknown Organization',
+                  'shortName' => $orgData->hasShortName ?? $orgData->label ?? 'Unknown',
+                  'fullName' => $orgData->name ?? $orgData->label ?? 'Unknown Organization',
+                  'image' => $imageUrl,
+                  'peopleCount' => $peopleCount,
+                  'registeredUsersCount' => $registeredUsersCount,
+                  'platformCount' => $platformCount,
+                  'simulatorCount' => $simulatorCount,
+                ];
               }
-              
-              // Fetch people count for this organization (including sub-organizations)
-              $peopleCount = $this->getTotalPeopleCount($api, $contributorUri);
-              
-              // Fetch registered PMSR users count (people with user information)
-              $registeredUsersCount = $this->getRegisteredUsersCount($api, $contributorUri);
-              
-              // Fetch platform count for this organization
-              $platformCount = $this->getPlatformCountByOrganization($api, $contributorUri);
-              
-              // Fetch simulator count for this organization
-              $simulatorCount = $this->getSimulatorCountByOrganization($api, $contributorUri);
-              
-              $members[] = [
-                'uri' => $contributorUri,
-                'label' => $orgData->label ?? 'Unknown Organization',
-                'shortName' => $orgData->hasShortName ?? $orgData->label ?? 'Unknown',
-                'fullName' => $orgData->name ?? $orgData->label ?? 'Unknown Organization',
-                'image' => $imageUrl,
-                'peopleCount' => $peopleCount,
-                'registeredUsersCount' => $registeredUsersCount,
-                'platformCount' => $platformCount,
-                'simulatorCount' => $simulatorCount,
-              ];
+            } catch (\Exception $e) {
+              \Drupal::logger('pmsr')->warning('Failed to fetch organization ' . $contributorUri . ': ' . $e->getMessage());
             }
-          } catch (\Exception $e) {
-            \Drupal::logger('pmsr')->warning('Failed to fetch organization ' . $contributorUri . ': ' . $e->getMessage());
           }
         }
+      } catch (\Exception $e) {
+        // This is expected when project is not yet loaded into the knowledge graph
+        \Drupal::logger('pmsr')->info('PMSR project not found in knowledge graph: ' . $e->getMessage());
       }
-    } catch (\Exception $e) {
-      \Drupal::logger('pmsr')->error('Failed to fetch PMSR project: ' . $e->getMessage());
+
+      $cache->set(
+        $members_cache_cid,
+        $members,
+        \Drupal\Core\Cache\Cache::PERMANENT,
+        ['pmsr_statistics:projects', 'pmsr_statistics:organizations', 'pmsr_statistics:people', 'kgr_people', 'kgr_geography', 'dp2_pmsr']
+      );
     }
 
     // Display members table (up to 10 columns + Description column + Total column)
@@ -746,7 +760,10 @@ $output .= '</div>'; // End single row with all 5 cards
     } else {
       $output .= '<div class="row mt-3">';
       $output .= '<div class="col-12">';
-      $output .= '<p class="text-muted">No project members found.</p>';
+      $output .= '<div class="alert alert-info" role="alert">';
+      $output .= '<i class="fas fa-info-circle me-2"></i>';
+      $output .= '<strong>No project information is currently loaded into the knowledge graph</strong>';
+      $output .= '</div>';
       $output .= '</div>';
       $output .= '</div>';
     }
@@ -779,8 +796,17 @@ $output .= '</div>'; // End single row with all 5 cards
           'pmsr_statistics:classes',
           'pmsr_statistics:instances',
           'pmsr_statistics:people',
+          'pmsr_statistics:projects',
+          'pmsr_statistics:organizations',
+          'pmsr_ontology:ins',
+          'pmsr_ontology:pmsr',
+          'pmsr_ontology:uberon',
+          'pmsr_ontology:ncit',
+          'kgr_people',
+          'kgr_geography',
+          'dp2_pmsr',
         ],
-        'max-age' => 0,  // Disable caching to ensure fresh data
+        'max-age' => 3600,
       ],
     ];
   }
@@ -885,6 +911,8 @@ $output .= '</div>'; // End single row with all 5 cards
       'pmsr_statistics:classes',
       'pmsr_statistics:instances',
       'pmsr_statistics:people',
+      'pmsr_statistics:projects',
+      'pmsr_statistics:organizations',
       'pmsr_statistics:instruments',
       'pmsr_statistics:procedures',
       'pmsr_statistics:anatomy',
@@ -913,6 +941,8 @@ $output .= '</div>'; // End single row with all 5 cards
       'pmsr_statistics:classes',
       'pmsr_statistics:instances',
       'pmsr_statistics:people',
+      'pmsr_statistics:projects',
+      'pmsr_statistics:organizations',
       'pmsr_statistics:instruments',
       'pmsr_statistics:procedures',
       'pmsr_statistics:anatomy',
@@ -921,8 +951,10 @@ $output .= '</div>'; // End single row with all 5 cards
     
     \Drupal\Core\Cache\Cache::invalidateTags($tags);
     
-    // Also clear render cache to ensure page refreshes
+    // Also clear render cache and page cache to ensure page refreshes
     \Drupal::cache('render')->deleteAll();
+    \Drupal::cache('page')->deleteAll();
+    \Drupal::cache('dynamic_page_cache')->deleteAll();
     
     // Set a success message
     \Drupal::messenger()->addStatus('Statistics cache cleared successfully. Data has been refreshed from the knowledge graph.');

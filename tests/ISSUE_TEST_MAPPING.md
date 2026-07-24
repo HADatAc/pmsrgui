@@ -255,7 +255,7 @@ curl -s -X POST http://localhost:3030/store/sparql \
 $result = $api->uploadOntology($hascoTempPath, 'hasco', 'application');
 
 // NEW (safe):
-$result = $api->repoIngestNamespaceOntology('hasco', $hascoTempPath);
+$result = $api->repoIngestNamespaceOntology('hasco', 'http://hadatac.org/ont/hasco/', $file_content, 'text/turtle');
 ```
 
 ---

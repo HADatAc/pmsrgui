@@ -120,7 +120,7 @@ class IngestionINSController extends ControllerBase {
     $module_path = \Drupal::service('extension.list.module')->getPath('pmsr');
     $file_path = DRUPAL_ROOT . '/' . $module_path . '/mts/INS-PMSR.xlsx';
     
-    $progress[] = "[1/9] Locating INS-PMSR.xlsx file...";
+    $progress[] = "[1/10] Locating INS-PMSR.xlsx file...";
     
     if (!file_exists($file_path)) {
       $errors[] = "INS-PMSR.xlsx file not found at: " . $file_path;
@@ -136,7 +136,7 @@ class IngestionINSController extends ControllerBase {
     $progress[] = "  ✓ File found: INS-PMSR.xlsx";
     
     // Step 2: Create Drupal file entity
-    $progress[] = "[2/9] Creating Drupal file entity...";
+    $progress[] = "[2/10] Creating Drupal file entity...";
     
     try {
       // Check if file already exists
@@ -181,7 +181,7 @@ class IngestionINSController extends ControllerBase {
     }
     
     // Step 3: Generate URIs
-    $progress[] = "[3/9] Generating URIs...";
+    $progress[] = "[3/10] Generating URIs...";
     
     $api = \Drupal::service('rep.api_connector');
     
@@ -196,7 +196,7 @@ class IngestionINSController extends ControllerBase {
 
     
     // Step 4: Check for and delete existing INS instance data
-    $progress[] = "[4/9] Checking for existing INS instance data...";
+    $progress[] = "[4/10] Checking for existing INS instance data...";
     
     $ins_namespace = 'http://hadatac.org/ont/ins';
     $ins_abbreviation = 'ins';
@@ -247,8 +247,61 @@ class IngestionINSController extends ControllerBase {
       $progress[] = "  → Proceeding with ingestion...";
     }
     
-    // Step 5: Create DataFile (DFL) and INS metadata template in HAScO
-    $progress[] = "[5/9] Creating DataFile (DFL) and INS metadata template...";
+    // Step 5: Check for and delete existing INS-PMSR metadata templates
+    $progress[] = "[5/10] Checking for existing INS-PMSR metadata templates...";
+    
+    try {
+      $useremail = \Drupal::currentUser()->getEmail();
+      
+      // Get list of INS templates managed by current user
+      $response = $api->listByManagerEmail('ins', $useremail, 100, 0);
+      $data = json_decode($response);
+      
+      $existingINS = [];
+      if ($data && $data->isSuccessful && !empty($data->body)) {
+        foreach ($data->body as $ins) {
+          // Find INS-PMSR templates (check label or filename)
+          if (isset($ins->label) && $ins->label === 'INS-PMSR') {
+            $existingINS[] = [
+              'uri' => $ins->uri,
+              'label' => $ins->label,
+              'dataFileUri' => $ins->hasDataFile->uri ?? null,
+            ];
+            $progress[] = "  → Found existing INS-PMSR: " . $ins->uri;
+          }
+        }
+      }
+      
+      // Delete existing INS-PMSR templates (which also deletes their DataFile graphs)
+      if (!empty($existingINS)) {
+        $progress[] = "  → Deleting " . count($existingINS) . " existing INS-PMSR template(s)...";
+        
+        foreach ($existingINS as $ins) {
+          try {
+            $uningest_response = $api->uningestMT($ins['uri']);
+            $uningest_data = json_decode($uningest_response);
+            
+            if ($uningest_data && $uningest_data->isSuccessful) {
+              $progress[] = "    ✓ Deleted INS template and DataFile graph: " . $ins['uri'];
+            } else {
+              $progress[] = "    ⚠ Failed to delete " . $ins['uri'] . ": " . ($uningest_data->message ?? 'Unknown error');
+            }
+          } catch (\Exception $e) {
+            $progress[] = "    ⚠ Exception deleting " . $ins['uri'] . ": " . $e->getMessage();
+          }
+        }
+        
+        $progress[] = "  ✓ Cleaned up existing INS-PMSR data (rerun-safe)";
+      } else {
+        $progress[] = "  ✓ No existing INS-PMSR templates found (first run)";
+      }
+    } catch (\Exception $e) {
+      $progress[] = "  ⚠ Could not check for existing templates: " . $e->getMessage();
+      $progress[] = "  → Proceeding with ingestion...";
+    }
+    
+    // Step 6: Create DataFile (DFL) and INS metadata template in HAScO
+    $progress[] = "[6/10] Creating DataFile (DFL) and INS metadata template...";
     
     try {
       $useremail = \Drupal::currentUser()->getEmail();
@@ -314,8 +367,8 @@ class IngestionINSController extends ControllerBase {
       ]);
     }
     
-    // Step 6: Upload file content to HAScO API
-    $progress[] = "[6/9] Uploading file content to HAScO API...";
+    // Step 7: Upload file content to HAScO API
+    $progress[] = "[7/10] Uploading file content to HAScO API...";
     
     try {
       // Pass INS URI - uploadFile will find the INS entity and extract the DataFile URI from hasDataFileUri property
@@ -342,8 +395,8 @@ class IngestionINSController extends ControllerBase {
       ]);
     }
     
-    // Step 7: Trigger template ingestion
-    $progress[] = "[7/9] Triggering template ingestion...";
+    // Step 8: Trigger template ingestion
+    $progress[] = "[8/10] Triggering template ingestion...";
     
     try {
       // Create template object for ingestion
@@ -381,8 +434,8 @@ class IngestionINSController extends ControllerBase {
       ]);
     }
     
-    // Step 8: Verify ingestion status
-    $progress[] = "[8/9] Verifying ingestion status...";
+    // Step 9: Verify ingestion status
+    $progress[] = "[9/10] Verifying ingestion status...";
     
     try {
       // Wait a moment for processing to start
@@ -411,8 +464,8 @@ class IngestionINSController extends ControllerBase {
       $progress[] = "  ⚠ Check INS Templates list to verify ingestion";
     }
     
-    // Step 9: Invalidate INS cache
-    $progress[] = "[9/9] Invalidating statistics cache...";
+    // Step 10: Invalidate INS cache
+    $progress[] = "[10/10] Invalidating statistics cache...";
     
     try {
       \Drupal\pmsr\Controller\IngestionController::invalidateStatisticsCache(['ins']);

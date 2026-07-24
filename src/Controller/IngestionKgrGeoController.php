@@ -500,9 +500,14 @@ class IngestionKgrGeoController extends ControllerBase {
     // Final log
     \Drupal::logger('pmsr')->info("KGR: Geography ingestion completed - Success: $kgr_success_count, Errors: $kgr_error_count, Total errors: " . count($errors));
     
-    // Invalidate cached organization lists (e.g., Digi4Health members map)
-    \Drupal\Core\Cache\Cache::invalidateTags(['kgr_geography']);
-    \Drupal::logger('pmsr')->info("KGR: Cleared cached organization lists tagged with 'kgr_geography'");
+    // Invalidate cached organization lists and statistics blocks that depend on org hierarchy.
+    \Drupal\Core\Cache\Cache::invalidateTags([
+      'kgr_geography',
+      'pmsr_statistics:people',
+      'pmsr_statistics:projects',
+      'pmsr_statistics:organizations',
+    ]);
+    \Drupal::logger('pmsr')->info("KGR: Cleared cached organization data and related statistics tags");
     $progress[] = "✓ Cleared cached organization data to reflect new geography information";
     
     return new JsonResponse([

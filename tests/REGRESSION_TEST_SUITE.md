@@ -74,6 +74,44 @@ This comprehensive test suite validates all fixes implemented for critical data 
 
 **Note:** Requires JavaScript testing environment (Selenium/ChromeDriver)
 
+### 4. PMSR Setup Integration Tests
+
+#### test_pmsr_setup.php
+**Purpose**: Integration tests for PMSR Setup ingestion processes - validates rerun-safety and regression
+
+**Rerun-Safety Tests (4 Ingestion Processes):**
+- ✅ `testOntologiesRerunSafe` - Ontology ingestion clears existing triples before reloading
+- ✅ `testINSRerunSafe` - INS ingestion deletes old DataFiles before creating new ones
+- ✅ `testGeographyRerunSafe` - Geography ingestion deletes old KGR DataFiles
+- ✅ `testPeopleRerunSafe` - People ingestion deletes old KGR-PEOPLE DataFile
+
+**Regression Tests (5 Setup Processes):**
+- ✅ `testBootstrapRegression` - Config Bootstrap creates repository & essential namespaces
+- ✅ `testOntologiesRegression` - PMSR/NCIT/UBERON namespaces exist with correct URIs (`NCIT_` not `ncit.owl`)
+- ✅ `testINSRegression` - INS DataFile graphs exist with expected triple counts (~1,894)
+- ✅ `testGeographyRegression` - 10+ KGR DataFile graphs exist for geography data
+- ✅ `testPeopleRegression` - KGR-PEOPLE DataFile exists
+
+**Run:**
+```bash
+# All setup tests (rerun-safe + regression)
+php modules/custom/pmsrgui/tests/test_pmsr_setup.php all
+
+# Only rerun-safe tests
+php modules/custom/pmsrgui/tests/test_pmsr_setup.php rerun-safe
+
+# Only regression tests
+php modules/custom/pmsrgui/tests/test_pmsr_setup.php regression
+
+# Individual process tests
+php modules/custom/pmsrgui/tests/test_pmsr_setup.php ontologies
+php modules/custom/pmsrgui/tests/test_pmsr_setup.php ins
+php modules/custom/pmsrgui/tests/test_pmsr_setup.php geography
+php modules/custom/pmsrgui/tests/test_pmsr_setup.php people
+```
+
+**Note:** Requires hascoapi (port 9001) and Fuseki (port 3030) running. See SETUP_TEST_README.md for details.
+
 ## Issues Covered
 
 ### Issue #1: CRITICAL - Empty HASCO CLASSES Tree
@@ -132,6 +170,29 @@ This comprehensive test suite validates all fixes implemented for critical data 
 **Tests:**
 - `testIngestionReportIncludesTripleCounts` (documented)
 
+### Issue #9: NCIT and UBERON Namespace URI Corruption
+**Root Cause:** Namespace URIs set as `ncit.owl` and `uberon.owl` instead of `NCIT_` and `UBERON_`  
+**Impact:** Triples loaded to wrong named graphs, preventing proper deletion  
+**Tests:**
+- `testOntologiesRegression` - Validates correct URIs with underscore suffix
+
+### Issue #10: INS Ingestion Not Rerun-Safe
+**Root Cause:** Each INS ingestion created new DataFile with timestamp-based URI, accumulating duplicates  
+**Impact:** Running INS ingestion N times created N DataFiles with duplicate data  
+**Tests:**
+- `testINSRerunSafe` - Verifies old DataFiles deleted before new ingestion
+- `testINSRegression` - Checks DataFile count and triple counts
+
+### Issue #11: Missing Ingestion Regression Tests
+**Root Cause:** No automated tests for PMSR Setup ingestion processes  
+**Impact:** Could not verify rerun-safety or detect regressions in setup processes  
+**Tests:**
+- `testBootstrapRegression` - Validates bootstrap process
+- `testOntologiesRegression` - Validates ontology ingestion
+- `testINSRegression` - Validates INS ingestion
+- `testGeographyRegression` - Validates KRG Geography ingestion
+- `testPeopleRegression` - Validates KRG People ingestion
+
 ## 8-Layer Protection System Tests
 
 The tests validate all 8 protection layers implemented to prevent data loss:
@@ -151,6 +212,11 @@ The tests validate all 8 protection layers implemented to prevent data loss:
 ```bash
 cd /opt/homebrew/var/www/drupal/web
 
+# Run all tests using the test runner script
+../tests/run-tests.sh all
+
+# OR run individual test suites:
+
 # Unit tests
 vendor/bin/phpunit modules/custom/pmsrgui/tests/src/Unit/
 vendor/bin/phpunit modules/custom/rep/tests/src/Unit/
@@ -160,6 +226,9 @@ vendor/bin/phpunit modules/custom/pmsrgui/tests/src/Functional/
 
 # JavaScript tests (requires ChromeDriver)
 vendor/bin/phpunit modules/custom/rep/tests/src/FunctionalJavascript/
+
+# PMSR Setup tests (integration/regression)
+php modules/custom/pmsrgui/tests/test_pmsr_setup.php all
 ```
 
 ### Run Specific Test Class
@@ -196,19 +265,31 @@ vendor/bin/phpunit --filter testHascoTtlContainsAllRequiredEntryPoints modules/c
 - `drupal/core-dev` package installed
 - Browser testing environment configured
 
+### PMSR Setup Integration Tests
+- Apache Fuseki at localhost:3030/store
+- hascoapi backend at localhost:9001
+- Drupal instance at localhost:8080
+- Test data files (INS-PMSR.xlsx, KGR-*.xlsx) in place
+- PHP CLI (php command available)
+
 ## Continuous Integration
 
 These tests should be run:
 1. **Before any commit** to master/main branch
 2. **After any ontology ingestion** to verify integrity
-3. **Before production deployment**
-4. **Weekly** as part of scheduled maintenance
+3. **After any PMSR Setup process** to verify rerun-safety
+4. **Before production deployment**
+5. **Weekly** as part of scheduled maintenance
 
 ## Manual Testing Checklist
 
 Some scenarios require manual testing:
 
 - [ ] Full PMSR ingestion process (397 classes)
+- [ ] INS-PMSR.xlsx file upload and ingestion
+- [ ] Geography KGR ingestion from 10 Excel files
+- [ ] People KGR ingestion from KGR-PEOPLE.xlsx
+- [ ] Triple count verification in reports
 - [ ] Triple count verification in reports
 - [ ] Color-coding visual verification (green/red)
 - [ ] Emergency backup restoration

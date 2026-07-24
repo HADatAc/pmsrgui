@@ -1,4 +1,4 @@
 hasPrefix,hasNameSpace,hasFormat,hasSource
-pmsr,http://pmsr.net/ont/pmsr,text/turtle,
-uberon,http://purl.obolibrary.org/obo/uberon.owl,text/turtle,
-ncit,http://purl.obolibrary.org/obo/ncit.owl,text/turtle,
+pmsr,https://pmsr.net/ont/,text/turtle,
+uberon,http://purl.obolibrary.org/obo/UBERON_,text/turtle,
+ncit,http://purl.obolibrary.org/obo/NCIT_,text/turtle,
