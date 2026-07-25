@@ -806,7 +806,7 @@ $output .= '</div>'; // End single row with all 5 cards
           'kgr_geography',
           'dp2_pmsr',
         ],
-        'max-age' => 3600,
+        'max-age' => \Drupal\Core\Cache\Cache::PERMANENT,
       ],
     ];
   }
@@ -884,7 +884,7 @@ $output .= '</div>'; // End single row with all 5 cards
       }
       
       // Cache for 1 hour with global tag
-      $cache->set($cid, $result['data'], time() + 3600, ['pmsr_statistics:global']);
+      $cache->set($cid, $result['data'], \Drupal\Core\Cache\Cache::PERMANENT, ['pmsr_statistics:global']);
       $result['cached_at'] = date('c');
       $result['cache_age_seconds'] = 0;
     }
