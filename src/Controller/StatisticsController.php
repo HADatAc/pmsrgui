@@ -270,6 +270,332 @@ class StatisticsController extends ControllerBase {
   }
 
   /**
+   * Get all organization URIs in the hierarchy rooted at $orgUri.
+   */
+  private function getOrganizationHierarchyUris($api, $orgUri, array &$visited = []) {
+    $uris = [];
+    if (empty($orgUri) || isset($visited[$orgUri])) {
+      return $uris;
+    }
+
+    $visited[$orgUri] = true;
+    $uris[] = $orgUri;
+
+    try {
+      $subOrgsResponse = $api->getSubOrganizations($orgUri, 100, 0);
+      $subOrgsData = $api->parseObjectResponse($subOrgsResponse, 'getSubOrganizations');
+      if (is_array($subOrgsData)) {
+        foreach ($subOrgsData as $subOrg) {
+          if (is_object($subOrg) && !empty($subOrg->uri)) {
+            $uris = array_merge($uris, $this->getOrganizationHierarchyUris($api, $subOrg->uri, $visited));
+          }
+        }
+      }
+    } catch (\Exception $e) {
+      \Drupal::logger('pmsr')->warning('Failed to fetch organization hierarchy for ' . $orgUri . ': ' . $e->getMessage());
+    }
+
+    return $uris;
+  }
+
+  /**
+   * Normalize and extract emails from a person-like object.
+   */
+  private function extractEmailsFromPersonObject($personObj) {
+    $emails = [];
+    if (!is_object($personObj)) {
+      return $emails;
+    }
+
+    $candidates = [];
+    if (!empty($personObj->userEmail)) {
+      $candidates[] = $personObj->userEmail;
+    }
+    if (!empty($personObj->mbox)) {
+      $candidates[] = $personObj->mbox;
+    }
+    if (!empty($personObj->hasSIRManagerEmail)) {
+      $candidates[] = $personObj->hasSIRManagerEmail;
+    }
+
+    foreach ($candidates as $candidate) {
+      $value = strtolower(trim((string) $candidate));
+      if ($value === '') {
+        continue;
+      }
+      if (strpos($value, 'mailto:') === 0) {
+        $value = substr($value, 7);
+      }
+      if ($value !== '') {
+        $emails[$value] = true;
+      }
+    }
+
+    return $emails;
+  }
+
+  /**
+   * Normalize a raw email-like value for comparison.
+   */
+  private function normalizeEmailValue($value) {
+    $email = strtolower(trim((string) $value));
+    if ($email === '') {
+      return '';
+    }
+    if (strpos($email, 'mailto:') === 0) {
+      $email = substr($email, 7);
+    }
+    return trim($email);
+  }
+
+  /**
+   * Extract possible manager/contact emails from a ProcessBasedStudy-like object.
+   */
+  private function extractEmailsFromScenarioObject($scenarioObj) {
+    $emails = [];
+    if (!is_object($scenarioObj)) {
+      return $emails;
+    }
+
+    $candidates = [];
+    if (!empty($scenarioObj->hasSIRManagerEmail)) {
+      $candidates[] = $scenarioObj->hasSIRManagerEmail;
+    }
+    if (!empty($scenarioObj->principalInvestigator)) {
+      $candidates[] = $scenarioObj->principalInvestigator;
+    }
+    if (!empty($scenarioObj->contactEmail)) {
+      $candidates[] = $scenarioObj->contactEmail;
+    }
+    if (isset($scenarioObj->process) && is_object($scenarioObj->process) && !empty($scenarioObj->process->hasSIRManagerEmail)) {
+      $candidates[] = $scenarioObj->process->hasSIRManagerEmail;
+    }
+
+    foreach ($candidates as $candidate) {
+      $normalized = $this->normalizeEmailValue($candidate);
+      if ($normalized !== '') {
+        $emails[$normalized] = true;
+      }
+    }
+
+    return $emails;
+  }
+
+  /**
+   * Get all manager emails affiliated with an organization and sub-organizations.
+   */
+  private function getOrganizationManagerEmails($api, $orgUri) {
+    $emails = [];
+    $visited = [];
+    $allOrgUris = $this->getOrganizationHierarchyUris($api, $orgUri, $visited);
+
+    foreach ($allOrgUris as $currentOrgUri) {
+      $pageSize = 100;
+      $offset = 0;
+      while (true) {
+        try {
+          $response = $api->getAffiliations($currentOrgUri, $pageSize, $offset);
+          $people = $api->parseObjectResponse($response, 'getAffiliations');
+          if (!is_array($people) || empty($people)) {
+            break;
+          }
+
+          foreach ($people as $person) {
+            if (!is_object($person)) {
+              continue;
+            }
+
+            $localEmails = $this->extractEmailsFromPersonObject($person);
+            foreach ($localEmails as $email => $dummy) {
+              $emails[$email] = true;
+            }
+
+            // Enrich with full person record if needed.
+            if (empty($localEmails) && !empty($person->uri)) {
+              try {
+                $personResponse = $api->getUri($person->uri);
+                $personData = $api->parseObjectResponse($personResponse, 'getUri');
+                $fullEmails = $this->extractEmailsFromPersonObject($personData);
+                foreach ($fullEmails as $email => $dummy) {
+                  $emails[$email] = true;
+                }
+              } catch (\Exception $e) {
+                // Best effort; continue.
+              }
+            }
+          }
+
+          if (count($people) < $pageSize) {
+            break;
+          }
+          $offset += $pageSize;
+        } catch (\Exception $e) {
+          \Drupal::logger('pmsr')->warning('Failed to fetch affiliations for ' . $currentOrgUri . ': ' . $e->getMessage());
+          break;
+        }
+      }
+    }
+
+    return array_keys($emails);
+  }
+
+  /**
+   * Collect unique element URIs by manager emails.
+   */
+  private function collectElementUrisByManagerEmails($api, array $emails, $elementType) {
+    $uris = [];
+    if (empty($emails) || empty($elementType)) {
+      return $uris;
+    }
+
+    $pageSize = 100;
+    foreach ($emails as $email) {
+      $offset = 0;
+      while (true) {
+        try {
+          $response = $api->listByManagerEmail($elementType, $email, $pageSize, $offset);
+          $elements = $api->parseObjectResponse($response, 'listByManagerEmail');
+          if (!is_array($elements) || empty($elements)) {
+            break;
+          }
+
+          foreach ($elements as $element) {
+            if (is_object($element) && !empty($element->uri)) {
+              $uris[$element->uri] = true;
+            }
+          }
+
+          if (count($elements) < $pageSize) {
+            break;
+          }
+          $offset += $pageSize;
+        } catch (\Exception $e) {
+          \Drupal::logger('pmsr')->warning('Failed to list ' . $elementType . ' by manager email ' . $email . ': ' . $e->getMessage());
+          break;
+        }
+      }
+    }
+
+    return array_keys($uris);
+  }
+
+  /**
+   * Collect ProcessBasedStudy URIs that match any manager email.
+   */
+  private function collectProcessBasedStudyUrisByManagerEmails($api, array $emails) {
+    $uris = [];
+    if (empty($emails)) {
+      return $uris;
+    }
+
+    $emailSet = [];
+    foreach ($emails as $email) {
+      $normalized = $this->normalizeEmailValue($email);
+      if ($normalized !== '') {
+        $emailSet[$normalized] = true;
+      }
+    }
+
+    $pageSize = 100;
+    $offset = 0;
+    while (true) {
+      try {
+        $endpoint = '/hascoapi/api/processbasedstudy/elements/' . $pageSize . '/' . $offset;
+        $response = $api->perform_http_request('GET', $api->getApiUrl() . $endpoint, $api->getHeader());
+        $items = $api->parseObjectResponse($response, 'getProcessBasedStudiesWithPage');
+        if (!is_array($items) || empty($items)) {
+          break;
+        }
+
+        foreach ($items as $item) {
+          if (!is_object($item) || empty($item->uri)) {
+            continue;
+          }
+          $scenarioEmails = $this->extractEmailsFromScenarioObject($item);
+          $matches = false;
+          foreach ($scenarioEmails as $scenarioEmail => $dummy) {
+            if (isset($emailSet[$scenarioEmail])) {
+              $matches = true;
+              break;
+            }
+          }
+
+          if ($matches) {
+            $uris[$item->uri] = true;
+          }
+        }
+
+        if (count($items) < $pageSize) {
+          break;
+        }
+        $offset += $pageSize;
+      } catch (\Exception $e) {
+        \Drupal::logger('pmsr')->warning('Failed to list ProcessBasedStudy scenarios: ' . $e->getMessage());
+        break;
+      }
+    }
+
+    return array_keys($uris);
+  }
+
+  /**
+   * Collect scenario URIs: Study plus known Study subclasses (e.g., ProcessBasedStudy).
+   */
+  private function collectScenarioUrisByManagerEmails($api, array $emails) {
+    $scenarioUris = [];
+
+    $studyUris = $this->collectElementUrisByManagerEmails($api, $emails, 'study');
+    foreach ($studyUris as $uri) {
+      if (!empty($uri)) {
+        $scenarioUris[$uri] = true;
+      }
+    }
+
+    $pbsUris = $this->collectProcessBasedStudyUrisByManagerEmails($api, $emails);
+    foreach ($pbsUris as $uri) {
+      if (!empty($uri)) {
+        $scenarioUris[$uri] = true;
+      }
+    }
+
+    return array_keys($scenarioUris);
+  }
+
+  /**
+   * Count unique tasks/subtasks for a set of processes.
+   */
+  private function countTasksByProcessUris($api, array $processUris) {
+    $taskUris = [];
+    if (empty($processUris)) {
+      return 0;
+    }
+
+    foreach ($processUris as $processUri) {
+      if (empty($processUri)) {
+        continue;
+      }
+
+      try {
+        $endpoint = '/hascoapi/api/process/' . rawurlencode($processUri) . '/tasks';
+        $response = $api->perform_http_request('GET', $api->getApiUrl() . $endpoint, $api->getHeader());
+        $taskPayload = $api->parseObjectResponse($response, 'getTasksByProcess');
+
+        if (is_object($taskPayload) && isset($taskPayload->tasks) && is_array($taskPayload->tasks)) {
+          foreach ($taskPayload->tasks as $task) {
+            if (is_object($task) && !empty($task->uri)) {
+              $taskUris[$task->uri] = true;
+            }
+          }
+        }
+      } catch (\Exception $e) {
+        \Drupal::logger('pmsr')->warning('Failed to count tasks for process ' . $processUri . ': ' . $e->getMessage());
+      }
+    }
+
+    return count($taskUris);
+  }
+
+  /**
    * Returns the Statistics page.
    */
   public function content() {
@@ -527,11 +853,24 @@ $output .= '</div>'; // End single row with all 5 cards
     // Fetch PMSR project and its members (cached because this section is expensive).
     $projectUri = 'https://pmsr.net/ont/PJT1742783481383251';
     $members = [];
-    $members_cache_cid = 'pmsr_statistics:project_members_data';
+    $memberTotals = [
+      'registeredUsers' => 0,
+      'people' => 0,
+      'simulators' => 0,
+      'platforms' => 0,
+      'scenarios' => 0,
+      'processes' => 0,
+      'tasksSubtasks' => 0,
+    ];
+    $members_cache_cid = 'pmsr_statistics:project_members_data_v4';
     $members_cache = $cache->get($members_cache_cid);
 
-    if ($members_cache && isset($members_cache->data) && is_array($members_cache->data)) {
-      $members = $members_cache->data;
+    if ($members_cache && isset($members_cache->data) && is_array($members_cache->data)
+      && isset($members_cache->data['members']) && is_array($members_cache->data['members'])) {
+      $members = $members_cache->data['members'];
+      if (isset($members_cache->data['totals']) && is_array($members_cache->data['totals'])) {
+        $memberTotals = array_merge($memberTotals, $members_cache->data['totals']);
+      }
     } else {
       try {
         $projectResponse = $api->getUri($projectUri);
@@ -566,6 +905,12 @@ $output .= '</div>'; // End single row with all 5 cards
                 // Fetch simulator count for this organization
                 $simulatorCount = $this->getSimulatorCountByOrganization($api, $contributorUri);
 
+                // Organization-level registration metrics based on affiliated manager emails.
+                $managerEmails = $this->getOrganizationManagerEmails($api, $contributorUri);
+                $studyUris = $this->collectScenarioUrisByManagerEmails($api, $managerEmails);
+                $processUris = $this->collectElementUrisByManagerEmails($api, $managerEmails, 'process');
+                $tasksAndSubtasksCount = $this->countTasksByProcessUris($api, $processUris);
+
                 $members[] = [
                   'uri' => $contributorUri,
                   'label' => $orgData->label ?? 'Unknown Organization',
@@ -576,6 +921,9 @@ $output .= '</div>'; // End single row with all 5 cards
                   'registeredUsersCount' => $registeredUsersCount,
                   'platformCount' => $platformCount,
                   'simulatorCount' => $simulatorCount,
+                  'registeredScenariosCount' => count($studyUris),
+                  'registeredProcessesCount' => count($processUris),
+                  'registeredTasksSubtasksCount' => $tasksAndSubtasksCount,
                 ];
               }
             } catch (\Exception $e) {
@@ -588,9 +936,22 @@ $output .= '</div>'; // End single row with all 5 cards
         \Drupal::logger('pmsr')->info('PMSR project not found in knowledge graph: ' . $e->getMessage());
       }
 
+      foreach ($members as $member) {
+        $memberTotals['registeredUsers'] += $member['registeredUsersCount'] ?? 0;
+        $memberTotals['people'] += $member['peopleCount'] ?? 0;
+        $memberTotals['simulators'] += $member['simulatorCount'] ?? 0;
+        $memberTotals['platforms'] += $member['platformCount'] ?? 0;
+        $memberTotals['scenarios'] += $member['registeredScenariosCount'] ?? 0;
+        $memberTotals['processes'] += $member['registeredProcessesCount'] ?? 0;
+        $memberTotals['tasksSubtasks'] += $member['registeredTasksSubtasksCount'] ?? 0;
+      }
+
       $cache->set(
         $members_cache_cid,
-        $members,
+        [
+          'members' => $members,
+          'totals' => $memberTotals,
+        ],
         \Drupal\Core\Cache\Cache::PERMANENT,
         ['pmsr_statistics:projects', 'pmsr_statistics:organizations', 'pmsr_statistics:people', 'kgr_people', 'kgr_geography', 'dp2_pmsr']
       );
@@ -606,17 +967,13 @@ $output .= '</div>'; // End single row with all 5 cards
       $displayCount = min(count($members), 10);
       
       // Calculate totals across ALL members (not just displayed ones)
-      $totalRegisteredUsers = 0;
-      $totalPeople = 0;
-      $totalSimulators = 0;
-      $totalPlatforms = 0;
-      
-      foreach ($members as $member) {
-        $totalRegisteredUsers += $member['registeredUsersCount'] ?? 0;
-        $totalPeople += $member['peopleCount'] ?? 0;
-        $totalSimulators += $member['simulatorCount'] ?? 0;
-        $totalPlatforms += $member['platformCount'] ?? 0;
-      }
+      $totalRegisteredUsers = (int) ($memberTotals['registeredUsers'] ?? 0);
+      $totalPeople = (int) ($memberTotals['people'] ?? 0);
+      $totalSimulators = (int) ($memberTotals['simulators'] ?? 0);
+      $totalPlatforms = (int) ($memberTotals['platforms'] ?? 0);
+      $totalScenarios = (int) ($memberTotals['scenarios'] ?? 0);
+      $totalProcesses = (int) ($memberTotals['processes'] ?? 0);
+      $totalTasksSubtasks = (int) ($memberTotals['tasksSubtasks'] ?? 0);
       
       // Row 1: Logo
       $output .= '<tr>';
@@ -703,17 +1060,53 @@ $output .= '</div>'; // End single row with all 5 cards
       $output .= '</td>';
       $output .= '</tr>';
       
-      // Row 6: Registered Scenarios (placeholder)
+      // Row 6: Registered Scenarios
       $output .= '<tr>';
       $output .= '<td class="align-middle" style="padding: 15px; background-color: #f8f9fa;"><strong>Registered Scenarios</strong></td>';
       for ($i = 0; $i < $displayCount; $i++) {
-        $output .= '<td class="text-center align-middle text-muted" style="padding: 15px; background-color: white;">-</td>';
+        $member = $members[$i];
+        $scenariosCount = $member['registeredScenariosCount'] ?? 0;
+        $output .= '<td class="text-center align-middle" style="padding: 15px; background-color: white;">';
+        $output .= '<strong style="font-size: 2.4rem; color: #0d6efd;">' . $scenariosCount . '</strong>';
+        $output .= '</td>';
       }
       // Total column - Scenarios
-      $output .= '<td class="text-center align-middle text-muted" style="padding: 15px; background-color: #e9ecef; border-left: 3px solid #0d6efd;">-</td>';
+      $output .= '<td class="text-center align-middle" style="padding: 15px; background-color: #e9ecef; border-left: 3px solid #0d6efd;">';
+      $output .= '<strong style="font-size: 2.4rem; color: #0d6efd;">' . $totalScenarios . '</strong>';
+      $output .= '</td>';
+      $output .= '</tr>';
+
+      // Row 7: Registered Processes
+      $output .= '<tr>';
+      $output .= '<td class="align-middle" style="padding: 15px; background-color: #f8f9fa;"><strong>Registered Processes</strong></td>';
+      for ($i = 0; $i < $displayCount; $i++) {
+        $member = $members[$i];
+        $processCount = $member['registeredProcessesCount'] ?? 0;
+        $output .= '<td class="text-center align-middle" style="padding: 15px; background-color: white;">';
+        $output .= '<strong style="font-size: 2.4rem; color: #0d6efd;">' . $processCount . '</strong>';
+        $output .= '</td>';
+      }
+      $output .= '<td class="text-center align-middle" style="padding: 15px; background-color: #e9ecef; border-left: 3px solid #0d6efd;">';
+      $output .= '<strong style="font-size: 2.4rem; color: #0d6efd;">' . $totalProcesses . '</strong>';
+      $output .= '</td>';
+      $output .= '</tr>';
+
+      // Row 8: Registered Tasks/Subtasks (subrow of processes)
+      $output .= '<tr>';
+      $output .= '<td class="align-middle" style="padding: 15px 15px 15px 30px; background-color: #f8f9fa;"><strong>Registered Tasks/Subtasks</strong></td>';
+      for ($i = 0; $i < $displayCount; $i++) {
+        $member = $members[$i];
+        $tasksCount = $member['registeredTasksSubtasksCount'] ?? 0;
+        $output .= '<td class="text-center align-middle" style="padding: 15px; background-color: white;">';
+        $output .= '<strong style="font-size: 2.4rem; color: #0d6efd;">' . $tasksCount . '</strong>';
+        $output .= '</td>';
+      }
+      $output .= '<td class="text-center align-middle" style="padding: 15px; background-color: #e9ecef; border-left: 3px solid #0d6efd;">';
+      $output .= '<strong style="font-size: 2.4rem; color: #0d6efd;">' . $totalTasksSubtasks . '</strong>';
+      $output .= '</td>';
       $output .= '</tr>';
       
-      // Row 7: Registered Simulators
+      // Row 9: Registered Simulators
       $output .= '<tr>';
       $output .= '<td class="align-middle" style="padding: 15px; background-color: #f8f9fa;"><strong>Registered Simulators</strong></td>';
       for ($i = 0; $i < $displayCount; $i++) {
@@ -729,7 +1122,7 @@ $output .= '</div>'; // End single row with all 5 cards
       $output .= '</td>';
       $output .= '</tr>';
       
-      // Row 8: Registered Simulation Laboratories
+      // Row 10: Registered Simulation Laboratories
       $output .= '<tr>';
       $output .= '<td class="align-middle" style="padding: 15px; background-color: #f8f9fa;"><strong>Registered Simulation Laboratories</strong></td>';
       for ($i = 0; $i < $displayCount; $i++) {
