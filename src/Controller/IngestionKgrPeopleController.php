@@ -41,6 +41,7 @@ class IngestionKgrPeopleController extends ControllerBase {
     
     $output .= '<div class="mt-4">';
     $output .= '<button class="btn btn-primary btn-lg btn-start-ingestion">Start Ingestion</button>';
+    $output .= '<button class="btn btn-warning btn-lg ms-2 btn-sync-users-person">Sync Users/Person</button>';
     $output .= '<button class="btn btn-secondary btn-lg ms-2" onclick="history.back()">Cancel</button>';
     $output .= '</div>';
     
@@ -66,6 +67,11 @@ class IngestionKgrPeopleController extends ControllerBase {
             'ingestion' => [
               'endpoint' => '/pmsr/api/ingest/people/process',
               'message' => 'Ingesting people data...',
+              'token' => $csrf_token,
+            ],
+            'syncUsersPerson' => [
+              'endpoint' => '/pmsr/api/ingest/people/sync-users-person',
+              'message' => 'Synchronizing Drupal users with KGR persons...',
               'token' => $csrf_token,
             ],
           ],
@@ -633,6 +639,340 @@ class IngestionKgrPeopleController extends ControllerBase {
         'total_errors' => count($errors),
       ],
     ]);
+  }
+
+  /**
+   * Sync Drupal users and KGR persons by email and update user info fields.
+   */
+  public function syncUsersPerson(Request $request) {
+    set_time_limit(300);
+
+    $requestData = json_decode($request->getContent(), TRUE);
+    $providedToken = is_array($requestData) ? ($requestData['token'] ?? NULL) : NULL;
+    if (!$providedToken || !\Drupal::csrfToken()->validate($providedToken, 'kgr_people_ingestion')) {
+      return new JsonResponse([
+        'success' => FALSE,
+        'message' => 'Security error: invalid or missing CSRF token.',
+        'errors' => ['Invalid or missing CSRF token.'],
+      ]);
+    }
+
+    $progress = [];
+    $errors = [];
+    $updatedPeople = [];
+    $updatedCount = 0;
+
+    $progress[] = 'Starting Users/Person synchronization...';
+
+    $api = \Drupal::service('rep.api_connector');
+
+    // Step 1: Load all persons and index by email-like fields.
+    $personList = [];
+    try {
+      $raw = $api->listByKeyword('person', '_', 9999, 0);
+      $parsed = $api->parseObjectResponse($raw, 'listByKeyword');
+      if (is_array($parsed)) {
+        $personList = $parsed;
+      }
+    }
+    catch (\Throwable $e) {
+      $errors[] = 'Failed to load KGR persons: ' . $e->getMessage();
+    }
+
+    // Step 2: Load all Drupal users and index by email.
+    $users = \Drupal::entityTypeManager()->getStorage('user')->loadMultiple();
+    $usersByEmail = [];
+    foreach ($users as $user) {
+      if (!is_object($user) || !method_exists($user, 'getEmail')) {
+        continue;
+      }
+
+      $email = $this->normalizeEmail((string) $user->getEmail());
+      if ($email === '') {
+        continue;
+      }
+
+      if (!isset($usersByEmail[$email])) {
+        $usersByEmail[$email] = [];
+      }
+      $usersByEmail[$email][] = $user;
+    }
+
+    $progress[] = 'Loaded ' . count($users) . ' Drupal users and ' . count($personList) . ' KGR persons.';
+
+    $seenPersonUris = [];
+    foreach ($personList as $personLite) {
+      if (!is_object($personLite)) {
+        continue;
+      }
+
+      $personUri = trim((string) ($personLite->uri ?? ''));
+      if ($personUri === '' || isset($seenPersonUris[$personUri])) {
+        continue;
+      }
+      $seenPersonUris[$personUri] = TRUE;
+
+      // Hydrate with full data to avoid sparse list payload mismatches.
+      $person = $personLite;
+      try {
+        $rawPerson = $api->getUri($personUri);
+        $fullPerson = $api->parseObjectResponse($rawPerson, 'getUri');
+        if (is_object($fullPerson)) {
+          $person = $fullPerson;
+        }
+      }
+      catch (\Throwable $e) {
+        // Fall back to list payload.
+      }
+
+      $matchEmail = $this->pickMatchingPersonEmail($person, $usersByEmail);
+      if ($matchEmail === '') {
+        continue;
+      }
+
+      $targetUser = $this->selectTargetUserForPerson($person, $usersByEmail[$matchEmail], $progress);
+      if ($targetUser === NULL) {
+        continue;
+      }
+
+      $expectedUserName = trim((string) $targetUser->getAccountName());
+      $expectedUserEmail = trim((string) $targetUser->getEmail());
+      $expectedUserId = (string) $targetUser->id();
+
+      if ($this->personMatchesUserInfo($person, $expectedUserName, $expectedUserEmail, $expectedUserId)) {
+        continue;
+      }
+
+      $payload = $this->buildSyncedPersonPayload($person, $expectedUserName, $expectedUserEmail, $expectedUserId);
+      $payloadJson = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+      if (!is_string($payloadJson) || trim($payloadJson) === '') {
+        $errors[] = 'Failed to encode payload for person: ' . $personUri;
+        continue;
+      }
+
+      try {
+        $delRaw = $api->elementDel('person', $personUri);
+        $delDecoded = json_decode((string) $delRaw);
+        if (is_object($delDecoded) && isset($delDecoded->isSuccessful) && !$delDecoded->isSuccessful) {
+          $errors[] = 'Failed to delete person before update: ' . $personUri;
+          continue;
+        }
+
+        $addRaw = $api->elementAdd('person', $payloadJson);
+        $addDecoded = json_decode((string) $addRaw);
+        if (is_object($addDecoded) && isset($addDecoded->isSuccessful) && !$addDecoded->isSuccessful) {
+          $errors[] = 'Failed to update person user info: ' . $personUri;
+          continue;
+        }
+
+        // Verify persisted user info after write.
+        $persistedMatches = FALSE;
+        try {
+          $rawAfter = $api->getUri($personUri);
+          $personAfter = $api->parseObjectResponse($rawAfter, 'getUri');
+          if (is_object($personAfter)) {
+            $persistedMatches = $this->personMatchesUserInfo($personAfter, $expectedUserName, $expectedUserEmail, $expectedUserId);
+          }
+        }
+        catch (\Throwable $e) {
+          $persistedMatches = FALSE;
+        }
+
+        if (!$persistedMatches) {
+          $errors[] = 'Updated person but user info still mismatched after write: ' . $personUri;
+          continue;
+        }
+
+        $updatedCount++;
+        $updatedPeople[] = [
+          'uri' => $personUri,
+          'label' => trim((string) ($person->label ?? $personUri)),
+          'userName' => $expectedUserName,
+          'userEmail' => $expectedUserEmail,
+          'userID' => $expectedUserId,
+        ];
+      }
+      catch (\Throwable $e) {
+        $errors[] = 'Exception updating person ' . $personUri . ': ' . $e->getMessage();
+      }
+    }
+
+    $progress[] = 'Synchronization complete.';
+    $progress[] = 'Updated persons: ' . $updatedCount;
+    if (!empty($updatedPeople)) {
+      $progress[] = 'Updated KGR persons:';
+      foreach ($updatedPeople as $item) {
+        $progress[] = ' - ' . $item['label'] . ' [' . $item['uri'] . ']';
+      }
+    }
+
+    \Drupal::logger('pmsr')->info('Sync Users/Person completed. Updated: @count', ['@count' => $updatedCount]);
+
+    return new JsonResponse([
+      'success' => empty($errors),
+      'message' => 'Sync Users/Person finished. Updated: ' . $updatedCount,
+      'progress' => $progress,
+      'errors' => $errors,
+      'updates_count' => $updatedCount,
+      'updated_people' => $updatedPeople,
+    ]);
+  }
+
+  /**
+   * Normalize an email-like value for matching.
+   */
+  private function normalizeEmail(string $value): string {
+    $value = trim(strtolower($value));
+    if ($value === '') {
+      return '';
+    }
+
+    if (str_starts_with($value, 'mailto:')) {
+      $value = substr($value, 7);
+    }
+
+    return trim($value);
+  }
+
+  /**
+   * Pick the primary email used to match a person to Drupal users.
+   */
+  private function pickPrimaryPersonEmail(object $person): string {
+    $candidates = [
+      $this->normalizeEmail((string) ($person->userEmail ?? '')),
+      $this->normalizeEmail((string) ($person->mbox ?? '')),
+      $this->normalizeEmail((string) ($person->hasSIRManagerEmail ?? '')),
+    ];
+
+    foreach ($candidates as $candidate) {
+      if ($candidate !== '') {
+        return $candidate;
+      }
+    }
+
+    return '';
+  }
+
+  /**
+   * Pick the first person email candidate that maps to an existing Drupal user.
+   */
+  private function pickMatchingPersonEmail(object $person, array $usersByEmail): string {
+    $candidates = [
+      $this->normalizeEmail((string) ($person->userEmail ?? '')),
+      $this->normalizeEmail((string) ($person->mbox ?? '')),
+      $this->normalizeEmail((string) ($person->hasSIRManagerEmail ?? '')),
+    ];
+
+    foreach ($candidates as $candidate) {
+      if ($candidate !== '' && isset($usersByEmail[$candidate])) {
+        return $candidate;
+      }
+    }
+
+    return '';
+  }
+
+  /**
+   * Choose a deterministic target user for a person when email maps to many users.
+   */
+  private function selectTargetUserForPerson(object $person, array $usersForEmail, array &$progress) {
+    if (empty($usersForEmail)) {
+      return NULL;
+    }
+
+    // Prefer existing direct linkage by userID.
+    $personUserId = trim((string) ($person->userID ?? ''));
+    if ($personUserId !== '') {
+      foreach ($usersForEmail as $user) {
+        if ((string) $user->id() === $personUserId) {
+          return $user;
+        }
+      }
+    }
+
+    // Then prefer existing linkage by userName.
+    $personUserName = trim((string) ($person->userName ?? ''));
+    if ($personUserName !== '') {
+      foreach ($usersForEmail as $user) {
+        if (strcasecmp((string) $user->getAccountName(), $personUserName) === 0) {
+          return $user;
+        }
+      }
+    }
+
+    if (count($usersForEmail) === 1) {
+      return reset($usersForEmail);
+    }
+
+    // Stable fallback: lowest UID to avoid oscillation across runs.
+    usort($usersForEmail, function ($a, $b) {
+      return ((int) $a->id()) <=> ((int) $b->id());
+    });
+
+    $uri = trim((string) ($person->uri ?? '(unknown person)'));
+    $progress[] = 'Ambiguous email match for ' . $uri . '; selected lowest UID deterministically.';
+
+    return $usersForEmail[0];
+  }
+
+  /**
+   * Compare person user-info fields to expected Drupal user values.
+   */
+  private function personMatchesUserInfo(object $person, string $expectedUserName, string $expectedUserEmail, string $expectedUserId): bool {
+    $currentUserName = trim((string) ($person->userName ?? ''));
+    $currentUserEmail = trim((string) ($person->userEmail ?? ''));
+    $currentUserId = trim((string) ($person->userID ?? ''));
+
+    return (
+      strcasecmp($currentUserName, $expectedUserName) === 0
+      && $this->normalizeEmail($currentUserEmail) === $this->normalizeEmail($expectedUserEmail)
+      && $currentUserId === trim($expectedUserId)
+    );
+  }
+
+  /**
+   * Build a person payload preserving existing fields and synced user info.
+   */
+  private function buildSyncedPersonPayload(object $person, string $userName, string $userEmail, string $userId): array {
+    $payload = [
+      'uri' => trim((string) ($person->uri ?? '')),
+      'typeUri' => trim((string) ($person->typeUri ?? 'https://schema.org/Person')),
+      'hascoTypeUri' => trim((string) ($person->hascoTypeUri ?? 'https://schema.org/Person')),
+      'label' => trim((string) ($person->label ?? '')),
+      'name' => trim((string) ($person->name ?? '')),
+      'givenName' => trim((string) ($person->givenName ?? '')),
+      'familyName' => trim((string) ($person->familyName ?? '')),
+      'mbox' => trim((string) ($person->mbox ?? '')),
+      'telephone' => trim((string) ($person->telephone ?? '')),
+      'hasAddressUri' => trim((string) ($person->hasAddressUri ?? '')),
+      'hasAffiliationUri' => trim((string) ($person->hasAffiliationUri ?? '')),
+      'jobTitle' => trim((string) ($person->jobTitle ?? '')),
+      'comment' => trim((string) ($person->comment ?? '')),
+      'description' => trim((string) ($person->description ?? '')),
+      'hasImageUri' => trim((string) ($person->hasImageUri ?? '')),
+      'hasWebDocument' => trim((string) ($person->hasWebDocument ?? '')),
+      'hasSIRManagerEmail' => $userEmail,
+      'userName' => $userName,
+      'userEmail' => $userEmail,
+      'userID' => $userId,
+    ];
+
+    // Preserve optional fields when present.
+    foreach (['namedGraph', 'hasStatus', 'originalID', 'hasLanguage', 'hasVersion'] as $field) {
+      if (isset($person->{$field})) {
+        $payload[$field] = $person->{$field};
+      }
+    }
+
+    // Keep label/name usable if one is missing.
+    if ($payload['label'] === '' && $payload['name'] !== '') {
+      $payload['label'] = $payload['name'];
+    }
+    if ($payload['name'] === '' && $payload['label'] !== '') {
+      $payload['name'] = $payload['label'];
+    }
+
+    return $payload;
   }
 
 }

@@ -179,3 +179,13 @@ pmsr.process_people_ingestion:
     no_cache: TRUE
   methods: [POST]
 
+pmsr.sync_users_person:
+  path: '/pmsr/api/ingest/people/sync-users-person'
+  defaults:
+    _controller: '\Drupal\pmsr\Controller\IngestionKgrPeopleController::syncUsersPerson'
+  requirements:
+    _access: 'TRUE'
+  options:
+    no_cache: TRUE
+  methods: [POST]
+

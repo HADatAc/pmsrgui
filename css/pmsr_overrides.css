@@ -31,6 +31,43 @@ body.pmsr-module-enabled #navbar-top.navbar,
   font-size: 12px!important;
 }
 
+/* Keep footer partner logos/text at stable size across pages. */
+.site-footer img,
+#partners_footer img,
+#landing_footer img {
+  max-width: 220px;
+  max-height: 52px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+
+.site-footer,
+#partners_footer,
+#landing_footer {
+  font-size: 12px !important;
+}
+
+.std-title-mode-badge {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  line-height: 1.2;
+  vertical-align: middle;
+}
+
+.std-title-mode-edit {
+  background-color: #198754;
+  color: #fff;
+}
+
+.std-title-mode-view {
+  background-color: #6c757d;
+  color: #fff;
+}
+
 #landing_footer {
   background-color: #0066004b!important;
 }

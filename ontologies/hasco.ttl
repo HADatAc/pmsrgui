@@ -1,0 +1,275 @@
+@prefix hadatac: <http://hadatac.org/ont/hadatac/> .
+@prefix hasco: <http://hadatac.org/ont/hasco/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix vstoi: <http://hadatac.org/ont/vstoi#> .
+@prefix sio: <http://semanticscience.org/resource/> .
+@prefix schema: <https://schema.org/> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+
+hasco:  owl:imports      <http://hadatac.org/ont/vstoi> ;
+        owl:imports      <http://www.w3.org/TR/prov-o/> ;
+        owl:imports      <http://www.w3.org/2004/02/skos/core> ;
+        owl:imports      <http://purl.obolibrary.org/obo/uo.owl> ;
+        owl:imports      <http://semanticscience.org/ontology/sio.owl> ;
+        owl:versionIRI   hasco:9 ;
+        rdfs:label       "HASCO APP Ontology" ;
+        rdf:type         owl:Ontology .
+
+vstoi:AnnotationStem
+	a rdfs:Class;
+	rdfs:subClassOf hasco:AnnotationStemEntryPoint.
+
+sio:Attribute
+	a rdfs:Class;
+	rdfs:subClassOf hasco:AttributeEntryPoint.
+
+vstoi:CodeBook
+	a rdfs:Class;
+	rdfs:subClassOf hasco:CodeBookEntryPoint.
+
+vstoi:ComponentStem
+	a rdfs:Class;
+	rdfs:subClassOf hasco:ComponentStemEntryPoint.
+
+vstoi:Component
+	a rdfs:Class;
+	rdfs:subClassOf hasco:ComponentEntryPoint.
+
+vstoi:ComponentAttribute
+	a rdfs:Class;
+	rdfs:subClassOf hasco:ComponentAttributeEntryPoint.
+
+sio:Entity
+	a rdfs:Class;
+	rdfs:subClassOf hasco:EntityEntryPoint.
+
+foaf:Group
+	a rdfs:Class;
+	rdfs:subClassOf hasco:GroupEntryPoint.
+
+vstoi:Instrument
+	a rdfs:Class;
+	rdfs:subClassOf hasco:InstrumentEntryPoint.
+
+schema:Organization
+	a rdfs:Class;
+	rdfs:subClassOf hasco:OrganizationEntryPoint.
+
+schema:Person
+	a rdfs:Class;
+	rdfs:subClassOf hasco:PersonEntryPoint.
+
+schema:Place
+	a rdfs:Class;
+	rdfs:subClassOf hasco:PlaceEntryPoint.
+
+vstoi:Platform
+	a rdfs:Class;
+	rdfs:subClassOf hasco:PlatformEntryPoint.
+
+vstoi:Workflow
+	a rdfs:Class;
+	rdfs:subClassOf hasco:WorkflowEntryPoint.
+
+vstoi:Questionnaire
+	a rdfs:Class;
+	rdfs:subClassOf hasco:QuestionnaireEntryPoint.
+
+vstoi:ResponseOption
+	a rdfs:Class;
+	rdfs:subClassOf hasco:ResponseOptionEntryPoint.
+
+hasco:Study
+	a rdfs:Class;
+	rdfs:subClassOf hasco:StudyEntryPoint.
+
+vstoi:Task
+	a rdfs:Class;
+	rdfs:subClassOf hasco:TaskEntryPoint.
+
+vstoi:TaskTemporalDependency
+	a rdfs:Class;
+	rdfs:subClassOf hasco:TaskTemporalDependencyEntryPoint.
+
+sio:Unit
+	a rdfs:Class;
+	rdfs:subClassOf hasco:UnitEntryPoint. 
+
+# --- New Entry Point Classes ---
+# Base class for all entry points
+hasco:ClassEntryPoint
+	a owl:Class;
+	rdfs:subClassOf owl:Class;
+	rdfs:label "Class Entry Point"@en;
+	rdfs:comment "Base class for all HASCO entry points. Entry points serve as binding points where external ontologies can be integrated into the HASCO framework."@en .
+
+
+hasco:AnnotationStemEntryPoint
+	a owl:Class;
+	rdfs:subClassOf hasco:ClassEntryPoint;
+	rdfs:label "Annotation Stem Entry Point"@en;
+	rdfs:comment "Entry point for annotation stems."@en .
+
+hasco:AnatomicalPartEntryPoint
+	a owl:Class;
+	rdfs:subClassOf hasco:ClassEntryPoint;
+	rdfs:label "Anatomical Part Entry Point"@en;
+	rdfs:comment "Entry point for anatomical parts and body structures from ontologies like UBERON."@en .
+
+hasco:AttributeEntryPoint
+	a owl:Class;
+	rdfs:subClassOf hasco:ClassEntryPoint;
+	rdfs:label "Attribute Entry Point"@en;
+	rdfs:comment "Entry point for attributes."@en .
+
+hasco:CodeBookEntryPoint
+	a owl:Class;
+	rdfs:subClassOf hasco:ClassEntryPoint;
+	rdfs:label "Code Book Entry Point"@en;
+	rdfs:comment "Entry point for code books."@en .
+
+hasco:ComponentEntryPoint
+	a owl:Class;
+	rdfs:subClassOf hasco:ClassEntryPoint;
+	rdfs:label "Component Entry Point"@en;
+	rdfs:comment "Entry point for components."@en .
+
+hasco:ComponentAttributeEntryPoint
+	a owl:Class;
+	rdfs:subClassOf hasco:ClassEntryPoint;
+	rdfs:label "Component Attribute Entry Point"@en;
+	rdfs:comment "Entry point for component attributes."@en .
+
+hasco:ComponentStemEntryPoint
+	a owl:Class;
+	rdfs:subClassOf hasco:ClassEntryPoint;
+	rdfs:label "Component Stem Entry Point"@en;
+	rdfs:comment "Entry point for component stems."@en .
+
+hasco:EntityEntryPoint
+	a owl:Class;
+	rdfs:subClassOf hasco:ClassEntryPoint;
+	rdfs:label "Entity Entry Point"@en;
+	rdfs:comment "Entry point for entities."@en .
+
+hasco:GroupEntryPoint
+	a owl:Class;
+	rdfs:subClassOf hasco:ClassEntryPoint;
+	rdfs:label "Group Entry Point"@en;
+	rdfs:comment "Entry point for groups."@en .
+
+hasco:InstrumentEntryPoint
+	a owl:Class;
+	rdfs:subClassOf hasco:ClassEntryPoint;
+	rdfs:label "Instrument Entry Point"@en;
+	rdfs:comment "Entry point for instruments."@en .
+
+hasco:MedicalDeviceEntryPoint
+	a owl:Class;
+	rdfs:subClassOf hasco:ClassEntryPoint;
+	rdfs:label "Medical Device Entry Point"@en;
+	rdfs:comment "Entry point for medical devices and equipment from ontologies like NCIT."@en .
+
+hasco:OrganizationEntryPoint
+	a owl:Class;
+	rdfs:subClassOf hasco:ClassEntryPoint;
+	rdfs:label "Organization Entry Point"@en;
+	rdfs:comment "Entry point for organizations."@en .
+
+hasco:PersonEntryPoint
+	a owl:Class;
+	rdfs:subClassOf hasco:ClassEntryPoint;
+	rdfs:label "Person Entry Point"@en;
+	rdfs:comment "Entry point for persons."@en .
+
+hasco:PlaceEntryPoint
+	a owl:Class;
+	rdfs:subClassOf hasco:ClassEntryPoint;
+	rdfs:label "Place Entry Point"@en;
+	rdfs:comment "Entry point for places."@en .
+
+hasco:PlatformEntryPoint
+	a owl:Class;
+	rdfs:subClassOf hasco:ClassEntryPoint;
+	rdfs:label "Platform Entry Point"@en;
+	rdfs:comment "Entry point for platforms."@en .
+
+hasco:QuestionnaireEntryPoint
+	a owl:Class;
+	rdfs:subClassOf hasco:ClassEntryPoint;
+	rdfs:label "Questionnaire Entry Point"@en;
+	rdfs:comment "Entry point for questionnaires."@en .
+
+hasco:ResponseOptionEntryPoint
+	a owl:Class;
+	rdfs:subClassOf hasco:ClassEntryPoint;
+	rdfs:label "Response Option Entry Point"@en;
+	rdfs:comment "Entry point for response options."@en .
+
+hasco:StudyEntryPoint
+	a owl:Class;
+	rdfs:subClassOf hasco:ClassEntryPoint;
+	rdfs:label "Study Entry Point"@en;
+	rdfs:comment "Entry point for studies."@en .
+
+hasco:TaskEntryPoint
+	a owl:Class;
+	rdfs:subClassOf hasco:ClassEntryPoint;
+	rdfs:label "Task Entry Point"@en;
+	rdfs:comment "Entry point for tasks."@en .
+
+hasco:TaskTemporalDependencyEntryPoint
+	a owl:Class;
+	rdfs:subClassOf hasco:ClassEntryPoint;
+	rdfs:label "Task Temporal Dependency Entry Point"@en;
+	rdfs:comment "Entry point for task temporal dependencies."@en .
+
+hasco:UnitEntryPoint
+	a owl:Class;
+	rdfs:subClassOf hasco:ClassEntryPoint;
+	rdfs:label "Unit Entry Point"@en;
+	rdfs:comment "Entry point for units."@en .
+
+hasco:WorkflowEntryPoint
+	a owl:Class;
+	rdfs:subClassOf hasco:ClassEntryPoint;
+	rdfs:label "Workflow Entry Point"@en;
+	rdfs:comment "Entry point for workflows."@en .
+
+hasco:WorkflowStemEntryPoint
+	a owl:Class;
+	rdfs:subClassOf hasco:ClassEntryPoint;
+	rdfs:label "Workflow Stem Entry Point"@en;
+	rdfs:comment "Entry point for workflow stems and process stems."@en .
+
+# Ontology file created by MapEntryPointsForm
+
+# --- Mapping appended by MapEntryPointsForm ---
+<https://schema.org/Place>
+	a rdfs:Class;
+	rdfs:subClassOf <http://hadatac.org/ont/hasco/PlaceEntryPoint> .
+
+
+# --- Mapping appended by MapEntryPointsForm ---
+<http://hadatac.org/ont/vstoi#Component>
+	a rdfs:Class;
+	rdfs:subClassOf <http://hadatac.org/ont/hasco/ComponentEntryPoint> .
+
+# --- Mapping appended by MapEntryPointsForm ---
+<http://purl.obolibrary.org/obo/UBERON_0001062>
+	a rdfs:Class;
+	rdfs:subClassOf <http://hadatac.org/ont/hasco/AnatomicalPartEntryPoint> .
+
+# --- Mapping for NCIT Manufactured Object (created by PMSR Ontology Ingestion at 2026-07-19 03:04:32) ---
+<http://purl.obolibrary.org/obo/NCIT_C97325>
+	a rdfs:Class;
+	rdfs:subClassOf <http://hadatac.org/ont/hasco/MedicalDeviceEntryPoint> .
+
+# --- Mapping for PMSR Medical Simulation Process Stem (created by fix on 2026-07-19) ---
+<https://pmsr.net/ont/MedicalSimulationProcessStem>
+	a rdfs:Class;
+	rdfs:subClassOf <http://hadatac.org/ont/hasco/WorkflowStemEntryPoint> .

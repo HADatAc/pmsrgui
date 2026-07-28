@@ -324,6 +324,108 @@
           });
         }
       });
+
+      // Attach click handler to Sync Users/Person button
+      $('.btn-sync-users-person', context).each(function() {
+        if (!$(this).data('pmsr-sync-users-person-processed')) {
+          $(this).data('pmsr-sync-users-person-processed', true);
+          $(this).on('click', function(e) {
+            e.preventDefault();
+
+            const endpoint = drupalSettings.pmsr.syncUsersPerson.endpoint;
+            const message = drupalSettings.pmsr.syncUsersPerson.message;
+            const token = drupalSettings.pmsr.syncUsersPerson.token || null;
+
+            $(this).prop('disabled', true).addClass('disabled');
+
+            document.getElementById('ingestion-status').style.display = 'block';
+            document.getElementById('status-message').textContent = message;
+
+            fetch(endpoint, {
+              method: 'POST',
+              credentials: 'same-origin',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ token: token })
+            })
+            .then(response => response.json())
+            .then(data => {
+              document.getElementById('ingestion-status').style.display = 'none';
+              $('.btn-sync-users-person').prop('disabled', false).removeClass('disabled');
+
+              const resultsDiv = document.getElementById('ingestion-results');
+              resultsDiv.style.display = 'block';
+
+              const isSuccess = data.success === true;
+              const alertClass = isSuccess ? 'alert-success' : 'alert-danger';
+              const icon = isSuccess ? '✓' : '✗';
+              const title = isSuccess ? 'Sync Completed' : 'Sync Completed With Errors';
+
+              let html = '<div class="alert ' + alertClass + ' alert-dismissable fade show" role="alert">' +
+                '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+                '<span aria-hidden="true">&times;</span></button>' +
+                '<h4>' + icon + ' ' + title + '</h4>' +
+                '<p>' + (data.message || '') + '</p>';
+
+              if (typeof data.updates_count !== 'undefined') {
+                html += '<p><strong>Updates made:</strong> ' + data.updates_count + '</p>';
+              }
+
+              if (Array.isArray(data.updated_people) && data.updated_people.length > 0) {
+                html += '<div class="mt-2"><strong>Updated KGR persons:</strong><ul>';
+                data.updated_people.forEach(function(item) {
+                  const label = item.label || item.uri || '(unknown person)';
+                  const uri = item.uri || '';
+                  html += '<li>' + label + (uri ? ' [' + uri + ']' : '') + '</li>';
+                });
+                html += '</ul></div>';
+              }
+
+              if (Array.isArray(data.errors) && data.errors.length > 0) {
+                html += '<div class="mt-2"><strong>Errors:</strong><ul>';
+                data.errors.forEach(function(err) {
+                  html += '<li>' + err + '</li>';
+                });
+                html += '</ul></div>';
+              }
+
+              html += '</div>';
+              resultsDiv.innerHTML = html;
+
+              $(resultsDiv).find('.alert .close').on('click', function() {
+                $(this).closest('.alert').fadeOut(300, function() {
+                  $(this).remove();
+                });
+              });
+
+              resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            })
+            .catch(error => {
+              document.getElementById('ingestion-status').style.display = 'none';
+              $('.btn-sync-users-person').prop('disabled', false).removeClass('disabled');
+
+              const resultsDiv = document.getElementById('ingestion-results');
+              resultsDiv.style.display = 'block';
+              resultsDiv.innerHTML =
+                '<div class="alert alert-danger alert-dismissable fade show" role="alert">' +
+                '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+                '<span aria-hidden="true">&times;</span></button>' +
+                '<h4>✗ Error</h4>' +
+                '<p>Failed to connect to Sync Users/Person service: ' + error.message + '</p>' +
+                '</div>';
+
+              $(resultsDiv).find('.alert .close').on('click', function() {
+                $(this).closest('.alert').fadeOut(300, function() {
+                  $(this).remove();
+                });
+              });
+
+              resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            });
+          });
+        }
+      });
     }
   };
 
