@@ -12,19 +12,52 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# Change to Drupal root
-cd "$(dirname "$0")/../../.."
+# Resolve Drupal project root by walking up to the directory that contains
+# both composer.json and web/core.
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+DRUPAL_ROOT="$SCRIPT_DIR"
+while [[ "$DRUPAL_ROOT" != "/" && !( -f "$DRUPAL_ROOT/composer.json" && -d "$DRUPAL_ROOT/web/core" ) ]]; do
+    DRUPAL_ROOT="$(dirname "$DRUPAL_ROOT")"
+done
+
+if [[ ! -f "$DRUPAL_ROOT/composer.json" || ! -d "$DRUPAL_ROOT/web/core" ]]; then
+    echo -e "${RED}✗ Unable to find Drupal project root (expected composer.json + web/core)${NC}"
+    exit 1
+fi
+
+cd "$DRUPAL_ROOT"
 
 echo -e "${BLUE}================================================${NC}"
 echo -e "${BLUE}  PMSR Ingestion Regression Test Suite${NC}"
 echo -e "${BLUE}================================================${NC}"
 echo ""
 
+# Test-result database configuration.
+# Override via environment variables when needed.
+DRUPAL_DB_HOST="${DRUPAL_DB_HOST:-localhost}"
+DRUPAL_DB_PORT="${DRUPAL_DB_PORT:-3306}"
+DRUPAL_DB_USER="${DRUPAL_DB_USER:-drupal}"
+DRUPAL_DB_PASS="${DRUPAL_DB_PASS:-drupal}"
+TEST_RESULT_DB_NAME="${TEST_RESULT_DB_NAME:-drupal_test_results}"
+TEST_RESULT_DB_URL="mysql://${DRUPAL_DB_USER}:${DRUPAL_DB_PASS}@${DRUPAL_DB_HOST}:${DRUPAL_DB_PORT}/${TEST_RESULT_DB_NAME}"
+
+ensure_test_result_database() {
+    echo -e "${YELLOW}Ensuring test-result database exists: ${TEST_RESULT_DB_NAME}${NC}"
+    if ! mysql -h "${DRUPAL_DB_HOST}" -P "${DRUPAL_DB_PORT}" -u"${DRUPAL_DB_USER}" -p"${DRUPAL_DB_PASS}" \
+        -e "CREATE DATABASE IF NOT EXISTS \`${TEST_RESULT_DB_NAME}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;" > /dev/null 2>&1; then
+        echo -e "${RED}✗ Unable to create/access database '${TEST_RESULT_DB_NAME}' with current credentials${NC}"
+        echo -e "${YELLOW}  Grant CREATE privileges or pre-create the DB, then rerun tests.${NC}"
+        echo -e "${YELLOW}  Current target URL: ${TEST_RESULT_DB_URL}${NC}"
+        exit 1
+    fi
+    echo -e "${GREEN}✓ Test-result database ready: ${TEST_RESULT_DB_NAME}${NC}"
+}
+
 # Check prerequisites
 echo -e "${YELLOW}Checking prerequisites...${NC}"
 
 # Check if PHPUnit is available
-if ! command -v vendor/bin/phpunit &> /dev/null; then
+if [[ ! -x "vendor/bin/phpunit" ]]; then
     echo -e "${RED}✗ PHPUnit not found. Run: composer require --dev phpunit/phpunit${NC}"
     exit 1
 fi
@@ -73,19 +106,21 @@ case "$TEST_TYPE" in
     functional)
         echo -e "${BLUE}Running Functional Tests...${NC}"
         echo ""
-        vendor/bin/phpunit $VERBOSE \
+        ensure_test_result_database
+        SIMPLETEST_DB="$TEST_RESULT_DB_URL" vendor/bin/phpunit $VERBOSE \
             modules/custom/pmsrgui/tests/src/Functional/
         ;;
     
     javascript)
         echo -e "${BLUE}Running JavaScript Tests...${NC}"
         echo ""
+        ensure_test_result_database
         if ! command -v chromedriver &> /dev/null; then
             echo -e "${RED}✗ ChromeDriver not found${NC}"
             echo -e "${YELLOW}Install with: brew install --cask chromedriver${NC}"
             exit 1
         fi
-        vendor/bin/phpunit $VERBOSE \
+        SIMPLETEST_DB="$TEST_RESULT_DB_URL" vendor/bin/phpunit $VERBOSE \
             modules/custom/rep/tests/src/FunctionalJavascript/
         ;;
     
@@ -99,7 +134,8 @@ case "$TEST_TYPE" in
     integrity)
         echo -e "${BLUE}Running Ingestion Integrity Tests...${NC}"
         echo ""
-        vendor/bin/phpunit $VERBOSE \
+        ensure_test_result_database
+        SIMPLETEST_DB="$TEST_RESULT_DB_URL" vendor/bin/phpunit $VERBOSE \
             modules/custom/pmsrgui/tests/src/Functional/IngestionIntegrityTest.php
         ;;
     
@@ -113,7 +149,8 @@ case "$TEST_TYPE" in
     color)
         echo -e "${BLUE}Running Color-Coding Tests...${NC}"
         echo ""
-        vendor/bin/phpunit $VERBOSE \
+        ensure_test_result_database
+        SIMPLETEST_DB="$TEST_RESULT_DB_URL" vendor/bin/phpunit $VERBOSE \
             modules/custom/rep/tests/src/FunctionalJavascript/EntryPointColorCodingTest.php
         ;;
     
@@ -154,13 +191,14 @@ case "$TEST_TYPE" in
         
         echo ""
         echo -e "${YELLOW}2. Functional Tests${NC}"
-        vendor/bin/phpunit $VERBOSE \
+        ensure_test_result_database
+        SIMPLETEST_DB="$TEST_RESULT_DB_URL" vendor/bin/phpunit $VERBOSE \
             modules/custom/pmsrgui/tests/src/Functional/ || true
         
         echo ""
         echo -e "${YELLOW}3. JavaScript Tests (if ChromeDriver available)${NC}"
         if command -v chromedriver &> /dev/null; then
-            vendor/bin/phpunit $VERBOSE \
+            SIMPLETEST_DB="$TEST_RESULT_DB_URL" vendor/bin/phpunit $VERBOSE \
                 modules/custom/rep/tests/src/FunctionalJavascript/ || true
         else
             echo -e "${YELLOW}Skipping JavaScript tests - ChromeDriver not found${NC}"
@@ -191,6 +229,10 @@ case "$TEST_TYPE" in
         echo ""
         echo "Options:"
         echo "  --verbose   - Show detailed test output"
+        echo ""
+        echo "Environment overrides:"
+        echo "  DRUPAL_DB_HOST, DRUPAL_DB_PORT, DRUPAL_DB_USER, DRUPAL_DB_PASS"
+        echo "  TEST_RESULT_DB_NAME"
         echo ""
         echo "Examples:"
         echo "  $0                    # Run all tests"

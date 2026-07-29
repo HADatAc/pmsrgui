@@ -247,6 +247,8 @@ class IngestionKgrPeopleController extends ControllerBase {
         "label" => $kgr_label,
         "filename" => $filename,
         "fileStatus" => \Drupal\rep\Constant::FILE_STATUS_UNPROCESSED,
+        // Persist the Drupal file entity id in KG DataFile.id.
+        "id" => $file_entity->id(),
         "hasSIRManagerEmail" => $useremail,
       ]);
       
@@ -351,8 +353,7 @@ class IngestionKgrPeopleController extends ControllerBase {
         }
       }
       
-      // Delete temporary Drupal file
-      $file_entity->delete();
+      // Keep local Drupal file entities for MT data files so FileId stays available.
       
     } catch (\Exception $e) {
       $error_detail = $e->getMessage() . " (File: " . $e->getFile() . " Line: " . $e->getLine() . ")";
@@ -486,6 +487,8 @@ class IngestionKgrPeopleController extends ControllerBase {
             "label" => $dp2_label,
             "filename" => $filename,
             "fileStatus" => \Drupal\rep\Constant::FILE_STATUS_UNPROCESSED,
+            // Persist the Drupal file entity id in KG DataFile.id.
+            "id" => $file_entity->id(),
             "hasSIRManagerEmail" => $useremail,
           ]);
 
@@ -571,8 +574,7 @@ class IngestionKgrPeopleController extends ControllerBase {
             }
           }
 
-          // Delete temporary Drupal file
-          $file_entity->delete();
+          // Keep local Drupal file entities for MT data files so FileId stays available.
 
         } catch (\Exception $e) {
           $error_detail = $e->getMessage() . " (File: " . $e->getFile() . " Line: " . $e->getLine() . ")";

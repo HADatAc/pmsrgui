@@ -31,6 +31,7 @@ class ConfigBootstrapForm extends FormBase {
         <h2>' . $this->t('PMSR Configuration Bootstrap') . '</h2>
         <p>' . $this->t('This tool will bootstrap your PMSR installation by:') . '</p>
         <ul>
+          <li>' . $this->t('Resetting PMSR bootstrap caches/state (session filters and ontology backup/version snapshots)') . '</li>
           <li>' . $this->t('Verifying the triplestore is empty (automatic check)') . '</li>
           <li>' . $this->t('Configuring the repository settings in the API') . '</li>
           <li>' . $this->t('Updating local Drupal configuration') . '</li>

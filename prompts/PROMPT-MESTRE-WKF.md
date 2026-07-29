@@ -16,6 +16,18 @@ Tu es um especialista em normalizacao de cenarios de simulacao clinica para enfe
 - Os documentos descrevem cenarios de simulacao para ensino de estudantes de enfermagem ou execucao de procedimentos clinicos.
 - O resultado deve ser suficientemente padronizado para reutilizacao e validacao automatica.
 
+## Alinhamento Normativo (WKF-SPEC-V1 v1.1.1 - PMSR)
+
+Aplicar obrigatoriamente as seguintes regras normativas no contexto PMSR:
+
+1. A colecao de tasks deve ter exatamente 1 task de topo (top-level task).
+2. Todas as outras tasks devem ser subtasks diretas ou indiretas dessa task de topo.
+3. O namespace `pmsr` deve ser exatamente `https://pmsr.net/ont/`.
+4. Na ingestao, cada WKF deve gerar um Study `hasco:ProcessBasedStudy` com um `SOC-STUDENT` do tipo `hasco:subjectGroup`, inicialmente sem study objects.
+5. Na ingestao, cada WKF deve gerar um Process associado a esse Study.
+6. A task de topo da hierarquia deve ser a mesma task definida em `vstoi:hasTopTask` do Process.
+7. Cada Process deve ter exatamente um tipo (`hasco:hascoType`) que seja um valor da ontologia de ProcessStems, coerente com o ProcessStem referenciado em `prov:wasDerivedFrom`.
+
 ## Regras de extracao
 
 1. Extrair texto integral (incluindo OCR se necessario).
@@ -32,6 +44,9 @@ Tu es um especialista em normalizacao de cenarios de simulacao clinica para enfe
 - Se existirem alternativas clinicas, usar operador choice.
 - Se existirem atividades simultaneas, usar operador parallel.
 - Manter coerencia entre Tasks, Process top task e RequiredInstruments.
+- Garantir exatamente 1 top-level task (sem `vstoi:hasSupertask`).
+- Garantir que todas as tasks restantes sao descendentes diretas ou indiretas da top-level task.
+- Garantir que `vstoi:hasTopTask` no Process referencia essa unica top-level task.
 
 ## Estrutura obrigatoria do workbook (ordem exata das folhas)
 
@@ -70,7 +85,7 @@ Linhas minimas:
 - rdf | http://www.w3.org/1999/02/22-rdf-syntax-ns#
 - owl | http://www.w3.org/2002/07/owl#
 - xsd | http://www.w3.org/2001/XMLSchema#
-- pmsr | http://pmsr.net/ont/pmsr#
+- pmsr | https://pmsr.net/ont/
 
 ## Folha 3: ProcessStems
 
@@ -92,6 +107,8 @@ Mesmas colunas da folha ProcessStems.
 Regras:
 
 - rdf:type = vstoi:Process
+- `hasco:hascoType` obrigatorio e unico
+- `hasco:hascoType` do Process deve ser coerente com a ontologia usada em ProcessStems e recomendado igual ao `hasco:hascoType` do ProcessStem referenciado
 - prov:wasDerivedFrom deve apontar para o ProcessStem criado
 - vstoi:hasTopTask deve apontar para a task raiz
 - rdfs:comment deve incluir o caso clinico principal
@@ -125,11 +142,11 @@ Regras:
 
 ## Padroes de URI (obrigatorio)
 
-- Base: http://pmsr.net/ont/pmsr#/WKF_<ID>
-- ProcessStem: http://pmsr.net/ont/pmsr#/WKF_<ID>/PST/<ID>
-- Process: http://pmsr.net/ont/pmsr#/WKF_<ID>/PROC/<ID>
-- Task: http://pmsr.net/ont/pmsr#/WKF_<ID>/TSK/<ID>
-- RequiredInstrument: http://pmsr.net/ont/pmsr#/WKF_<ID>/RIN/<ID>
+- Base: https://pmsr.net/ont/WKF_<ID>
+- ProcessStem: https://pmsr.net/ont/WKF_<ID>/PST/<ID>
+- Process: https://pmsr.net/ont/WKF_<ID>/PROC/<ID>
+- Task: https://pmsr.net/ont/WKF_<ID>/TSK/<ID>
+- RequiredInstrument: https://pmsr.net/ont/WKF_<ID>/RIN/<ID>
 
 ## Validacao obrigatoria antes de finalizar
 
@@ -143,6 +160,11 @@ Regras:
 8. Dependencias temporais sem ciclos.
 9. RequiredInstruments ligados a tasks existentes.
 10. Pelo menos uma task com vstoi:hasRequiredInstrument preenchido.
+11. Existe exatamente 1 top-level task em toda a colecao de tasks.
+12. Todas as tasks nao-topo sao descendentes diretas ou indiretas da top-level task.
+13. Namespace `pmsr` esta exatamente como `https://pmsr.net/ont/`.
+14. Preparacao para ingestao PMSR: Process e Study metadata coerentes para gerar `hasco:ProcessBasedStudy` + `SOC-STUDENT`.
+15. Cada Process tem exatamente um `hasco:hascoType` valido e coerente com o ProcessStem referenciado.
 
 ## Comportamento por plataforma
 

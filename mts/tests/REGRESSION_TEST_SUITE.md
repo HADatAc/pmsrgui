@@ -72,7 +72,8 @@ This comprehensive test suite validates all fixes implemented for critical data 
 
 **Run:** `vendor/bin/phpunit modules/custom/rep/tests/src/FunctionalJavascript/EntryPointColorCodingTest.php`
 
-**Note:** Requires JavaScript testing environment (Selenium/ChromeDriver)
+**Note:** GUI/browser validation should use the Playwright procedure.
+**Legacy note:** PHPUnit `FunctionalJavascript` tests still use the existing driver configuration in this repository.
 
 ## Issues Covered
 
@@ -158,7 +159,7 @@ vendor/bin/phpunit modules/custom/rep/tests/src/Unit/
 # Functional tests
 vendor/bin/phpunit modules/custom/pmsrgui/tests/src/Functional/
 
-# JavaScript tests (requires ChromeDriver)
+# JavaScript tests (GUI checks via Playwright)
 vendor/bin/phpunit modules/custom/rep/tests/src/FunctionalJavascript/
 ```
 
@@ -192,7 +193,7 @@ vendor/bin/phpunit --filter testHascoTtlContainsAllRequiredEntryPoints modules/c
 - hasco.ttl file at /Users/Shared/drupal_private/ont/
 
 ### JavaScript Tests
-- ChromeDriver or Selenium WebDriver
+- Playwright test runner and browser binaries
 - `drupal/core-dev` package installed
 - Browser testing environment configured
 

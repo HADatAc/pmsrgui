@@ -18,6 +18,9 @@ class PmsrThemeNegotiator implements ThemeNegotiatorInterface {
     //\Drupal::logger('pmsr')->log(RfcLogLevel::INFO, 'MeuThemeNegotiator => applies() chamado');
     // Obtenha o nome da rota para decidir.
     $route_name = $route_match->getRouteName();
+    if (!is_string($route_name) || $route_name === '') {
+      return FALSE;
+    }
 
     // Nesse exemplo, verificamos se a rota inicia com "pmsr."
     // Ou seja, todas as rotas definidas no pmsr.routing.yml serão afetadas.

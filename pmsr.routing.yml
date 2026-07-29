@@ -189,3 +189,11 @@ pmsr.sync_users_person:
     no_cache: TRUE
   methods: [POST]
 
+pmsr.well_known_chrome_devtools:
+  path: '/.well-known/appspecific/com.chrome.devtools.json'
+  defaults:
+    _controller: '\Drupal\pmsr\Controller\WellKnownController::chromeDevTools'
+  requirements:
+    _access: 'TRUE'
+  methods: [GET, HEAD]
+

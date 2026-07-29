@@ -54,6 +54,8 @@ Browser automation tests for UI features:
 - Tree interaction
 - CSS styling
 
+Legacy note: PHPUnit `FunctionalJavascript` tests still use the existing driver configuration in this repository; Playwright is the primary GUI validation procedure.
+
 ### PMSR Setup Tests
 ```bash
 # Run all PMSR Setup tests (rerun-safe + regression)
@@ -195,11 +197,11 @@ curl http://localhost:3030/$/ping  # Fuseki
 
 ### JavaScript Tests Fail
 ```bash
-# Install ChromeDriver
-brew install --cask chromedriver
+# Install Playwright browsers
+npx playwright install
 
-# Or use Selenium standalone
-java -jar selenium-server-standalone.jar
+# Run Playwright GUI checks
+npx playwright test
 ```
 
 ### Database Errors

@@ -377,6 +377,8 @@ class IngestionKgrGeoController extends ControllerBase {
           "label" => str_replace('.xlsx', '', $filename),
           "filename" => $filename,
           "fileStatus" => \Drupal\rep\Constant::FILE_STATUS_UNPROCESSED,
+          // Persist the Drupal file entity id in KG DataFile.id.
+          "id" => $file_entity->id(),
           "hasSIRManagerEmail" => $useremail,
         ]);
         
@@ -467,8 +469,7 @@ class IngestionKgrGeoController extends ControllerBase {
         \Drupal::logger('pmsr')->info("KGR: Successfully ingested $filename");
         $kgr_success_count++;
         
-        // Delete temporary Drupal file
-        $file_entity->delete();
+        // Keep local Drupal file entities for MT data files so FileId stays available.
         
       } catch (\Exception $e) {
         $error_detail = $e->getMessage() . " (File: " . $e->getFile() . " Line: " . $e->getLine() . ")";

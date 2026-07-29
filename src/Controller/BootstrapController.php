@@ -89,6 +89,33 @@ class BootstrapController extends ControllerBase {
     $api = \Drupal::service('rep.api_connector');
     $config = \Drupal::service('config.factory')->getEditable('rep.settings');
     $api_url = self::LOCALHOST_CONFIG['api_url'];
+
+    // Step 0: Reset PMSR-specific non-Drupal caches/state once per bootstrap run.
+    $this->sendProgress([
+      'type' => 'step',
+      'step' => 'pre-bootstrap-reset',
+      'message' => 'Resetting PMSR bootstrap caches/state...',
+    ]);
+
+    $resetReport = $this->resetPmsrBootstrapCaches();
+    if ($resetReport['status'] === 'error') {
+      $this->sendProgress([
+        'type' => 'step',
+        'step' => 'pre-bootstrap-reset-error',
+        'status' => 'error',
+        'message' => 'Failed to reset PMSR bootstrap caches/state.',
+        'details' => implode(' | ', $resetReport['messages']),
+      ]);
+      return;
+    }
+
+    $this->sendProgress([
+      'type' => 'step',
+      'step' => 'pre-bootstrap-reset-success',
+      'status' => $resetReport['status'],
+      'message' => 'PMSR bootstrap caches/state reset complete.',
+      'details' => implode(' | ', $resetReport['messages']),
+    ]);
     
     // Temporarily set the API URL in config so API connector methods work
     $original_api_url = $config->get('api_url');
@@ -650,6 +677,138 @@ class BootstrapController extends ControllerBase {
     echo json_encode($data) . "\n";
     ob_flush();
     flush();
+  }
+
+  /**
+   * Reset PMSR caches/state that live outside Drupal cache bins.
+   *
+   * @return array{status:string,messages:array}
+   *   status: success|warning|error
+   */
+  private function resetPmsrBootstrapCaches() {
+    $messages = [];
+    $hasErrors = FALSE;
+    $hasWarnings = FALSE;
+
+    // 1) Clear UI/session state keys used by PMSR-related forms.
+    try {
+      $session = \Drupal::request()->getSession();
+      $keys = array_keys((array) $session->all());
+      $removed = 0;
+      foreach ($keys as $key) {
+        $normalized = (string) $key;
+        if (
+          strpos($normalized, 'rep_select_') === 0 ||
+          strpos($normalized, 'dpl_select_') === 0 ||
+          strpos($normalized, 'dpl_manage_streams_') === 0 ||
+          $normalized === 'social_view_type'
+        ) {
+          $session->remove($normalized);
+          $removed++;
+        }
+      }
+      $messages[] = 'Session state reset: removed ' . $removed . ' key(s).';
+    }
+    catch (\Throwable $e) {
+      $hasWarnings = TRUE;
+      $messages[] = 'Session state reset warning: ' . $e->getMessage();
+    }
+
+    // 2) Clear hasco.ttl emergency backup cache files.
+    $fs = \Drupal::service('file_system');
+    $backupUri = 'private://ont/emergency-backups';
+    $backupPath = $fs->realpath($backupUri);
+    if ($backupPath && is_dir($backupPath)) {
+      $result = $this->clearDirectoryContents($backupPath);
+      if ($result['ok']) {
+        $messages[] = 'Cleared emergency backup cache (' . $result['deleted'] . ' item(s)).';
+      }
+      else {
+        $hasWarnings = TRUE;
+        $messages[] = 'Emergency backup cache clear warning: ' . $result['message'];
+      }
+    }
+    else {
+      $messages[] = 'Emergency backup cache not present (nothing to clear).';
+    }
+
+    // 3) Clear hasco.ttl version snapshots cache files.
+    $versionsUri = 'private://ont/versions';
+    $versionsPath = $fs->realpath($versionsUri);
+    if ($versionsPath && is_dir($versionsPath)) {
+      $result = $this->clearDirectoryContents($versionsPath);
+      if ($result['ok']) {
+        $messages[] = 'Cleared ontology version snapshots (' . $result['deleted'] . ' item(s)).';
+      }
+      else {
+        $hasWarnings = TRUE;
+        $messages[] = 'Version snapshots clear warning: ' . $result['message'];
+      }
+    }
+    else {
+      $messages[] = 'Ontology version snapshots not present (nothing to clear).';
+    }
+
+    // 4) In-process memoization caches are request-scoped and naturally reset.
+    $messages[] = 'In-memory request caches reset automatically per request.';
+
+    return [
+      'status' => $hasErrors ? 'error' : ($hasWarnings ? 'warning' : 'success'),
+      'messages' => $messages,
+    ];
+  }
+
+  /**
+   * Remove all files/subdirectories under a directory while preserving root.
+   *
+   * @return array{ok:bool,deleted:int,message:string}
+   */
+  private function clearDirectoryContents(string $directoryPath): array {
+    $deleted = 0;
+    try {
+      $items = scandir($directoryPath);
+      if (!is_array($items)) {
+        return ['ok' => FALSE, 'deleted' => 0, 'message' => 'Cannot read directory.'];
+      }
+
+      foreach ($items as $item) {
+        if ($item === '.' || $item === '..') {
+          continue;
+        }
+        $fullPath = $directoryPath . DIRECTORY_SEPARATOR . $item;
+        $this->deletePathRecursive($fullPath, $deleted);
+      }
+
+      return ['ok' => TRUE, 'deleted' => $deleted, 'message' => ''];
+    }
+    catch (\Throwable $e) {
+      return ['ok' => FALSE, 'deleted' => $deleted, 'message' => $e->getMessage()];
+    }
+  }
+
+  /**
+   * Recursively delete a file or directory.
+   */
+  private function deletePathRecursive(string $path, int &$deletedCount): void {
+    if (is_dir($path) && !is_link($path)) {
+      $children = scandir($path);
+      if (is_array($children)) {
+        foreach ($children as $child) {
+          if ($child === '.' || $child === '..') {
+            continue;
+          }
+          $this->deletePathRecursive($path . DIRECTORY_SEPARATOR . $child, $deletedCount);
+        }
+      }
+      if (@rmdir($path)) {
+        $deletedCount++;
+      }
+      return;
+    }
+
+    if (@unlink($path)) {
+      $deletedCount++;
+    }
   }
 
 }
