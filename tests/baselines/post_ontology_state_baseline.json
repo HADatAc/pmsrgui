@@ -1,0 +1,115 @@
+{
+    "recordedAt": "2026-07-29T12:56:25+00:00",
+    "recordReason": "State reached after successful # Ingest PMSR Ontologies",
+    "requiredNamespaces": {
+        "bfo": {
+            "uri": "http://purl.obolibrary.org/obo/BFO_/",
+            "sourceMime": "application/rdf+xml",
+            "minTriples": 1221
+        },
+        "dcterms": {
+            "uri": "http://purl.org/dc/terms/",
+            "sourceMime": "text/turtle",
+            "minTriples": 700
+        },
+        "default": {
+            "uri": "http://hadatac.org/kb/default/",
+            "sourceMime": "",
+            "minTriples": 0
+        },
+        "fhir": {
+            "uri": "http://hl7.org/fhir/",
+            "sourceMime": "",
+            "minTriples": 0
+        },
+        "foaf": {
+            "uri": "http://xmlns.com/foaf/0.1/",
+            "sourceMime": "application/rdf+xml",
+            "minTriples": 631
+        },
+        "hasco": {
+            "uri": "http://hadatac.org/ont/hasco/",
+            "sourceMime": "text/turtle",
+            "minTriples": 910
+        },
+        "lcc-639-1": {
+            "uri": "https://www.omg.org/spec/LCC/Languages/ISO639-1-LanguageCodes/",
+            "sourceMime": "text/turtle",
+            "minTriples": 3766
+        },
+        "ns_http___purl_obolibra": {
+            "uri": "http://purl.obolibrary.org/obo/NCIT_/",
+            "sourceMime": "text/turtle",
+            "minTriples": 21218
+        },
+        "owl": {
+            "uri": "http://www.w3.org/2002/07/owl#/",
+            "sourceMime": "text/turtle",
+            "minTriples": 450
+        },
+        "pmsr": {
+            "uri": "https://pmsr.net/ont/",
+            "sourceMime": "",
+            "minTriples": 1876
+        },
+        "prov": {
+            "uri": "http://www.w3.org/ns/prov#/",
+            "sourceMime": "text/turtle",
+            "minTriples": 1617
+        },
+        "rdf": {
+            "uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#/",
+            "sourceMime": "text/turtle",
+            "minTriples": 127
+        },
+        "rdfs": {
+            "uri": "http://www.w3.org/2000/01/rdf-schema#/",
+            "sourceMime": "text/turtle",
+            "minTriples": 87
+        },
+        "schema": {
+            "uri": "https://schema.org/",
+            "sourceMime": "text/turtle",
+            "minTriples": 16674
+        },
+        "sio": {
+            "uri": "http://semanticscience.org/resource/",
+            "sourceMime": "application/rdf+xml",
+            "minTriples": 14675
+        },
+        "skos": {
+            "uri": "http://www.w3.org/2004/02/skos/core#/",
+            "sourceMime": "",
+            "minTriples": 0
+        },
+        "test": {
+            "uri": "http://hadatac.org/kb/test/",
+            "sourceMime": "",
+            "minTriples": 0
+        },
+        "unit": {
+            "uri": "http://qudt.org/vocab/unit/",
+            "sourceMime": "text/turtle",
+            "minTriples": 86602
+        },
+        "vstoi": {
+            "uri": "http://hadatac.org/ont/vstoi#/",
+            "sourceMime": "text/turtle",
+            "minTriples": 690
+        },
+        "xsd": {
+            "uri": "http://www.w3.org/2001/XMLSchema#/",
+            "sourceMime": "",
+            "minTriples": 0
+        }
+    },
+    "minimumStatistics": {
+        "ontologies": 20,
+        "classes": 45654,
+        "instances": 44102,
+        "instruments": 81,
+        "procedures": 398,
+        "anatomy": 4170,
+        "medical_devices": 1423
+    }
+}

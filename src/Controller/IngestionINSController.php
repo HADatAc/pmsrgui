@@ -47,7 +47,7 @@ class IngestionINSController extends ControllerBase {
     $output .= '<div class="mt-4">';
     $output .= '<button class="btn btn-primary btn-lg btn-start-ingestion">Start Ingestion</button>';
     $output .= '<button class="btn btn-danger btn-lg btn-start-uningest ms-2">Start Uningestion</button>';
-    $output .= '<a href="/pmsr/api/statistics/refresh" class="btn btn-success btn-lg ms-2">Refresh Statistics</a>';
+    $output .= '<a href="/pmsr/statistics/refresh" class="btn btn-success btn-lg ms-2">Refresh Statistics</a>';
     $output .= '<button class="btn btn-secondary btn-lg ms-2" onclick="history.back()">Cancel</button>';
     $output .= '</div>';
     
@@ -72,6 +72,8 @@ class IngestionINSController extends ControllerBase {
           'pmsr' => [
             'ingestion' => [
               'endpoint' => '/pmsr/api/ingest/ins/process',
+              'startEndpoint' => '/pmsr/api/ingest/ins/start',
+              'statusEndpoint' => '/pmsr/api/ingest/ins/status',
               'message' => 'Ingesting INS template...',
             ],
             'uningest' => [
@@ -82,6 +84,71 @@ class IngestionINSController extends ControllerBase {
         ],
       ],
     ];
+  }
+
+  /**
+   * Start a tracked INS ingestion job and return a job ID for polling.
+   */
+  public function startINSIngestion(Request $request) {
+    $jobId = 'ins-' . \Drupal::time()->getCurrentTime() . '-' . bin2hex(random_bytes(4));
+
+    $progress = [
+      '[0/10] Ingestion job created. Waiting for worker start...',
+    ];
+
+    $this->persistINSIngestionJobState($jobId, 'RUNNING', $progress, [], [
+      'message' => 'INS ingestion started',
+      'startedAt' => \Drupal::time()->getCurrentTime(),
+      'currentStep' => 0,
+      'totalSteps' => 10,
+    ]);
+
+    return new JsonResponse([
+      'success' => true,
+      'jobId' => $jobId,
+      'message' => 'INS ingestion job started',
+      'progress' => $progress,
+    ]);
+  }
+
+  /**
+   * Get current status for a tracked INS ingestion job.
+   */
+  public function getINSIngestionStatus(string $jobId) {
+    $state = $this->getINSIngestionJobState($jobId);
+
+    if ($state === NULL) {
+      return new JsonResponse([
+        'success' => false,
+        'status' => 'UNKNOWN',
+        'message' => 'Ingestion job not found',
+        'jobId' => $jobId,
+        'progress' => [],
+        'errors' => ['Ingestion job not found or expired'],
+      ], 404);
+    }
+
+    if (($state['status'] ?? 'UNKNOWN') === 'RUNNING') {
+      $state = $this->refreshRunningINSIngestionState($state);
+    }
+
+    return new JsonResponse([
+      'success' => ($state['status'] ?? 'UNKNOWN') === 'SUCCESS',
+      'status' => $state['status'] ?? 'UNKNOWN',
+      'message' => $state['message'] ?? '',
+      'jobId' => $jobId,
+      'progress' => $state['progress'] ?? [],
+      'errors' => $state['errors'] ?? [],
+      'currentStep' => $state['currentStep'] ?? 0,
+      'totalSteps' => $state['totalSteps'] ?? 10,
+      'insUri' => $state['insUri'] ?? NULL,
+      'dataFileUri' => $state['dataFileUri'] ?? NULL,
+      'finalTemplateStatus' => $state['finalTemplateStatus'] ?? NULL,
+      'finalFileStatus' => $state['finalFileStatus'] ?? NULL,
+      'updatedAt' => $state['updatedAt'] ?? NULL,
+      'startedAt' => $state['startedAt'] ?? NULL,
+      'finishedAt' => $state['finishedAt'] ?? NULL,
+    ]);
   }
 
   /**
@@ -110,9 +177,27 @@ class IngestionINSController extends ControllerBase {
   public function processINSIngestion(Request $request) {
     // Increase execution time limit for long-running ingestion (5 minutes)
     set_time_limit(300);
+
+    $payload = json_decode($request->getContent(), TRUE);
+    $jobId = NULL;
+    if (is_array($payload) && isset($payload['jobId']) && is_string($payload['jobId'])) {
+      $jobId = trim($payload['jobId']);
+      if ($jobId === '') {
+        $jobId = NULL;
+      }
+    }
     
     $progress = [];
     $errors = [];
+
+    if ($jobId !== NULL) {
+      $progress[] = "[0/10] Worker started for job {$jobId}";
+      $this->persistINSIngestionJobState($jobId, 'RUNNING', $progress, $errors, [
+        'message' => 'INS ingestion worker started',
+        'currentStep' => 0,
+        'totalSteps' => 10,
+      ]);
+    }
     
     \Drupal::logger('pmsr')->info('INS ingestion started');
     
@@ -125,15 +210,17 @@ class IngestionINSController extends ControllerBase {
     if (!file_exists($file_path)) {
       $errors[] = "INS-PMSR.xlsx file not found at: " . $file_path;
       \Drupal::logger('pmsr')->error("INS: File not found at $file_path");
-      return new JsonResponse([
-        'success' => false,
-        'message' => 'INS file not found',
-        'progress' => $progress,
-        'errors' => $errors,
-      ]);
+      return $this->insIngestionResponse(false, 'INS file not found', $progress, $errors, $jobId);
     }
     
     $progress[] = "  ✓ File found: INS-PMSR.xlsx";
+    if ($jobId !== NULL) {
+      $this->persistINSIngestionJobState($jobId, 'RUNNING', $progress, $errors, [
+        'message' => 'INS file located',
+        'currentStep' => 1,
+        'totalSteps' => 10,
+      ]);
+    }
     
     // Step 2: Create Drupal file entity
     $progress[] = "[2/10] Creating Drupal file entity...";
@@ -158,12 +245,7 @@ class IngestionINSController extends ControllerBase {
         
         if (!$file) {
           $errors[] = "Failed to create file entity";
-          return new JsonResponse([
-            'success' => false,
-            'message' => 'Could not create file entity',
-            'progress' => $progress,
-            'errors' => $errors,
-          ]);
+          return $this->insIngestionResponse(false, 'Could not create file entity', $progress, $errors, $jobId);
         }
         
         $file->setPermanent();
@@ -172,11 +254,14 @@ class IngestionINSController extends ControllerBase {
       }
     } catch (\Exception $e) {
       $errors[] = "Exception creating file entity: " . $e->getMessage();
-      return new JsonResponse([
-        'success' => false,
-        'message' => 'Exception during file entity creation',
-        'progress' => $progress,
-        'errors' => $errors,
+      return $this->insIngestionResponse(false, 'Exception during file entity creation', $progress, $errors, $jobId);
+    }
+
+    if ($jobId !== NULL) {
+      $this->persistINSIngestionJobState($jobId, 'RUNNING', $progress, $errors, [
+        'message' => 'Drupal file entity ready',
+        'currentStep' => 2,
+        'totalSteps' => 10,
       ]);
     }
     
@@ -193,6 +278,16 @@ class IngestionINSController extends ControllerBase {
     
     $progress[] = "  ✓ DataFile (DFL) URI: " . $newDataFileUri;
     $progress[] = "  ✓ INS (INF) URI: " . $newINSUri;
+
+    if ($jobId !== NULL) {
+      $this->persistINSIngestionJobState($jobId, 'RUNNING', $progress, $errors, [
+        'message' => 'Generated DataFile and INS URIs',
+        'currentStep' => 3,
+        'totalSteps' => 10,
+        'insUri' => $newINSUri,
+        'dataFileUri' => $newDataFileUri,
+      ]);
+    }
 
     
     // Step 4: Check for and delete existing INS instance data
@@ -223,16 +318,14 @@ class IngestionINSController extends ControllerBase {
         // Delete the INS named graph (contains instrument instances, NOT the VSTOI class definitions)
         $progress[] = "  → Deleting INS named graph (instrument instances only, VSTOI classes preserved)...";
         
-        $delete_response = $api->repoDeleteSelectedNamespace($ins_abbreviation);
+        $delete_response = $api->repoDeleteSelectedNamespaceTriples([$ins_namespace]);
         $delete_data = json_decode($delete_response);
         
         if (!$delete_data || !$delete_data->isSuccessful) {
           $errors[] = "Failed to delete INS named graph";
-          return new JsonResponse([
-            'success' => false,
-            'message' => 'Failed to delete existing INS instance data',
-            'progress' => $progress,
-            'errors' => $errors,
+          return $this->insIngestionResponse(false, 'Failed to delete existing INS instance data', $progress, $errors, $jobId, [
+            'insUri' => $newINSUri,
+            'dataFileUri' => $newDataFileUri,
           ]);
         }
         
@@ -245,6 +338,16 @@ class IngestionINSController extends ControllerBase {
     } catch (\Exception $e) {
       $progress[] = "  ⚠ Could not check/delete INS data: " . $e->getMessage();
       $progress[] = "  → Proceeding with ingestion...";
+    }
+
+    if ($jobId !== NULL) {
+      $this->persistINSIngestionJobState($jobId, 'RUNNING', $progress, $errors, [
+        'message' => 'INS instance graph cleanup completed',
+        'currentStep' => 4,
+        'totalSteps' => 10,
+        'insUri' => $newINSUri,
+        'dataFileUri' => $newDataFileUri,
+      ]);
     }
     
     // Step 5: Check for and delete existing INS-PMSR metadata templates
@@ -299,6 +402,16 @@ class IngestionINSController extends ControllerBase {
       $progress[] = "  ⚠ Could not check for existing templates: " . $e->getMessage();
       $progress[] = "  → Proceeding with ingestion...";
     }
+
+    if ($jobId !== NULL) {
+      $this->persistINSIngestionJobState($jobId, 'RUNNING', $progress, $errors, [
+        'message' => 'Previous INS templates cleanup completed',
+        'currentStep' => 5,
+        'totalSteps' => 10,
+        'insUri' => $newINSUri,
+        'dataFileUri' => $newDataFileUri,
+      ]);
+    }
     
     // Step 6: Create DataFile (DFL) and INS metadata template in HAScO
     $progress[] = "[6/10] Creating DataFile (DFL) and INS metadata template...";
@@ -334,11 +447,9 @@ class IngestionINSController extends ControllerBase {
       $msg1 = $api->parseObjectResponse($api->datafileAdd($datafileJSON), 'datafileAdd');
       if ($msg1 == NULL) {
         $errors[] = "Failed to create DataFile (DFL) entity";
-        return new JsonResponse([
-          'success' => false,
-          'message' => 'DataFile creation failed',
-          'progress' => $progress,
-          'errors' => $errors,
+        return $this->insIngestionResponse(false, 'DataFile creation failed', $progress, $errors, $jobId, [
+          'insUri' => $newINSUri,
+          'dataFileUri' => $newDataFileUri,
         ]);
       }
       $progress[] = "  ✓ Created DataFile (DFL) entity";
@@ -347,11 +458,9 @@ class IngestionINSController extends ControllerBase {
       $msg2 = $api->parseObjectResponse($api->elementAdd('ins', $insJSON), 'elementAdd');
       if ($msg2 == NULL) {
         $errors[] = "Failed to create INS metadata template";
-        return new JsonResponse([
-          'success' => false,
-          'message' => 'INS creation failed',
-          'progress' => $progress,
-          'errors' => $errors,
+        return $this->insIngestionResponse(false, 'INS creation failed', $progress, $errors, $jobId, [
+          'insUri' => $newINSUri,
+          'dataFileUri' => $newDataFileUri,
         ]);
       }
       $progress[] = "  ✓ Created INS (INF) metadata template";
@@ -359,11 +468,19 @@ class IngestionINSController extends ControllerBase {
       
     } catch (\Exception $e) {
       $errors[] = "Exception creating entities: " . $e->getMessage();
-      return new JsonResponse([
-        'success' => false,
-        'message' => 'Exception during entity creation',
-        'progress' => $progress,
-        'errors' => $errors,
+      return $this->insIngestionResponse(false, 'Exception during entity creation', $progress, $errors, $jobId, [
+        'insUri' => $newINSUri,
+        'dataFileUri' => $newDataFileUri,
+      ]);
+    }
+
+    if ($jobId !== NULL) {
+      $this->persistINSIngestionJobState($jobId, 'RUNNING', $progress, $errors, [
+        'message' => 'DataFile and INS entities created',
+        'currentStep' => 6,
+        'totalSteps' => 10,
+        'insUri' => $newINSUri,
+        'dataFileUri' => $newDataFileUri,
       ]);
     }
     
@@ -376,22 +493,28 @@ class IngestionINSController extends ControllerBase {
       
       if ($upload_result === NULL || $upload_result === FALSE || $upload_result === '') {
         $errors[] = "Failed to upload file to HAScO API";
-        return new JsonResponse([
-          'success' => false,
-          'message' => 'File upload to API failed',
-          'progress' => $progress,
-          'errors' => $errors,
+        return $this->insIngestionResponse(false, 'File upload to API failed', $progress, $errors, $jobId, [
+          'insUri' => $newINSUri,
+          'dataFileUri' => $newDataFileUri,
         ]);
       }
       
       $progress[] = "  ✓ File content uploaded successfully to HAScO API";
     } catch (\Exception $e) {
       $errors[] = "Exception uploading file: " . $e->getMessage();
-      return new JsonResponse([
-        'success' => false,
-        'message' => 'Exception during file upload',
-        'progress' => $progress,
-        'errors' => $errors,
+      return $this->insIngestionResponse(false, 'Exception during file upload', $progress, $errors, $jobId, [
+        'insUri' => $newINSUri,
+        'dataFileUri' => $newDataFileUri,
+      ]);
+    }
+
+    if ($jobId !== NULL) {
+      $this->persistINSIngestionJobState($jobId, 'RUNNING', $progress, $errors, [
+        'message' => 'INS file content uploaded to HAScO API',
+        'currentStep' => 7,
+        'totalSteps' => 10,
+        'insUri' => $newINSUri,
+        'dataFileUri' => $newDataFileUri,
       ]);
     }
     
@@ -413,11 +536,9 @@ class IngestionINSController extends ControllerBase {
       if ($ingest_result === NULL || $ingest_result === FALSE || $ingest_result === '') {
         $errors[] = "Failed to trigger ingestion in HAScO API";
         $progress[] = "  ✗ Ingestion trigger failed";
-        return new JsonResponse([
-          'success' => false,
-          'message' => 'Ingestion trigger failed',
-          'progress' => $progress,
-          'errors' => $errors,
+        return $this->insIngestionResponse(false, 'Ingestion trigger failed', $progress, $errors, $jobId, [
+          'insUri' => $newINSUri,
+          'dataFileUri' => $newDataFileUri,
         ]);
       }
       
@@ -426,42 +547,142 @@ class IngestionINSController extends ControllerBase {
       $progress[] = "  ✓ DataFile (DFL) URI: " . $newDataFileUri;
     } catch (\Exception $e) {
       $errors[] = "Exception during ingestion: " . $e->getMessage();
-      return new JsonResponse([
-        'success' => false,
-        'message' => 'Exception during ingestion trigger',
-        'progress' => $progress,
-        'errors' => $errors,
+      return $this->insIngestionResponse(false, 'Exception during ingestion trigger', $progress, $errors, $jobId, [
+        'insUri' => $newINSUri,
+        'dataFileUri' => $newDataFileUri,
+      ]);
+    }
+
+    if ($jobId !== NULL) {
+      $this->persistINSIngestionJobState($jobId, 'RUNNING', $progress, $errors, [
+        'message' => 'Template ingestion submitted to backend',
+        'currentStep' => 8,
+        'totalSteps' => 10,
+        'insUri' => $newINSUri,
+        'dataFileUri' => $newDataFileUri,
       ]);
     }
     
     // Step 9: Verify ingestion status
     $progress[] = "[9/10] Verifying ingestion status...";
+
+    $ingestionVerified = false;
+    $ingestionFailed = false;
+    $ingestionFailureReason = '';
+    $finalTemplateStatus = 'UNKNOWN';
+    $finalFileStatus = 'UNKNOWN';
     
     try {
-      // Wait a moment for processing to start
-      sleep(2);
-      
-      // Query the INS template to check status
-      $ins_response = $api->getUri($newINSUri);
-      $ins = $api->parseObjectResponse($ins_response, 'getUri');
-      
-      if ($ins && isset($ins->uri)) {
-        $status = isset($ins->hasStatus) ? $ins->hasStatus : 'UNKNOWN';
-        $progress[] = "  ✓ INS template created with status: " . $status;
-        
-        if ($status === 'PROCESSED') {
-          $progress[] = "  ✓ Template successfully processed!";
-        } else {
-          $progress[] = "  ⚠ Template created but status is: " . $status;
-          $progress[] = "  ⚠ Processing may still be in progress. Check INS Templates list.";
+      // Poll up to ~300s because ingest runs asynchronously in hascoapi.
+      $maxAttempts = 100;
+      $sleepSeconds = 3;
+
+      for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
+        $ins_response = $api->getUri($newINSUri);
+        $ins = $api->parseObjectResponse($ins_response, 'getUri');
+
+        // Always try to resolve DataFile directly as fallback because INS->hasDataFile
+        // can be absent/stale during async ingestion windows.
+        $dataFile = NULL;
+
+        if ($ins && isset($ins->uri)) {
+          if (isset($ins->hasDataFile) && is_object($ins->hasDataFile)) {
+            $dataFile = $ins->hasDataFile;
+          }
+
+          if ($dataFile === NULL && isset($ins->hasDataFileUri) && is_string($ins->hasDataFileUri) && trim($ins->hasDataFileUri) !== '') {
+            $df_from_ins_uri = $api->parseObjectResponse($api->getUri(trim($ins->hasDataFileUri)), 'getUri');
+            if ($df_from_ins_uri && is_object($df_from_ins_uri)) {
+              $dataFile = $df_from_ins_uri;
+            }
+          }
+
+          $templateStatusRaw = isset($ins->hasStatus) ? (string) $ins->hasStatus : '';
+          $finalTemplateStatus = $this->normalizeStatusToken($templateStatusRaw, 'UNKNOWN');
         }
+
+        if ($dataFile === NULL && is_string($newDataFileUri) && trim($newDataFileUri) !== '') {
+          $df_direct = $api->parseObjectResponse($api->getUri($newDataFileUri), 'getUri');
+          if ($df_direct && is_object($df_direct)) {
+            $dataFile = $df_direct;
+          }
+        }
+
+        $fileStatusRaw = '';
+        if ($dataFile && is_object($dataFile)) {
+          if (isset($dataFile->fileStatus)) {
+            $fileStatusRaw = (string) $dataFile->fileStatus;
+          } elseif (isset($dataFile->hasStatus)) {
+            $fileStatusRaw = (string) $dataFile->hasStatus;
+          }
+        }
+        $finalFileStatus = $this->normalizeStatusToken($fileStatusRaw, 'UNKNOWN');
+
+        // Detect backend processing errors from DataFile logs.
+        $logText = '';
+        if ($dataFile && is_object($dataFile)) {
+          if (isset($dataFile->log) && is_string($dataFile->log)) {
+            $logText = $dataFile->log;
+          } else if (isset($dataFile->hasLog) && is_string($dataFile->hasLog)) {
+            $logText = $dataFile->hasLog;
+          }
+        }
+
+        // Either object can lead completion, depending on when hascoapi persists each resource.
+        if ($finalFileStatus === 'PROCESSED' || $finalTemplateStatus === 'PROCESSED') {
+          $ingestionVerified = true;
+          break;
+        }
+
+        if ($finalFileStatus === 'FAILED' || $finalFileStatus === 'ERROR' || $finalTemplateStatus === 'FAILED' || $finalTemplateStatus === 'ERROR') {
+          $ingestionFailed = true;
+          $ingestionFailureReason = 'Backend status indicates failure. INS=' . $finalTemplateStatus . ', DataFile=' . $finalFileStatus;
+          break;
+        }
+
+        if ($logText !== '' && preg_match('/Error in INSGenerator|Not a valid \(absolute\) IRI|\[ERROR\]/i', $logText)) {
+          $ingestionFailed = true;
+          $cleanLog = preg_replace('/\s+/', ' ', $logText);
+          $ingestionFailureReason = 'Backend log reports ingestion error: ' . substr($cleanLog, 0, 300);
+          break;
+        }
+
+        if ($attempt < $maxAttempts) {
+          sleep($sleepSeconds);
+        }
+      }
+
+      $progress[] = "  ✓ INS template status: " . $finalTemplateStatus;
+      $progress[] = "  ✓ DataFile processing status: " . $finalFileStatus;
+
+      if ($ingestionVerified) {
+        $progress[] = "  ✓ Template successfully processed!";
+      } else if ($ingestionFailed) {
+        $errors[] = $ingestionFailureReason !== ''
+          ? $ingestionFailureReason
+          : 'Ingestion failed according to backend processing status.';
+        $progress[] = "  ✗ Ingestion failed during backend processing.";
       } else {
-        $progress[] = "  ⚠ Could not verify template status immediately";
-        $progress[] = "  ⚠ Template should appear in INS Templates list shortly";
+        $progress[] = "  → Backend is still processing (latest DataFile status: " . $finalFileStatus . ").";
+        $progress[] = "  → Live status polling will continue until terminal status is reached.";
       }
     } catch (\Exception $e) {
-      $progress[] = "  ⚠ Could not verify status: " . $e->getMessage();
-      $progress[] = "  ⚠ Check INS Templates list to verify ingestion";
+      $ingestionFailed = true;
+      $ingestionFailureReason = 'Could not verify ingestion status: ' . $e->getMessage();
+      $errors[] = $ingestionFailureReason;
+      $progress[] = "  ✗ " . $ingestionFailureReason;
+    }
+
+    if ($jobId !== NULL) {
+      $this->persistINSIngestionJobState($jobId, 'RUNNING', $progress, $errors, [
+        'message' => 'Backend status verification completed',
+        'currentStep' => 9,
+        'totalSteps' => 10,
+        'insUri' => $newINSUri,
+        'dataFileUri' => $newDataFileUri,
+        'finalTemplateStatus' => $finalTemplateStatus,
+        'finalFileStatus' => $finalFileStatus,
+      ]);
     }
     
     // Step 10: Invalidate INS cache
@@ -473,15 +694,58 @@ class IngestionINSController extends ControllerBase {
     } catch (\Exception $e) {
       // Non-fatal
     }
+
+    if ($jobId !== NULL) {
+      $this->persistINSIngestionJobState($jobId, 'RUNNING', $progress, $errors, [
+        'message' => 'INS statistics cache invalidated',
+        'currentStep' => 10,
+        'totalSteps' => 10,
+        'insUri' => $newINSUri,
+        'dataFileUri' => $newDataFileUri,
+        'finalTemplateStatus' => $finalTemplateStatus,
+        'finalFileStatus' => $finalFileStatus,
+      ]);
+    }
     
-    // Return success
-    return new JsonResponse([
-      'success' => true,
-      'message' => 'INS template ingestion completed successfully!',
-      'progress' => $progress,
-      'errors' => $errors,
+    if ($ingestionVerified && empty($errors)) {
+      return $this->insIngestionResponse(true, 'INS template ingestion completed successfully!', $progress, $errors, $jobId, [
+        'insUri' => $newINSUri,
+        'dataFileUri' => $newDataFileUri,
+      ]);
+    }
+
+    if (!$ingestionFailed && empty($errors)) {
+      if ($jobId !== NULL) {
+        $this->persistINSIngestionJobState($jobId, 'RUNNING', $progress, $errors, [
+          'message' => 'INS ingestion still running in backend',
+          'currentStep' => 9,
+          'totalSteps' => 10,
+          'insUri' => $newINSUri,
+          'dataFileUri' => $newDataFileUri,
+          'finalTemplateStatus' => $finalTemplateStatus,
+          'finalFileStatus' => $finalFileStatus,
+        ]);
+      }
+
+      return new JsonResponse([
+        'success' => true,
+        'running' => true,
+        'message' => 'INS ingestion is still processing in backend. Continue polling status endpoint.',
+        'progress' => $progress,
+        'errors' => $errors,
+        'jobId' => $jobId,
+        'insUri' => $newINSUri,
+        'dataFileUri' => $newDataFileUri,
+        'finalTemplateStatus' => $finalTemplateStatus,
+        'finalFileStatus' => $finalFileStatus,
+      ]);
+    }
+
+    return $this->insIngestionResponse(false, 'INS template ingestion failed during backend processing.', $progress, $errors, $jobId, [
       'insUri' => $newINSUri,
       'dataFileUri' => $newDataFileUri,
+      'finalTemplateStatus' => $finalTemplateStatus,
+      'finalFileStatus' => $finalFileStatus,
     ]);
   }
 
@@ -634,6 +898,223 @@ class IngestionINSController extends ControllerBase {
     
     // Redirect to statistics page
     return new RedirectResponse('/pmsr/statistics');
+  }
+
+  /**
+   * Convert status strings (including URI forms) to normalized tokens.
+   */
+  private function normalizeStatusToken($rawStatus, string $default = 'UNKNOWN'): string {
+    if (!is_string($rawStatus)) {
+      return $default;
+    }
+
+    $value = trim($rawStatus);
+    if ($value === '') {
+      return $default;
+    }
+
+    if (strpos($value, '#') !== FALSE) {
+      $value = substr($value, strrpos($value, '#') + 1);
+    } elseif (strpos($value, '/') !== FALSE) {
+      $value = substr($value, strrpos($value, '/') + 1);
+    }
+
+    $token = strtoupper(trim($value));
+    if ($token === '') {
+      return $default;
+    }
+
+    if (strpos($token, 'PROCESS') !== FALSE) {
+      return 'PROCESSED';
+    }
+    if (strpos($token, 'WORK') !== FALSE || strpos($token, 'INGEST') !== FALSE || strpos($token, 'RUN') !== FALSE) {
+      return 'WORKING';
+    }
+    if (strpos($token, 'FAIL') !== FALSE || strpos($token, 'ERROR') !== FALSE) {
+      return 'ERROR';
+    }
+
+    return $token;
+  }
+
+  /**
+   * Build and persist a consistent INS ingestion response.
+   */
+  private function insIngestionResponse(bool $success, string $message, array $progress, array $errors, ?string $jobId = NULL, array $extra = []): JsonResponse {
+    if ($jobId !== NULL) {
+      $resolvedStep = isset($extra['currentStep'])
+        ? (int) $extra['currentStep']
+        : $this->extractCurrentStepFromProgress($progress);
+
+      $this->persistINSIngestionJobState(
+        $jobId,
+        $success ? 'SUCCESS' : 'FAILED',
+        $progress,
+        $errors,
+        array_merge($extra, [
+          'message' => $message,
+          'currentStep' => $resolvedStep,
+          'totalSteps' => 10,
+          'finishedAt' => \Drupal::time()->getCurrentTime(),
+        ])
+      );
+    }
+
+    return new JsonResponse(array_merge([
+      'success' => $success,
+      'message' => $message,
+      'progress' => $progress,
+      'errors' => $errors,
+      'jobId' => $jobId,
+    ], $extra));
+  }
+
+  /**
+   * Persist INS ingestion state for live polling.
+   */
+  private function persistINSIngestionJobState(string $jobId, string $status, array $progress, array $errors, array $extra = []): void {
+    $existing = $this->getINSIngestionJobState($jobId);
+
+    $record = [
+      'jobId' => $jobId,
+      'status' => strtoupper($status),
+      'message' => $extra['message'] ?? ($existing['message'] ?? ''),
+      'progress' => $progress,
+      'errors' => $errors,
+      'currentStep' => $extra['currentStep'] ?? ($existing['currentStep'] ?? 0),
+      'totalSteps' => $extra['totalSteps'] ?? ($existing['totalSteps'] ?? 10),
+      'startedAt' => $existing['startedAt'] ?? ($extra['startedAt'] ?? \Drupal::time()->getCurrentTime()),
+      'updatedAt' => \Drupal::time()->getCurrentTime(),
+      'finishedAt' => $extra['finishedAt'] ?? ($existing['finishedAt'] ?? NULL),
+      'insUri' => $extra['insUri'] ?? ($existing['insUri'] ?? NULL),
+      'dataFileUri' => $extra['dataFileUri'] ?? ($existing['dataFileUri'] ?? NULL),
+      'finalTemplateStatus' => $extra['finalTemplateStatus'] ?? ($existing['finalTemplateStatus'] ?? NULL),
+      'finalFileStatus' => $extra['finalFileStatus'] ?? ($existing['finalFileStatus'] ?? NULL),
+    ];
+
+    \Drupal::state()->set($this->getINSIngestionJobStateKey($jobId), $record);
+  }
+
+  /**
+   * Load persisted INS ingestion job state.
+   */
+  private function getINSIngestionJobState(string $jobId): ?array {
+    $record = \Drupal::state()->get($this->getINSIngestionJobStateKey($jobId));
+    return is_array($record) ? $record : NULL;
+  }
+
+  /**
+   * Refresh a RUNNING job by querying current INS/DataFile statuses from HAScO.
+   */
+  private function refreshRunningINSIngestionState(array $state): array {
+    $insUri = $state['insUri'] ?? NULL;
+    $dataFileUri = $state['dataFileUri'] ?? NULL;
+
+    if ((!is_string($insUri) || trim($insUri) === '') && (!is_string($dataFileUri) || trim($dataFileUri) === '')) {
+      return $state;
+    }
+
+    try {
+      $api = \Drupal::service('rep.api_connector');
+      $templateStatus = 'UNKNOWN';
+      $fileStatus = 'UNKNOWN';
+      $dataFile = NULL;
+
+      if (is_string($insUri) && trim($insUri) !== '') {
+        $ins = $api->parseObjectResponse($api->getUri($insUri), 'getUri');
+        if ($ins && isset($ins->hasStatus)) {
+          $templateStatus = $this->normalizeStatusToken((string) $ins->hasStatus, 'UNKNOWN');
+        }
+        if ($ins && isset($ins->hasDataFile) && is_object($ins->hasDataFile)) {
+          $dataFile = $ins->hasDataFile;
+        }
+      }
+
+      if ($dataFile === NULL && is_string($dataFileUri) && trim($dataFileUri) !== '') {
+        $df = $api->parseObjectResponse($api->getUri($dataFileUri), 'getUri');
+        if ($df && is_object($df)) {
+          $dataFile = $df;
+        }
+      }
+
+      if ($dataFile && isset($dataFile->fileStatus)) {
+        $fileStatus = $this->normalizeStatusToken((string) $dataFile->fileStatus, 'UNKNOWN');
+      } elseif ($dataFile && isset($dataFile->hasStatus)) {
+        $fileStatus = $this->normalizeStatusToken((string) $dataFile->hasStatus, 'UNKNOWN');
+      }
+
+      $state['finalTemplateStatus'] = $templateStatus;
+      $state['finalFileStatus'] = $fileStatus;
+
+      if ($templateStatus === 'PROCESSED' || $fileStatus === 'PROCESSED') {
+        $state['status'] = 'SUCCESS';
+        $state['message'] = 'INS template ingestion completed successfully.';
+        $state['currentStep'] = 10;
+        $state['finishedAt'] = \Drupal::time()->getCurrentTime();
+      } elseif ($templateStatus === 'ERROR' || $templateStatus === 'FAILED' || $fileStatus === 'ERROR' || $fileStatus === 'FAILED') {
+        $state['status'] = 'FAILED';
+        $state['message'] = 'INS template ingestion failed during backend processing.';
+        $state['currentStep'] = 9;
+        $state['finishedAt'] = \Drupal::time()->getCurrentTime();
+        if (empty($state['errors'])) {
+          $state['errors'] = [];
+        }
+        $state['errors'][] = 'Backend status indicates failure. INS=' . $templateStatus . ', DataFile=' . $fileStatus;
+      } else {
+        $state['status'] = 'RUNNING';
+        $state['message'] = 'Backend processing in progress. INS=' . $templateStatus . ', DataFile=' . $fileStatus;
+        $state['currentStep'] = max((int) ($state['currentStep'] ?? 9), 9);
+      }
+
+      $state['updatedAt'] = \Drupal::time()->getCurrentTime();
+      $this->persistINSIngestionJobState($state['jobId'], $state['status'], $state['progress'] ?? [], $state['errors'] ?? [], [
+        'message' => $state['message'],
+        'currentStep' => $state['currentStep'],
+        'totalSteps' => $state['totalSteps'] ?? 10,
+        'insUri' => $state['insUri'] ?? NULL,
+        'dataFileUri' => $state['dataFileUri'] ?? NULL,
+        'finalTemplateStatus' => $state['finalTemplateStatus'] ?? NULL,
+        'finalFileStatus' => $state['finalFileStatus'] ?? NULL,
+        'startedAt' => $state['startedAt'] ?? \Drupal::time()->getCurrentTime(),
+        'finishedAt' => $state['finishedAt'] ?? NULL,
+      ]);
+
+      return $this->getINSIngestionJobState($state['jobId']) ?? $state;
+    } catch (\Exception $e) {
+      return $state;
+    }
+  }
+
+  /**
+   * Build state key for INS ingestion job tracking.
+   */
+  private function getINSIngestionJobStateKey(string $jobId): string {
+    return 'pmsr.ins_ingestion_job.' . $jobId;
+  }
+
+  /**
+   * Extract the latest [n/10] step number from progress lines.
+   */
+  private function extractCurrentStepFromProgress(array $progress): int {
+    $step = 0;
+    foreach ($progress as $line) {
+      if (!is_string($line)) {
+        continue;
+      }
+      if (preg_match('/^\[(\d+)\/10\]/', $line, $matches)) {
+        $candidate = (int) $matches[1];
+        if ($candidate > $step) {
+          $step = $candidate;
+        }
+      }
+    }
+    if ($step < 0) {
+      return 0;
+    }
+    if ($step > 10) {
+      return 10;
+    }
+    return $step;
   }
 
 }

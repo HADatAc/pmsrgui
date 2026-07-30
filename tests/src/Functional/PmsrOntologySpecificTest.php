@@ -18,12 +18,12 @@ class PmsrOntologySpecificTest extends BrowserTestBase {
   /**
    * {@inheritdoc}
    */
-  protected $defaultTheme = 'stark';
+  protected $defaultTheme = 'hasco_barrio';
 
   /**
    * {@inheritdoc}
    */
-  protected static $modules = ['pmsrgui', 'rep', 'ont'];
+  protected static $modules = ['block', 'pmsr', 'rep'];
 
   /**
    * Test PMSR medical simulation process hierarchy.

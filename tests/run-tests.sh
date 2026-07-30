@@ -27,6 +27,25 @@ fi
 
 cd "$DRUPAL_ROOT"
 
+if [[ -d "$DRUPAL_ROOT/web/modules/custom" ]]; then
+    CUSTOM_MODULES_DIR="web/modules/custom"
+elif [[ -d "$DRUPAL_ROOT/modules/custom" ]]; then
+    CUSTOM_MODULES_DIR="modules/custom"
+else
+    echo -e "${RED}✗ Unable to find custom modules directory (expected web/modules/custom or modules/custom)${NC}"
+    exit 1
+fi
+
+PHPUNIT_CONFIG_DEFAULT="$DRUPAL_ROOT/$CUSTOM_MODULES_DIR/pmsrgui/tests/phpunit.xml"
+if [[ -f "$PHPUNIT_CONFIG_DEFAULT" ]]; then
+    PHPUNIT_CONFIG="${PHPUNIT_CONFIG:-$PHPUNIT_CONFIG_DEFAULT}"
+elif [[ -f "$DRUPAL_ROOT/web/core/phpunit.xml.dist" ]]; then
+    PHPUNIT_CONFIG="${PHPUNIT_CONFIG:-$DRUPAL_ROOT/web/core/phpunit.xml.dist}"
+else
+    echo -e "${RED}✗ Unable to find a PHPUnit configuration file${NC}"
+    exit 1
+fi
+
 echo -e "${BLUE}================================================${NC}"
 echo -e "${BLUE}  PMSR Ingestion Regression Test Suite${NC}"
 echo -e "${BLUE}================================================${NC}"
@@ -98,17 +117,17 @@ case "$TEST_TYPE" in
     unit)
         echo -e "${BLUE}Running Unit Tests...${NC}"
         echo ""
-        vendor/bin/phpunit $VERBOSE \
-            modules/custom/pmsrgui/tests/src/Unit/ \
-            modules/custom/rep/tests/src/Unit/
+        vendor/bin/phpunit -c "$PHPUNIT_CONFIG" $VERBOSE \
+            "$CUSTOM_MODULES_DIR"/pmsrgui/tests/src/Unit/ \
+            "$CUSTOM_MODULES_DIR"/rep/tests/src/Unit/
         ;;
     
     functional)
         echo -e "${BLUE}Running Functional Tests...${NC}"
         echo ""
         ensure_test_result_database
-        SIMPLETEST_DB="$TEST_RESULT_DB_URL" vendor/bin/phpunit $VERBOSE \
-            modules/custom/pmsrgui/tests/src/Functional/
+        SIMPLETEST_DB="$TEST_RESULT_DB_URL" vendor/bin/phpunit -c "$PHPUNIT_CONFIG" $VERBOSE \
+            "$CUSTOM_MODULES_DIR"/pmsrgui/tests/src/Functional/
         ;;
     
     javascript)
@@ -120,56 +139,99 @@ case "$TEST_TYPE" in
             echo -e "${YELLOW}Install with: brew install --cask chromedriver${NC}"
             exit 1
         fi
-        SIMPLETEST_DB="$TEST_RESULT_DB_URL" vendor/bin/phpunit $VERBOSE \
-            modules/custom/rep/tests/src/FunctionalJavascript/
+        SIMPLETEST_DB="$TEST_RESULT_DB_URL" vendor/bin/phpunit -c "$PHPUNIT_CONFIG" $VERBOSE \
+            "$CUSTOM_MODULES_DIR"/rep/tests/src/FunctionalJavascript/
         ;;
     
     validator)
         echo -e "${BLUE}Running HascoIntegrityValidator Tests...${NC}"
         echo ""
-        vendor/bin/phpunit $VERBOSE \
-            modules/custom/pmsrgui/tests/src/Unit/HascoIntegrityValidatorTest.php
+        vendor/bin/phpunit -c "$PHPUNIT_CONFIG" $VERBOSE \
+            "$CUSTOM_MODULES_DIR"/pmsrgui/tests/src/Unit/HascoIntegrityValidatorTest.php
         ;;
     
     integrity)
         echo -e "${BLUE}Running Ingestion Integrity Tests...${NC}"
         echo ""
         ensure_test_result_database
-        SIMPLETEST_DB="$TEST_RESULT_DB_URL" vendor/bin/phpunit $VERBOSE \
-            modules/custom/pmsrgui/tests/src/Functional/IngestionIntegrityTest.php
+        SIMPLETEST_DB="$TEST_RESULT_DB_URL" vendor/bin/phpunit -c "$PHPUNIT_CONFIG" $VERBOSE \
+            "$CUSTOM_MODULES_DIR"/pmsrgui/tests/src/Functional/IngestionIntegrityTest.php
         ;;
     
     api)
         echo -e "${BLUE}Running API Tests...${NC}"
         echo ""
-        vendor/bin/phpunit $VERBOSE \
-            modules/custom/rep/tests/src/Unit/TreeControllerApiTest.php
+        vendor/bin/phpunit -c "$PHPUNIT_CONFIG" $VERBOSE \
+            "$CUSTOM_MODULES_DIR"/rep/tests/src/Unit/TreeControllerApiTest.php
         ;;
     
     color)
         echo -e "${BLUE}Running Color-Coding Tests...${NC}"
         echo ""
         ensure_test_result_database
-        SIMPLETEST_DB="$TEST_RESULT_DB_URL" vendor/bin/phpunit $VERBOSE \
-            modules/custom/rep/tests/src/FunctionalJavascript/EntryPointColorCodingTest.php
+        SIMPLETEST_DB="$TEST_RESULT_DB_URL" vendor/bin/phpunit -c "$PHPUNIT_CONFIG" $VERBOSE \
+            "$CUSTOM_MODULES_DIR"/rep/tests/src/FunctionalJavascript/EntryPointColorCodingTest.php
         ;;
     
     setup)
         echo -e "${BLUE}Running PMSR Setup Tests...${NC}"
         echo ""
-        php modules/custom/pmsrgui/tests/test_pmsr_setup.php all
+        php "$CUSTOM_MODULES_DIR"/pmsrgui/tests/test_pmsr_setup.php all
         ;;
     
     setup-regression)
         echo -e "${BLUE}Running PMSR Setup Regression Tests...${NC}"
         echo ""
-        php modules/custom/pmsrgui/tests/test_pmsr_setup.php regression
+        php "$CUSTOM_MODULES_DIR"/pmsrgui/tests/test_pmsr_setup.php regression
+        echo ""
+        echo -e "${BLUE}Running Namespace Policy Regression...${NC}"
+        bash "$CUSTOM_MODULES_DIR"/pmsrgui/tests/test_namespace_policy.sh
+        echo ""
+        echo -e "${BLUE}Running Entry-Point Soundness Regression...${NC}"
+        bash "$CUSTOM_MODULES_DIR"/pmsrgui/tests/test_entrypoint_soundness.sh
+        echo ""
+        echo -e "${BLUE}Running Entry-Point Color-Coding Regression...${NC}"
+        if command -v chromedriver &> /dev/null; then
+            ensure_test_result_database
+            SIMPLETEST_DB="$TEST_RESULT_DB_URL" vendor/bin/phpunit -c "$PHPUNIT_CONFIG" $VERBOSE \
+                "$CUSTOM_MODULES_DIR"/rep/tests/src/FunctionalJavascript/EntryPointColorCodingTest.php
+        else
+            echo -e "${YELLOW}Skipping Entry-Point Color-Coding Regression - ChromeDriver not found${NC}"
+        fi
+        ;;
+
+    namespace-policy)
+        echo -e "${BLUE}Running Namespace Policy Regression...${NC}"
+        echo ""
+        bash "$CUSTOM_MODULES_DIR"/pmsrgui/tests/test_namespace_policy.sh
+        ;;
+
+    entrypoints-soundness)
+        echo -e "${BLUE}Running Entry-Point Soundness Regression...${NC}"
+        echo ""
+        bash "$CUSTOM_MODULES_DIR"/pmsrgui/tests/test_entrypoint_soundness.sh
+        ;;
+
+    safety-gate)
+        echo -e "${BLUE}Running Namespace Safety Gate (strict)...${NC}"
+        echo ""
+        bash "$CUSTOM_MODULES_DIR"/pmsrgui/tests/test_namespace_policy.sh
+        bash "$CUSTOM_MODULES_DIR"/pmsrgui/tests/test_entrypoint_soundness.sh
+        bash "$CUSTOM_MODULES_DIR"/pmsrgui/tests/compare_baseline_minimums.sh
+
+        if ! command -v chromedriver &> /dev/null; then
+            echo -e "${RED}✗ ChromeDriver not found (required for safety-gate color-coding verification)${NC}"
+            exit 1
+        fi
+        ensure_test_result_database
+        SIMPLETEST_DB="$TEST_RESULT_DB_URL" vendor/bin/phpunit -c "$PHPUNIT_CONFIG" $VERBOSE \
+            "$CUSTOM_MODULES_DIR"/rep/tests/src/FunctionalJavascript/EntryPointColorCodingTest.php
         ;;
     
     setup-rerun)
         echo -e "${BLUE}Running PMSR Setup Rerun-Safety Tests...${NC}"
         echo ""
-        php modules/custom/pmsrgui/tests/test_pmsr_setup.php rerun-safe
+        php "$CUSTOM_MODULES_DIR"/pmsrgui/tests/test_pmsr_setup.php rerun-safe
         ;;
     
     critical)
@@ -177,7 +239,7 @@ case "$TEST_TYPE" in
         echo ""
         vendor/bin/phpunit $VERBOSE \
             --filter "testHascoTtlContainsAllRequiredEntryPoints|testHascoTtlContainsClassEntryPointBaseClass|testPmsrCorrectlyBoundToWorkflowStemEntryPoint|testValidateHascoTtlDetectsMissingEntryPoints" \
-            modules/custom/pmsrgui/tests/src/Functional/IngestionIntegrityTest.php
+            "$CUSTOM_MODULES_DIR"/pmsrgui/tests/src/Functional/IngestionIntegrityTest.php
         ;;
     
     all)
@@ -185,28 +247,36 @@ case "$TEST_TYPE" in
         echo ""
         
         echo -e "${YELLOW}1. Unit Tests${NC}"
-        vendor/bin/phpunit $VERBOSE \
-            modules/custom/pmsrgui/tests/src/Unit/ \
-            modules/custom/rep/tests/src/Unit/ || true
+        vendor/bin/phpunit -c "$PHPUNIT_CONFIG" $VERBOSE \
+            "$CUSTOM_MODULES_DIR"/pmsrgui/tests/src/Unit/ \
+            "$CUSTOM_MODULES_DIR"/rep/tests/src/Unit/ || true
         
         echo ""
         echo -e "${YELLOW}2. Functional Tests${NC}"
         ensure_test_result_database
-        SIMPLETEST_DB="$TEST_RESULT_DB_URL" vendor/bin/phpunit $VERBOSE \
-            modules/custom/pmsrgui/tests/src/Functional/ || true
+        SIMPLETEST_DB="$TEST_RESULT_DB_URL" vendor/bin/phpunit -c "$PHPUNIT_CONFIG" $VERBOSE \
+            "$CUSTOM_MODULES_DIR"/pmsrgui/tests/src/Functional/ || true
         
         echo ""
         echo -e "${YELLOW}3. JavaScript Tests (if ChromeDriver available)${NC}"
         if command -v chromedriver &> /dev/null; then
-            SIMPLETEST_DB="$TEST_RESULT_DB_URL" vendor/bin/phpunit $VERBOSE \
-                modules/custom/rep/tests/src/FunctionalJavascript/ || true
+            SIMPLETEST_DB="$TEST_RESULT_DB_URL" vendor/bin/phpunit -c "$PHPUNIT_CONFIG" $VERBOSE \
+                "$CUSTOM_MODULES_DIR"/rep/tests/src/FunctionalJavascript/ || true
         else
             echo -e "${YELLOW}Skipping JavaScript tests - ChromeDriver not found${NC}"
         fi
         
         echo ""
         echo -e "${YELLOW}4. PMSR Setup Tests${NC}"
-        php modules/custom/pmsrgui/tests/test_pmsr_setup.php all || true
+        php "$CUSTOM_MODULES_DIR"/pmsrgui/tests/test_pmsr_setup.php all || true
+
+        echo ""
+        echo -e "${YELLOW}5. Namespace Policy Regression${NC}"
+        bash "$CUSTOM_MODULES_DIR"/pmsrgui/tests/test_namespace_policy.sh || true
+
+        echo ""
+        echo -e "${YELLOW}6. Entry-Point Soundness Regression${NC}"
+        bash "$CUSTOM_MODULES_DIR"/pmsrgui/tests/test_entrypoint_soundness.sh || true
         ;;
     
     help|--help|-h)
@@ -224,6 +294,9 @@ case "$TEST_TYPE" in
         echo "  setup            - Run PMSR Setup tests (all)"
         echo "  setup-regression - Run PMSR Setup regression tests"
         echo "  setup-rerun      - Run PMSR Setup rerun-safety tests"
+        echo "  namespace-policy - Run namespace policy regression test"
+        echo "  entrypoints-soundness - Run entry-point soundness regression test"
+        echo "  safety-gate      - Run strict namespace corruption prevention gate"
         echo "  critical         - Run critical data loss prevention tests"
         echo "  help             - Show this help message"
         echo ""

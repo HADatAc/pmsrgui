@@ -205,16 +205,117 @@ class BootstrapController extends ControllerBase {
       //   3. <http://hadatac.org/kb/default/repository> vstoi:hasVersion "X.X" (version varies)
       // See: hascoapi/app/module/OnStart.java and hascoapi/app/org/hascoapi/RepositoryInstance.java
       
-      // If we have exactly 3 triples, verify they are the expected default repository metadata
+        // If we have exactly 3 triples, verify by exact string matching only.
+        // No namespace inference/validation is performed here.
       if ($actualTripleCount === 3) {
         $this->sendProgress([
           'type' => 'step',
           'step' => 'verify-default-triples',
           'status' => 'info',
-          'message' => 'Found exactly 3 triples. Verifying they are default repository metadata...',
+            'message' => 'Found exactly 3 triples. Verifying exact triple strings...',
         ]);
-        
-        // Query to verify the default repository structure (accept any version number)
+
+          // Fetch full triple content as raw strings for deterministic comparison.
+          $allTriplesQuery = '
+            SELECT ?s ?p ?o WHERE {
+              ?s ?p ?o .
+            }
+          ';
+          $allTriplesResult = $api->sparqlQuery($allTriplesQuery);
+
+          $actualTriples = [];
+          if ($allTriplesResult) {
+            $allTriplesObj = json_decode($allTriplesResult);
+            if (isset($allTriplesObj->results->bindings) && is_array($allTriplesObj->results->bindings)) {
+              foreach ($allTriplesObj->results->bindings as $binding) {
+                $s = $binding->s->value ?? '';
+                $p = $binding->p->value ?? '';
+                $oType = $binding->o->type ?? '';
+                $oValue = $binding->o->value ?? '';
+
+                if ($s === '' || $p === '' || $oValue === '') {
+                  continue;
+                }
+
+                if ($oType === 'uri') {
+                  $actualTriples[] = '<' . $s . '> <' . $p . '> <' . $oValue . '>';
+                }
+                else {
+                  $escapedLiteral = addcslashes($oValue, "\\\"");
+                  $actualTriples[] = '<' . $s . '> <' . $p . '> "' . $escapedLiteral . '"';
+                }
+              }
+            }
+          }
+
+          sort($actualTriples);
+
+          // Version literal can vary; accept known hasVersion predicate variants.
+          $expectedFixedTriples = [
+            '<http://hadatac.org/kb/default/repository> <http://hadatac.org/ont/hasco/hascoType> <http://hadatac.org/ont/hasco/Repository>',
+          ];
+
+          $expectedRdfTypeVariants = [
+            '<http://hadatac.org/kb/default/repository> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://hadatac.org/ont/hasco/Repository>',
+            '<http://hadatac.org/kb/default/repository> <http://www.w3.org/1999/02/22-rdf-syntax-ns#/type> <http://hadatac.org/ont/hasco/Repository>',
+          ];
+
+          $hasVersionLine = false;
+          $versionNumber = '';
+          foreach ($actualTriples as $line) {
+            if (preg_match('/^<http:\/\/hadatac\.org\/kb\/default\/repository> <http:\/\/hadatac\.org\/ont\/vstoi#\/?hasVersion> "([^"]+)"$/', $line, $m)) {
+              $hasVersionLine = true;
+              $versionNumber = $m[1];
+              break;
+            }
+          }
+
+          $fixedMatches = 0;
+          foreach ($expectedFixedTriples as $expectedLine) {
+            if (in_array($expectedLine, $actualTriples, true)) {
+              $fixedMatches++;
+            }
+          }
+
+          $hasRdfTypeLine = false;
+          foreach ($expectedRdfTypeVariants as $rdfTypeLine) {
+            if (in_array($rdfTypeLine, $actualTriples, true)) {
+              $hasRdfTypeLine = true;
+              break;
+            }
+          }
+
+          $isValidDefault = (count($actualTriples) === 3 && $fixedMatches === 1 && $hasRdfTypeLine && $hasVersionLine);
+
+          if ($isValidDefault) {
+            $this->sendProgress([
+              'type' => 'step',
+              'step' => 'default-triples-confirmed',
+              'status' => 'success',
+              'message' => 'Confirmed: Triplestore contains only default repository metadata (version ' . $versionNumber . ')',
+              'details' => 'Verified by exact triple string matching only. Safe to proceed.',
+            ]);
+            // Treat as empty - continue with bootstrap
+            $actualTripleCount = 0;
+          }
+
+          if (!$isValidDefault) {
+            $this->sendProgress([
+              'type' => 'step',
+              'step' => 'unexpected-triples',
+              'status' => 'error',
+              'message' => 'Found 3 triples but they do not match expected default repository pattern',
+              'details' => 'Expected exact strings for rdf:type + hascoType + hasVersion. Actual: ' . implode(' | ', $actualTriples),
+            ]);
+            // Restore original API URL
+            $config->set('api_url', $original_api_url)->save();
+            return;
+          }
+
+          // Old semantic check kept disabled intentionally in favor of strict string-match.
+          /*
+
+          // Query to verify the default repository structure (accept any version number)
         $verifyQuery = '
           SELECT ?p ?o WHERE {
             <http://hadatac.org/kb/default/repository> ?p ?o .
@@ -242,8 +343,13 @@ class BootstrapController extends ControllerBase {
                   $object === 'http://hadatac.org/ont/hasco/Repository') {
                 $hasHascoType = true;
               }
-              if ($predicate === 'http://hadatac.org/ont/vstoi#hasVersion' && 
-                  !empty($object)) {
+                $isHasVersionPredicate = (
+                  $predicate === 'http://hadatac.org/ont/vstoi#hasVersion' ||
+                  $predicate === 'http://hadatac.org/ont/vstoi#/hasVersion' ||
+                  preg_match('/[#\/]hasVersion$/', $predicate)
+                );
+
+                if ($isHasVersionPredicate && !empty($object)) {
                 $hasVersion = true;
                 $versionNumber = $object;
               }
@@ -277,6 +383,8 @@ class BootstrapController extends ControllerBase {
           $config->set('api_url', $original_api_url)->save();
           return;
         }
+
+          */
       }
       
       // Check for existing ontologies
@@ -439,7 +547,8 @@ class BootstrapController extends ControllerBase {
         self::LOCALHOST_CONFIG['repository_namespace_prefix'],
         self::LOCALHOST_CONFIG['repository_namespace_url'],
         '',
-        ''
+        '',
+        'pmsr-config-bootstrap'
       );
       
       $this->sendProgress([
@@ -498,8 +607,11 @@ class BootstrapController extends ControllerBase {
       ['label' => 'sio', 'comment' => 'Semanticscience Integrated Ontology', 'url' => 'https://raw.githubusercontent.com/micheldumontier/semanticscience/master/ontology/sio/release/sio-release.owl'],
       ['label' => 'dcterms', 'comment' => 'Dublin Core Terms', 'url' => 'http://purl.org/dc/terms/'],
       ['label' => 'prov', 'comment' => 'PROV Ontology', 'url' => 'https://hadatac.org/ont/prov/'],
-      ['label' => 'foaf', 'comment' => 'Friend of a Friend', 'url' => 'http://xmlns.com/foaf/spec/index.rdf'],
+        ['label' => 'foaf', 'comment' => 'Friend of a Friend', 'url' => 'https://xmlns.com/foaf/spec/index.rdf'],
     ];
+
+      // FOAF availability may vary by remote host/network; treat it as non-blocking.
+      $optionalOntologyLabels = ['foaf'];
 
     // Send ontology list to create all cards upfront
     $this->sendProgress([
@@ -535,6 +647,35 @@ class BootstrapController extends ControllerBase {
       $loadObj = json_decode($loadResult);
       
       if (!$loadObj || !$loadObj->isSuccessful) {
+        $loadMessage = (string) ($loadObj->body ?? 'Unknown error');
+        $isPolicyBlocked = stripos($loadMessage, 'Ontology mutation is disabled') !== false;
+
+        if ($isPolicyBlocked) {
+          foreach ($generalPurposeOntologies as $ont) {
+            $this->sendProgress([
+              'type' => 'ontology',
+              'ontology' => $ont['label'],
+              'status' => 'warning',
+              'message' => 'Skipped by policy'
+            ]);
+          }
+
+          $this->sendProgress([
+            'type' => 'step',
+            'step' => 'ontologies-skipped-policy',
+            'status' => 'warning',
+            'message' => 'General ontology loading is disabled by current hascoapi policy.',
+          ]);
+
+          $this->sendProgress([
+            'type' => 'complete',
+            'status' => 'success',
+            'message' => 'Bootstrap completed with policy restrictions.',
+            'details' => 'Repository/local configuration was updated. General ontology loading via /repo/ont/load is disabled. Next step: use "Ingest PMSR Ontologies" to load pmsr, ncit, and uberon.',
+          ]);
+          return;
+        }
+
         // Mark all cards as error
         foreach ($generalPurposeOntologies as $ont) {
           $this->sendProgress([
@@ -549,7 +690,7 @@ class BootstrapController extends ControllerBase {
           'type' => 'step',
           'step' => 'ontologies-error',
           'status' => 'error',
-          'message' => 'Failed to load ontologies: ' . ($loadObj->body ?? 'Unknown error'),
+          'message' => 'Failed to load ontologies: ' . $loadMessage,
         ]);
         return;
       }
@@ -566,7 +707,7 @@ class BootstrapController extends ControllerBase {
       sleep(10);
       
       // Force refresh of namespace cache in hascoapi
-      $api->repoResetNamespaces();
+      $api->repoResetNamespaces('pmsr-config-bootstrap');
       sleep(2);
       
       // Get loaded namespaces from hascoapi
@@ -589,6 +730,7 @@ class BootstrapController extends ControllerBase {
       // Update each card based on what was actually loaded
       $successCount = 0;
       $failedCount = 0;
+      $optionalWarningCount = 0;
       
       foreach ($generalPurposeOntologies as $ont) {
         // Exact label match (case-sensitive)
@@ -610,19 +752,24 @@ class BootstrapController extends ControllerBase {
             'status' => 'warning',
             'message' => 'Not loaded or no triples'
           ]);
-          $failedCount++;
+
+            if (in_array($ont['label'], $optionalOntologyLabels, true)) {
+              $optionalWarningCount++;
+            } else {
+              $failedCount++;
+            }
         }
         
         // Small delay to make the UI updates visible
         usleep(100000); // 0.1 second
       }
       
-      if ($failedCount > 0) {
+        if ($failedCount > 0) {
         $this->sendProgress([
           'type' => 'step',
           'step' => 'ontologies-warning',
           'status' => 'warning',
-          'message' => "Loaded $successCount ontologies, $failedCount had issues",
+            'message' => "Loaded $successCount ontologies, $failedCount required ontologies had issues",
         ]);
         
         // Bootstrap failed - not all ontologies loaded
@@ -630,15 +777,20 @@ class BootstrapController extends ControllerBase {
           'type' => 'complete',
           'status' => 'error',
           'message' => 'Bootstrap failed!',
-          'details' => "Only $successCount of " . count($generalPurposeOntologies) . " general purpose ontologies loaded successfully. $failedCount ontologies had issues. Please check hascoapi logs and retry.",
+            'details' => "Only $successCount of " . count($generalPurposeOntologies) . " general purpose ontologies loaded successfully. $failedCount required ontologies had issues. Please check hascoapi logs and retry.",
         ]);
         return;
       } else {
+          $successDetails = "All required ontologies loaded successfully";
+          if ($optionalWarningCount > 0) {
+            $successDetails .= "; $optionalWarningCount optional ontology warnings (non-blocking)";
+          }
+
         $this->sendProgress([
           'type' => 'step',
           'step' => 'ontologies-success',
           'status' => 'success',
-          'message' => "All $successCount general purpose ontologies loaded successfully",
+            'message' => $successDetails,
         ]);
         
         // Bootstrap complete - configuration is ready

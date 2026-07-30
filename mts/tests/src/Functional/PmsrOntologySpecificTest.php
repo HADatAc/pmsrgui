@@ -23,7 +23,7 @@ class PmsrOntologySpecificTest extends BrowserTestBase {
   /**
    * {@inheritdoc}
    */
-  protected static $modules = ['pmsrgui', 'rep', 'ont'];
+  protected static $modules = ['pmsr', 'rep'];
 
   /**
    * Test PMSR medical simulation process hierarchy.

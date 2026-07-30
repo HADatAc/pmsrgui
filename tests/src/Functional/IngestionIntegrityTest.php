@@ -18,12 +18,12 @@ class IngestionIntegrityTest extends BrowserTestBase {
   /**
    * {@inheritdoc}
    */
-  protected $defaultTheme = 'stark';
+  protected $defaultTheme = 'hasco_barrio';
 
   /**
    * {@inheritdoc}
    */
-  protected static $modules = ['pmsrgui', 'rep', 'ont'];
+  protected static $modules = ['block', 'pmsr', 'rep'];
 
   /**
    * Test that hasco.ttl contains all 23 required entry points.

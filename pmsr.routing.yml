@@ -76,7 +76,7 @@ pmsr.access_denied:
 pmsr.ingest_ontologies:
   path: '/pmsr/ingest/ontologies'
   defaults:
-    _controller: '\Drupal\pmsr\Controller\IngestionController::ingestOntologies'
+    _controller: '\Drupal\pmsr\Controller\IngestionPMSROntologies::ingestOntologies'
     _title: 'Ingest PMSR Ontologies'
   requirements:
     _permission: 'access content'
@@ -85,7 +85,7 @@ pmsr.ingest_ontologies:
 pmsr.process_ontology_ingestion:
   path: '/pmsr/api/ingest/ontologies/process'
   defaults:
-    _controller: '\Drupal\pmsr\Controller\IngestionController::processOntologyIngestion'
+    _controller: '\Drupal\pmsr\Controller\IngestionPMSROntologies::processOntologyIngestion'
   requirements:
     _access: 'TRUE'
   options:
@@ -110,6 +110,26 @@ pmsr.process_ins_ingestion:
   options:
     no_cache: TRUE
   methods: [POST]
+
+pmsr.start_ins_ingestion:
+  path: '/pmsr/api/ingest/ins/start'
+  defaults:
+    _controller: '\Drupal\pmsr\Controller\IngestionINSController::startINSIngestion'
+  requirements:
+    _access: 'TRUE'
+  options:
+    no_cache: TRUE
+  methods: [POST]
+
+pmsr.status_ins_ingestion:
+  path: '/pmsr/api/ingest/ins/status/{jobId}'
+  defaults:
+    _controller: '\Drupal\pmsr\Controller\IngestionINSController::getINSIngestionStatus'
+  requirements:
+    _access: 'TRUE'
+  options:
+    no_cache: TRUE
+  methods: [GET]
 
 pmsr.process_ins_uningest:
   path: '/pmsr/api/uningest/ins/process'

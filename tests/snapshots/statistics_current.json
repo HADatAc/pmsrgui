@@ -1,0 +1,9 @@
+{
+  "ontologies": 20,
+  "classes": 45654,
+  "instances": 44102,
+  "instruments": 81,
+  "procedures": 398,
+  "anatomy": 4170,
+  "medical_devices": 1423
+}

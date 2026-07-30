@@ -71,6 +71,26 @@ Legacy note: PHPUnit `FunctionalJavascript` tests still use the existing driver 
 php modules/custom/pmsrgui/tests/test_pmsr_setup.php all
 php modules/custom/pmsrgui/tests/test_pmsr_setup.php rerun-safe
 php modules/custom/pmsrgui/tests/test_pmsr_setup.php regression
+
+# Run namespace policy regression
+./modules/custom/pmsrgui/tests/run-tests.sh namespace-policy
+
+# Run entry-point soundness regression
+./modules/custom/pmsrgui/tests/run-tests.sh entrypoints-soundness
+
+# Ordered soundness checks (11 then 09)
+./modules/custom/pmsrgui/tests/run-tests.sh namespace-policy
+./modules/custom/pmsrgui/tests/run-tests.sh entrypoints-soundness
+./modules/custom/pmsrgui/tests/run-tests.sh color
+
+# Strict corruption-prevention gate (CI/nightly)
+./modules/custom/pmsrgui/tests/run-tests.sh safety-gate
+
+# Nightly drift check wrapper (logs under tests/logs)
+./modules/custom/pmsrgui/tests/nightly_namespace_drift_check.sh
+
+# Timestamped namespace/statistics backup snapshot
+./modules/custom/pmsrgui/tests/backup_namespace_state.sh
 ```
 Integration tests for PMSR Setup ingestion processes:
 - Ontology ingestion rerun-safety (4 tests)
