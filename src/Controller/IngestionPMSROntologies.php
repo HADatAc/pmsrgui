@@ -4,6 +4,7 @@ namespace Drupal\pmsr\Controller;
 
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\Render\Markup;
+use Drupal\pmsr\Support\PmsrSetupTracker;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -175,6 +176,8 @@ class IngestionPMSROntologies extends ControllerBase {
    * Process PMSR ontology ingestion (AJAX endpoint).
    */
   public function processOntologyIngestion(Request $request) {
+    PmsrSetupTracker::markStageStarted('ingest_pmsr_ontologies', 'PMSR ontology ingestion started');
+
     $progress = [];
     $errors = [];
     $successfully_ingested = [];
@@ -215,6 +218,7 @@ class IngestionPMSROntologies extends ControllerBase {
     }
 
     if (!empty($missing_files)) {
+      PmsrSetupTracker::markStageResult('ingest_pmsr_ontologies', false, 'Missing ontology files: ' . implode(', ', $missing_files));
       return new JsonResponse([
         'success' => false,
         'message' => 'Missing ontology files: ' . implode(', ', $missing_files),
@@ -273,23 +277,10 @@ class IngestionPMSROntologies extends ControllerBase {
       }
 
       if (!$validation['exists']) {
-        $json_payload = json_encode([
-          'label' => $onto['label'],
-          'uri' => $onto['namespace'],
-          'source' => $onto['source'],
-          'sourceMime' => $onto['mime'],
-        ]);
-
-        $create_response = $api->repoCreateNamespace($json_payload, 'pmsr-ingest-ontologies');
-        $create_data = json_decode($create_response);
-
-        if (!$create_data || !$create_data->isSuccessful) {
-          $errors[] = "Failed to create namespace for $abbrev";
-          $progress = array_merge($progress, $ontology_progress);
-          continue;
-        }
-
-        $ontology_progress[] = "  ✓ Created namespace '$onto[label]' with URI: $onto[namespace]";
+        // hascoapi ingest endpoint auto-registers missing namespaces.
+        // Avoid direct create call here to keep this flow aligned with
+        // namespace mutation policy and reduce failure points.
+        $ontology_progress[] = "  ✓ Namespace '$onto[label]' will be auto-registered during ingestion";
       } else {
         $ontology_progress[] = "  ✓ Namespace '$onto[label]' already exists with correct URI";
 
@@ -452,9 +443,13 @@ class IngestionPMSROntologies extends ControllerBase {
       }
     }
 
+    $success = empty($errors);
+    $message = $success ? 'All ontologies ingested successfully!' : 'Ingestion completed with errors';
+    PmsrSetupTracker::markStageResult('ingest_pmsr_ontologies', $success, $message);
+
     return new JsonResponse([
-      'success' => empty($errors),
-      'message' => empty($errors) ? 'All ontologies ingested successfully!' : 'Ingestion completed with errors',
+      'success' => $success,
+      'message' => $message,
       'progress' => $progress,
       'errors' => $errors,
     ]);
@@ -622,6 +617,16 @@ class IngestionPMSROntologies extends ControllerBase {
     $existing_mappings = [];
     $timestamp = date('Y-m-d H:i:s');
 
+    // Remove deprecated binding before checking/creating current mappings.
+    $deprecatedSubject = 'https://pmsr.net/ont/MedicalSimulationProcessStem';
+    $deprecatedParent = 'http://hadatac.org/ont/hasco/ProcessEntryPoint';
+    $deprecatedPattern = '/<'
+      . preg_quote($deprecatedSubject, '/')
+      . '>\s+[^.]*rdfs:subClassOf\s+<'
+      . preg_quote($deprecatedParent, '/')
+      . '>\s*\.\s*/s';
+    $ttlContent = preg_replace($deprecatedPattern, '', $ttlContent, -1, $deprecatedRemovedCount);
+
     foreach ($mappings as $mapping) {
       $externalUri = $mapping['external_uri'];
       $parentUri = $mapping['parent_uri'];
@@ -636,7 +641,13 @@ class IngestionPMSROntologies extends ControllerBase {
         'entry_point' => $entry_point_name,
       ];
 
-      if (strpos($ttlContent, "<$externalUri>") !== false && strpos($ttlContent, "rdfs:subClassOf <$parentUri>") !== false) {
+      $exactMappingPattern = '/<'
+        . preg_quote($externalUri, '/')
+        . '>\s+[^.]*rdfs:subClassOf\s+<'
+        . preg_quote($parentUri, '/')
+        . '>\s*\./s';
+
+      if (preg_match($exactMappingPattern, $ttlContent) === 1) {
         $existing_mappings[] = $mapping_info;
         continue;
       }
@@ -650,11 +661,14 @@ class IngestionPMSROntologies extends ControllerBase {
       $append .= "\ta rdfs:Class;\n";
       $append .= "\trdfs:subClassOf <$parentUri> .\n";
 
+      // Keep local content current so repeated runs in one request don't duplicate mappings.
+      $ttlContent .= "\n<$externalUri>\n\ta rdfs:Class;\n\trdfs:subClassOf <$parentUri> .\n";
+
       $count++;
       $created_mappings[] = $mapping_info;
     }
 
-    if ($count === 0) {
+    if ($count === 0 && empty($deprecatedRemovedCount)) {
       return [
         'success' => true,
         'count' => 0,
@@ -664,7 +678,7 @@ class IngestionPMSROntologies extends ControllerBase {
       ];
     }
 
-    $bytes = file_put_contents($ttlPath, $append, FILE_APPEND | LOCK_EX);
+    $bytes = file_put_contents($ttlPath, $ttlContent, LOCK_EX);
     if ($bytes === false) {
       return [
         'success' => false,

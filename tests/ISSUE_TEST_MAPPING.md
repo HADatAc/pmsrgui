@@ -68,7 +68,7 @@ grep -A 3 "hasco:ClassEntryPoint" /Users/Shared/drupal_private/ont/hasco.ttl | h
 
 **Correct Binding:**
 ```php
-'external_uri' => 'http://pmsr.net/ont/pmsr#MedicalSimulationProcessStem',
+'external_uri' => 'https://pmsr.net/ont/MedicalSimulationProcessStem',
 'parent_uri' => 'http://hadatac.org/ont/hasco/WorkflowStemEntryPoint',
 ```
 

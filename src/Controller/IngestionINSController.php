@@ -4,9 +4,11 @@ namespace Drupal\pmsr\Controller;
 
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\Render\Markup;
+use Drupal\pmsr\Support\PmsrSetupTracker;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Component\Process\Process;
 use Drupal\file\Entity\File;
 use Drupal\rep\Vocabulary\VSTOI;
 
@@ -90,6 +92,8 @@ class IngestionINSController extends ControllerBase {
    * Start a tracked INS ingestion job and return a job ID for polling.
    */
   public function startINSIngestion(Request $request) {
+    PmsrSetupTracker::markStageStarted('ingest_ins_instruments', 'INS ingestion job started');
+
     $jobId = 'ins-' . \Drupal::time()->getCurrentTime() . '-' . bin2hex(random_bytes(4));
 
     $progress = [
@@ -175,6 +179,8 @@ class IngestionINSController extends ControllerBase {
    * - VSTOI class definitions remain in separate ontology graph
    */
   public function processINSIngestion(Request $request) {
+    PmsrSetupTracker::markStageStarted('ingest_ins_instruments', 'INS ingestion worker started');
+
     // Increase execution time limit for long-running ingestion (5 minutes)
     set_time_limit(300);
 
@@ -941,6 +947,38 @@ class IngestionINSController extends ControllerBase {
    * Build and persist a consistent INS ingestion response.
    */
   private function insIngestionResponse(bool $success, string $message, array $progress, array $errors, ?string $jobId = NULL, array $extra = []): JsonResponse {
+    PmsrSetupTracker::markStageResult('ingest_ins_instruments', $success, $message);
+
+    if ($success) {
+      $progress[] = '[final] Running namespace policy regression...';
+      PmsrSetupTracker::recordTestResult('ingest_ins_instruments', 'namespace-policy', 'running', 'Executing run-tests.sh namespace-policy');
+
+      try {
+        $testsDir = DRUPAL_ROOT . '/modules/custom/pmsrgui/tests';
+        $process = new Process(['./run-tests.sh', 'namespace-policy'], $testsDir, NULL, NULL, 900);
+        $process->run();
+
+        $combinedOutput = trim($process->getOutput() . "\n" . $process->getErrorOutput());
+        $summary = $combinedOutput === '' ? 'No output from namespace policy regression.' : substr($combinedOutput, -500);
+
+        if ($process->isSuccessful()) {
+          PmsrSetupTracker::recordTestResult('ingest_ins_instruments', 'namespace-policy', 'pass', $summary);
+          $progress[] = '  ✓ Namespace policy regression passed.';
+        }
+        else {
+          $exitCode = $process->getExitCode();
+          PmsrSetupTracker::recordTestResult('ingest_ins_instruments', 'namespace-policy', 'fail', 'Exit code ' . $exitCode . '. ' . $summary);
+          $progress[] = '  ✗ Namespace policy regression failed (exit code ' . $exitCode . ').';
+          $errors[] = 'Namespace policy regression failed after INS ingestion.';
+        }
+      }
+      catch (\Throwable $e) {
+        PmsrSetupTracker::recordTestResult('ingest_ins_instruments', 'namespace-policy', 'fail', 'Exception: ' . $e->getMessage());
+        $progress[] = '  ✗ Namespace policy regression could not be executed.';
+        $errors[] = 'Namespace policy regression execution error: ' . $e->getMessage();
+      }
+    }
+
     if ($jobId !== NULL) {
       $resolvedStep = isset($extra['currentStep'])
         ? (int) $extra['currentStep']

@@ -4,8 +4,10 @@ namespace Drupal\pmsr\Controller;
 
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\Render\Markup;
+use Drupal\pmsr\Support\PmsrSetupTracker;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Process\Process;
 
 /**
  * Controller for KGR Geography and Organizations ingestion operations.
@@ -91,6 +93,8 @@ class IngestionKgrGeoController extends ControllerBase {
    * Phase 2: Ingest 10 KGR files sequentially in specific order.
    */
   public function processGeographyIngestion(Request $request) {
+    PmsrSetupTracker::markStageStarted('ingest_kgr_geography', 'KGR geography ingestion started');
+
     // Increase execution time limit for long-running ingestion (5 minutes)
     set_time_limit(300);
     
@@ -104,6 +108,7 @@ class IngestionKgrGeoController extends ControllerBase {
     // Validate CSRF token
     if (!$provided_token || !\Drupal::csrfToken()->validate($provided_token, 'kgr_geography_ingestion')) {
       \Drupal::logger('pmsr')->error('KGR Geography ingestion blocked: Invalid or missing CSRF token');
+      PmsrSetupTracker::markStageResult('ingest_kgr_geography', false, 'Security error: invalid or missing CSRF token.');
       return new JsonResponse([
         'success' => false,
         'message' => '🔒 Security Error: This endpoint can only be called from the GUI interface.',
@@ -184,6 +189,7 @@ class IngestionKgrGeoController extends ControllerBase {
       $filePath = $images_dir . '/' . $filename;
       if (!file_exists($filePath)) {
         $errors[] = "Missing zip file: $filename at $filePath";
+        PmsrSetupTracker::markStageResult('ingest_kgr_geography', false, 'Required zip file missing: ' . $filename);
         return new JsonResponse([
           'success' => false,
           'message' => 'Required zip files not found',
@@ -238,6 +244,7 @@ class IngestionKgrGeoController extends ControllerBase {
     
     if (count($errors) > 0) {
       $progress[] = "  ⚠ Some uploads failed (see errors below)";
+      PmsrSetupTracker::markStageResult('ingest_kgr_geography', false, 'Some geography zip uploads failed.');
       return new JsonResponse([
         'success' => false,
         'message' => 'Some zip files failed to upload',
@@ -511,9 +518,43 @@ class IngestionKgrGeoController extends ControllerBase {
     \Drupal::logger('pmsr')->info("KGR: Cleared cached organization data and related statistics tags");
     $progress[] = "✓ Cleared cached organization data to reflect new geography information";
     
+    $success = $kgr_error_count == 0;
+    $message = $success ? 'Geography ingestion completed successfully' : 'Geography ingestion completed with some errors';
+    PmsrSetupTracker::markStageResult('ingest_kgr_geography', $success, $message);
+
+    if ($success) {
+      $progress[] = '[final] Running namespace policy regression...';
+      PmsrSetupTracker::recordTestResult('ingest_kgr_geography', 'namespace-policy', 'running', 'Executing run-tests.sh namespace-policy');
+
+      try {
+        $testsDir = DRUPAL_ROOT . '/modules/custom/pmsrgui/tests';
+        $process = new Process(['./run-tests.sh', 'namespace-policy'], $testsDir, NULL, NULL, 900);
+        $process->run();
+
+        $combinedOutput = trim($process->getOutput() . "\n" . $process->getErrorOutput());
+        $summary = $combinedOutput === '' ? 'No output from namespace policy regression.' : substr($combinedOutput, -500);
+
+        if ($process->isSuccessful()) {
+          PmsrSetupTracker::recordTestResult('ingest_kgr_geography', 'namespace-policy', 'pass', $summary);
+          $progress[] = '  ✓ Namespace policy regression passed.';
+        }
+        else {
+          $exitCode = $process->getExitCode();
+          PmsrSetupTracker::recordTestResult('ingest_kgr_geography', 'namespace-policy', 'fail', 'Exit code ' . $exitCode . '. ' . $summary);
+          $progress[] = '  ✗ Namespace policy regression failed (exit code ' . $exitCode . ').';
+          $errors[] = 'Namespace policy regression failed after KGR geography ingestion.';
+        }
+      }
+      catch (\Throwable $e) {
+        PmsrSetupTracker::recordTestResult('ingest_kgr_geography', 'namespace-policy', 'fail', 'Exception: ' . $e->getMessage());
+        $progress[] = '  ✗ Namespace policy regression could not be executed.';
+        $errors[] = 'Namespace policy regression execution error: ' . $e->getMessage();
+      }
+    }
+
     return new JsonResponse([
-      'success' => $kgr_error_count == 0,
-      'message' => $kgr_error_count == 0 ? 'Geography ingestion completed successfully' : 'Geography ingestion completed with some errors',
+      'success' => $success,
+      'message' => $message,
       'progress' => $progress,
       'errors' => $errors,
       'stats' => [

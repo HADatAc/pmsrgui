@@ -75,6 +75,18 @@ ensure_test_result_database() {
 # Check prerequisites
 echo -e "${YELLOW}Checking prerequisites...${NC}"
 
+http_status() {
+    local url="$1"
+    curl -s -o /dev/null -w "%{http_code}" --max-time 5 "$url" 2>/dev/null || echo "000"
+}
+
+is_reachable_http() {
+    local url="$1"
+    local code
+    code="$(http_status "$url")"
+    [[ "$code" != "000" ]]
+}
+
 # Check if PHPUnit is available
 if [[ ! -x "vendor/bin/phpunit" ]]; then
     echo -e "${RED}✗ PHPUnit not found. Run: composer require --dev phpunit/phpunit${NC}"
@@ -82,20 +94,21 @@ if [[ ! -x "vendor/bin/phpunit" ]]; then
 fi
 echo -e "${GREEN}✓ PHPUnit found${NC}"
 
-# Check if hascoapi is running
-if ! curl -s http://localhost:9001/hascoapi/api/statistics/namespaces > /dev/null 2>&1; then
-    echo -e "${YELLOW}⚠ hascoapi not running at localhost:9001${NC}"
-    echo -e "${YELLOW}  Some integration tests will be skipped${NC}"
+# Check if hascoapi is running (connectivity check, status-code aware)
+HASCOAPI_HEALTH_PATH="/hascoapi/api/repo/table/namespaces"
+if is_reachable_http "http://localhost:9001${HASCOAPI_HEALTH_PATH}" || is_reachable_http "http://127.0.0.1:9001${HASCOAPI_HEALTH_PATH}"; then
+    echo -e "${GREEN}✓ hascoapi reachable${NC}"
 else
-    echo -e "${GREEN}✓ hascoapi running${NC}"
+    echo -e "${YELLOW}⚠ hascoapi not reachable at localhost:9001 or 127.0.0.1:9001${NC}"
+    echo -e "${YELLOW}  Some integration tests will be skipped${NC}"
 fi
 
-# Check if Drupal is accessible
-if ! curl -s http://localhost:8080 > /dev/null 2>&1; then
-    echo -e "${YELLOW}⚠ Drupal not accessible at localhost:8080${NC}"
-    echo -e "${YELLOW}  Functional tests will fail${NC}"
+# Check if Drupal is accessible (connectivity check, status-code aware)
+if is_reachable_http "http://localhost:8080" || is_reachable_http "http://127.0.0.1:8080"; then
+    echo -e "${GREEN}✓ Drupal reachable${NC}"
 else
-    echo -e "${GREEN}✓ Drupal accessible${NC}"
+    echo -e "${YELLOW}⚠ Drupal not reachable at localhost:8080 or 127.0.0.1:8080${NC}"
+    echo -e "${YELLOW}  Functional tests will fail${NC}"
 fi
 
 # Check if hasco.ttl exists
@@ -204,6 +217,9 @@ case "$TEST_TYPE" in
         echo -e "${BLUE}Running Namespace Policy Regression...${NC}"
         echo ""
         bash "$CUSTOM_MODULES_DIR"/pmsrgui/tests/test_namespace_policy.sh
+        echo ""
+        echo -e "${BLUE}Running Namespace Abbreviation/Minimum Validation...${NC}"
+        bash "$CUSTOM_MODULES_DIR"/pmsrgui/tests/compare_baseline_minimums.sh
         ;;
 
     entrypoints-soundness)
@@ -232,6 +248,12 @@ case "$TEST_TYPE" in
         echo -e "${BLUE}Running PMSR Setup Rerun-Safety Tests...${NC}"
         echo ""
         php "$CUSTOM_MODULES_DIR"/pmsrgui/tests/test_pmsr_setup.php rerun-safe
+        ;;
+
+    kgr-people-statistics)
+        echo -e "${BLUE}Running KGR People Statistics Minimum Baseline Test...${NC}"
+        echo ""
+        bash "$CUSTOM_MODULES_DIR"/pmsrgui/tests/test_statistics_baseline.sh verify
         ;;
     
     critical)
@@ -294,7 +316,8 @@ case "$TEST_TYPE" in
         echo "  setup            - Run PMSR Setup tests (all)"
         echo "  setup-regression - Run PMSR Setup regression tests"
         echo "  setup-rerun      - Run PMSR Setup rerun-safety tests"
-        echo "  namespace-policy - Run namespace policy regression test"
+        echo "  kgr-people-statistics - Verify Statistics page values against KGR people baseline minimums"
+        echo "  namespace-policy - Run namespace policy regression + abbreviation/minimum validation"
         echo "  entrypoints-soundness - Run entry-point soundness regression test"
         echo "  safety-gate      - Run strict namespace corruption prevention gate"
         echo "  critical         - Run critical data loss prevention tests"

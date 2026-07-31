@@ -30,14 +30,25 @@
       .then(response => {
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
+        let pending = '';
         
         function processText({done, value}) {
           if (done) {
+            if (pending.trim()) {
+              try {
+                const data = JSON.parse(pending.trim());
+                updateProgress(data);
+              } catch (e) {
+                console.error('Final parse error:', e, pending);
+              }
+            }
             return;
           }
           
-          const text = decoder.decode(value);
-          const lines = text.split('\n');
+          const text = decoder.decode(value, { stream: true });
+          pending += text;
+          const lines = pending.split('\n');
+          pending = lines.pop() || '';
           
           lines.forEach(line => {
             if (line.trim()) {

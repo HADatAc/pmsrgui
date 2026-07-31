@@ -3,7 +3,7 @@
     "recordReason": "State reached after successful # Ingest PMSR Ontologies",
     "requiredNamespaces": {
         "bfo": {
-            "uri": "http://purl.obolibrary.org/obo/BFO_/",
+            "uri": "http://purl.obolibrary.org/obo/BFO_",
             "sourceMime": "application/rdf+xml",
             "minTriples": 1221
         },
@@ -37,33 +37,28 @@
             "sourceMime": "text/turtle",
             "minTriples": 3766
         },
-        "ns_http___purl_obolibra": {
-            "uri": "http://purl.obolibrary.org/obo/NCIT_/",
-            "sourceMime": "text/turtle",
-            "minTriples": 21218
-        },
         "owl": {
-            "uri": "http://www.w3.org/2002/07/owl#/",
+            "uri": "http://www.w3.org/2002/07/owl#",
             "sourceMime": "text/turtle",
             "minTriples": 450
         },
         "pmsr": {
             "uri": "https://pmsr.net/ont/",
-            "sourceMime": "",
+            "sourceMime": "text/turtle",
             "minTriples": 1876
         },
         "prov": {
-            "uri": "http://www.w3.org/ns/prov#/",
+            "uri": "http://www.w3.org/ns/prov#",
             "sourceMime": "text/turtle",
             "minTriples": 1617
         },
         "rdf": {
-            "uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#/",
+            "uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
             "sourceMime": "text/turtle",
             "minTriples": 127
         },
         "rdfs": {
-            "uri": "http://www.w3.org/2000/01/rdf-schema#/",
+            "uri": "http://www.w3.org/2000/01/rdf-schema#",
             "sourceMime": "text/turtle",
             "minTriples": 87
         },
@@ -78,7 +73,7 @@
             "minTriples": 14675
         },
         "skos": {
-            "uri": "http://www.w3.org/2004/02/skos/core#/",
+            "uri": "http://www.w3.org/2004/02/skos/core#",
             "sourceMime": "",
             "minTriples": 0
         },
@@ -93,12 +88,12 @@
             "minTriples": 86602
         },
         "vstoi": {
-            "uri": "http://hadatac.org/ont/vstoi#/",
+            "uri": "http://hadatac.org/ont/vstoi#",
             "sourceMime": "text/turtle",
             "minTriples": 690
         },
         "xsd": {
-            "uri": "http://www.w3.org/2001/XMLSchema#/",
+            "uri": "http://www.w3.org/2001/XMLSchema#",
             "sourceMime": "",
             "minTriples": 0
         }

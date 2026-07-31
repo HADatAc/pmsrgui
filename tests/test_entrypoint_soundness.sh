@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -u
 
-DRUPAL_BASE="${PMSR_TEST_DRUPAL_BASE:-http://127.0.0.1:8080}"
+DRUPAL_BASE="${PMSR_TEST_DRUPAL_BASE:-http://localhost:8080}"
 FUSEKI_QUERY="${PMSR_TEST_FUSEKI_QUERY:-http://127.0.0.1:3030/store/query}"
 
 pass=0
@@ -27,6 +27,7 @@ require_cmd() {
 http_get_retry() {
   local url="$1"
   local out=""
+  local code=""
   local alt=""
   local attempt
 
@@ -37,14 +38,18 @@ http_get_retry() {
   fi
 
   for attempt in 1 2 3 4 5; do
-    out="$(curl -s --max-time 20 "$url" 2>/dev/null || true)"
-    if [[ -n "$out" ]]; then
+    out="$(curl -s --max-time 20 -w "\n%{http_code}" "$url" 2>/dev/null || true)"
+    code="${out##*$'\n'}"
+    out="${out%$'\n'*}"
+    if [[ "$code" =~ ^2[0-9][0-9]$ && -n "$out" ]]; then
       printf '%s' "$out"
       return 0
     fi
     if [[ -n "$alt" ]]; then
-      out="$(curl -s --max-time 20 "$alt" 2>/dev/null || true)"
-      if [[ -n "$out" ]]; then
+      out="$(curl -s --max-time 20 -w "\n%{http_code}" "$alt" 2>/dev/null || true)"
+      code="${out##*$'\n'}"
+      out="${out%$'\n'*}"
+      if [[ "$code" =~ ^2[0-9][0-9]$ && -n "$out" ]]; then
         printf '%s' "$out"
         return 0
       fi
@@ -119,8 +124,8 @@ fi
 # 3) Fuseki semantic checks for expected mappings.
 query_uberon='ASK { <http://purl.obolibrary.org/obo/UBERON_0001062> <http://www.w3.org/2000/01/rdf-schema#subClassOf> <http://hadatac.org/ont/hasco/AnatomicalPartEntryPoint> . }'
 query_ncit='ASK { <http://purl.obolibrary.org/obo/NCIT_C97325> <http://www.w3.org/2000/01/rdf-schema#subClassOf> <http://hadatac.org/ont/hasco/MedicalDeviceEntryPoint> . }'
-query_wf='ASK { <https://pmsr.net/ont/pmsr#MedicalSimulationProcessStem> <http://www.w3.org/2000/01/rdf-schema#subClassOf> <http://hadatac.org/ont/hasco/WorkflowStemEntryPoint> . }'
-query_old='ASK { <https://pmsr.net/ont/pmsr#MedicalSimulationProcessStem> <http://www.w3.org/2000/01/rdf-schema#subClassOf> <http://hadatac.org/ont/hasco/ProcessEntryPoint> . }'
+query_wf='ASK { <https://pmsr.net/ont/MedicalSimulationProcessStem> <http://www.w3.org/2000/01/rdf-schema#subClassOf> <http://hadatac.org/ont/hasco/WorkflowStemEntryPoint> . }'
+query_old='ASK { <https://pmsr.net/ont/MedicalSimulationProcessStem> <http://www.w3.org/2000/01/rdf-schema#subClassOf> <http://hadatac.org/ont/hasco/ProcessEntryPoint> . }'
 
 ans="$(sparql_ask "$query_uberon" || true)"
 if [[ "$ans" == "true" ]]; then

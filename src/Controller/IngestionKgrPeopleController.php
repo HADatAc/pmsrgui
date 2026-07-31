@@ -4,8 +4,10 @@ namespace Drupal\pmsr\Controller;
 
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\Render\Markup;
+use Drupal\pmsr\Support\PmsrSetupTracker;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Process\Process;
 
 /**
  * Controller for KGR People ingestion operations.
@@ -89,6 +91,8 @@ class IngestionKgrPeopleController extends ControllerBase {
   * 3. DP2-PIAGET.xlsx - Instrument instances, platforms, and deployments
    */
   public function processPeopleIngestion(Request $request) {
+    PmsrSetupTracker::markStageStarted('ingest_kgr_people', 'KGR people ingestion started');
+
     // Increase execution time limit for long-running ingestion (5 minutes)
     set_time_limit(300);
     
@@ -102,6 +106,7 @@ class IngestionKgrPeopleController extends ControllerBase {
     // Validate CSRF token
     if (!$provided_token || !\Drupal::csrfToken()->validate($provided_token, 'kgr_people_ingestion')) {
       \Drupal::logger('pmsr')->error('KGR People ingestion blocked: Invalid or missing CSRF token');
+      PmsrSetupTracker::markStageResult('ingest_kgr_people', false, 'Security error: invalid or missing CSRF token.');
       return new JsonResponse([
         'success' => false,
         'message' => '🔒 Security Error: This endpoint can only be called from the GUI interface.',
@@ -142,6 +147,8 @@ class IngestionKgrPeopleController extends ControllerBase {
       $errors[] = "File not found: $filename at $filePath";
       $progress[] = "  ✗ File not found: $filePath";
       $kgr_error_count++;
+
+      PmsrSetupTracker::markStageResult('ingest_kgr_people', false, 'Required KGR people file not found: ' . $filename);
       
       return new JsonResponse([
         'success' => false,
@@ -627,10 +634,57 @@ class IngestionKgrPeopleController extends ControllerBase {
     $progress[] = "✓ Cleared cached data to reflect new information";
     
     $total_errors = $kgr_error_count + $dp2_error_count;
+    $success = $total_errors == 0;
+    $message = $success ? 'People and DP2 ingestion completed successfully' : 'Ingestion completed with some errors';
+
+    $progress[] = '[final] Running statistics minimum baseline check...';
+    PmsrSetupTracker::recordTestResult('ingest_kgr_people', 'statistics-minimum-baseline', 'running', 'Executing test_statistics_baseline.sh verify');
+
+    try {
+      $modulePath = \Drupal::service('extension.list.module')->getPath('pmsr');
+      $testsDir = DRUPAL_ROOT . '/' . $modulePath . '/tests';
+      $baselineFile = $testsDir . '/baselines/kgr_people_statistics_minimum_baseline.json';
+      $drupalBase = \Drupal::request()->getSchemeAndHttpHost();
+
+      $process = new Process([
+        'bash',
+        './test_statistics_baseline.sh',
+        'verify',
+        $baselineFile,
+      ], $testsDir, [
+        'PMSR_TEST_DRUPAL_BASE' => $drupalBase,
+      ], NULL, 180);
+      $process->run();
+
+      $combinedOutput = trim($process->getOutput() . "\n" . $process->getErrorOutput());
+      $summary = $combinedOutput === '' ? 'No output from statistics baseline check.' : substr($combinedOutput, -500);
+
+      if ($process->isSuccessful()) {
+        PmsrSetupTracker::recordTestResult('ingest_kgr_people', 'statistics-minimum-baseline', 'pass', $summary);
+        $progress[] = '  ✓ Statistics minimum baseline check passed.';
+      }
+      else {
+        $exitCode = $process->getExitCode();
+        PmsrSetupTracker::recordTestResult('ingest_kgr_people', 'statistics-minimum-baseline', 'fail', 'Exit code ' . $exitCode . '. ' . $summary);
+        $progress[] = '  ✗ Statistics minimum baseline check failed (exit code ' . $exitCode . ').';
+        $errors[] = 'Statistics minimum baseline check failed after KGR people ingestion.';
+        $success = false;
+        $message = 'Ingestion completed, but statistics minimum baseline check failed';
+      }
+    }
+    catch (\Throwable $e) {
+      PmsrSetupTracker::recordTestResult('ingest_kgr_people', 'statistics-minimum-baseline', 'fail', 'Exception: ' . $e->getMessage());
+      $progress[] = '  ✗ Statistics minimum baseline check could not be executed.';
+      $errors[] = 'Statistics minimum baseline check execution error: ' . $e->getMessage();
+      $success = false;
+      $message = 'Ingestion completed, but statistics minimum baseline check could not be executed';
+    }
+
+    PmsrSetupTracker::markStageResult('ingest_kgr_people', $success, $message);
     
     return new JsonResponse([
-      'success' => $total_errors == 0,
-      'message' => $total_errors == 0 ? 'People and DP2 ingestion completed successfully' : 'Ingestion completed with some errors',
+      'success' => $success,
+      'message' => $message,
       'progress' => $progress,
       'errors' => $errors,
       'stats' => [

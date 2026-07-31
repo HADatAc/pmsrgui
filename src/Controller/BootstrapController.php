@@ -3,6 +3,7 @@
 namespace Drupal\pmsr\Controller;
 
 use Drupal\Core\Controller\ControllerBase;
+use Drupal\pmsr\Support\PmsrSetupTracker;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -71,11 +72,22 @@ class BootstrapController extends ControllerBase {
   public function executeLocalhostBootstrap() {
     $response = new StreamedResponse();
     
-    $response->headers->set('Content-Type', 'application/json');
+    $response->headers->set('Content-Type', 'text/plain; charset=utf-8');
     $response->headers->set('X-Accel-Buffering', 'no');
     $response->headers->set('Cache-Control', 'no-cache');
+    $response->headers->set('Connection', 'keep-alive');
     
     $response->setCallback(function() {
+      @ini_set('zlib.output_compression', '0');
+      @ini_set('output_buffering', 'off');
+      @ini_set('implicit_flush', '1');
+      @set_time_limit(0);
+
+      while (ob_get_level() > 0) {
+        @ob_end_flush();
+      }
+      @ob_implicit_flush(TRUE);
+
       $this->performBootstrap();
     });
     
@@ -89,6 +101,10 @@ class BootstrapController extends ControllerBase {
     $api = \Drupal::service('rep.api_connector');
     $config = \Drupal::service('config.factory')->getEditable('rep.settings');
     $api_url = self::LOCALHOST_CONFIG['api_url'];
+
+    // Bootstrap is the KG reset phase for setup flows; clear tests dashboard state.
+    PmsrSetupTracker::resetAll('bootstrap');
+    PmsrSetupTracker::markStageStarted('pmsr_config_bootstrap', 'Bootstrap started');
 
     // Step 0: Reset PMSR-specific non-Drupal caches/state once per bootstrap run.
     $this->sendProgress([
@@ -106,6 +122,7 @@ class BootstrapController extends ControllerBase {
         'message' => 'Failed to reset PMSR bootstrap caches/state.',
         'details' => implode(' | ', $resetReport['messages']),
       ]);
+      PmsrSetupTracker::markStageResult('pmsr_config_bootstrap', false, 'Failed to reset PMSR bootstrap caches/state.');
       return;
     }
 
@@ -141,6 +158,7 @@ class BootstrapController extends ControllerBase {
         ]);
         // Restore original API URL
         $config->set('api_url', $original_api_url)->save();
+        PmsrSetupTracker::markStageResult('pmsr_config_bootstrap', false, 'Cannot connect to API during bootstrap.');
         return;
       }
       
@@ -159,6 +177,7 @@ class BootstrapController extends ControllerBase {
       ]);
       // Restore original API URL
       $config->set('api_url', $original_api_url)->save();
+      PmsrSetupTracker::markStageResult('pmsr_config_bootstrap', false, 'API connection failed: ' . $e->getMessage());
       return;
     }
 
@@ -309,6 +328,7 @@ class BootstrapController extends ControllerBase {
             ]);
             // Restore original API URL
             $config->set('api_url', $original_api_url)->save();
+            PmsrSetupTracker::markStageResult('pmsr_config_bootstrap', false, 'Unexpected triples found in triplestore default state check.');
             return;
           }
 
@@ -471,6 +491,7 @@ class BootstrapController extends ControllerBase {
           ]);
           // Restore original API URL
           $config->set('api_url', $original_api_url)->save();
+          PmsrSetupTracker::markStageResult('pmsr_config_bootstrap', false, 'Triplestore is not empty; bootstrap aborted.');
           return;
         }
       } else {
@@ -502,6 +523,7 @@ class BootstrapController extends ControllerBase {
             ]);
             // Restore original API URL
             $config->set('api_url', $original_api_url)->save();
+            PmsrSetupTracker::markStageResult('pmsr_config_bootstrap', false, 'Triplestore not empty by SPARQL verification; bootstrap aborted.');
             return;
           }
           
@@ -564,6 +586,7 @@ class BootstrapController extends ControllerBase {
         'status' => 'error',
         'message' => 'Failed to configure repository in API: ' . $e->getMessage(),
       ]);
+      PmsrSetupTracker::markStageResult('pmsr_config_bootstrap', false, 'Failed to configure repository in API: ' . $e->getMessage());
       return;
     }
 
@@ -692,6 +715,7 @@ class BootstrapController extends ControllerBase {
           'status' => 'error',
           'message' => 'Failed to load ontologies: ' . $loadMessage,
         ]);
+        PmsrSetupTracker::markStageResult('pmsr_config_bootstrap', false, 'Failed to load ontologies: ' . $loadMessage);
         return;
       }
       
@@ -826,9 +850,14 @@ class BootstrapController extends ControllerBase {
    * Send progress update to the client.
    */
   private function sendProgress($data) {
+    if (is_array($data) && ($data['type'] ?? '') === 'complete') {
+      $status = (string) ($data['status'] ?? '');
+      $message = (string) ($data['message'] ?? 'Bootstrap completed.');
+      PmsrSetupTracker::markStageResult('pmsr_config_bootstrap', $status === 'success', $message);
+    }
+
     echo json_encode($data) . "\n";
-    ob_flush();
-    flush();
+    @flush();
   }
 
   /**

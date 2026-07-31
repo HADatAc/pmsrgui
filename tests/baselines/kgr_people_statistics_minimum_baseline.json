@@ -1,0 +1,20 @@
+{
+  "recordedAt": "2026-07-31T09:36:11Z",
+  "source": "http://127.0.0.1:8080/pmsr/statistics",
+  "minimumStatistics": {
+    "ontologies": 22,
+    "classes": 47700,
+    "instances": 46149,
+    "simulator_models": 140,
+    "clinical_procedures": 398,
+    "anatomical_structures": 4170,
+    "medical_devices": 1434,
+    "registered_pmsr_users_total": 0,
+    "people_in_knowledge_graph_total": 0,
+    "registered_scenarios_total": 0,
+    "registered_processes_total": 0,
+    "registered_tasks_subtasks_total": 0,
+    "registered_simulators_total": 0,
+    "registered_simulation_laboratories_total": 0
+  }
+}

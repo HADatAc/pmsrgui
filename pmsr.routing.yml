@@ -151,10 +151,40 @@ pmsr.refresh_statistics:
     no_cache: TRUE
   methods: [POST]
 
+pmsr.refresh_members_statistics:
+  path: '/pmsr/api/statistics/refresh/members'
+  defaults:
+    _controller: '\Drupal\pmsr\Controller\StatisticsController::refreshMembersStatisticsCache'
+  requirements:
+    _access: 'TRUE'
+  options:
+    no_cache: TRUE
+  methods: [POST]
+
+pmsr.statistics_cache_worker:
+  path: '/pmsr/api/statistics/cache-worker/{jobId}'
+  defaults:
+    _controller: '\Drupal\pmsr\Controller\StatisticsController::statisticsCacheWorker'
+  requirements:
+    _access: 'TRUE'
+  options:
+    no_cache: TRUE
+  methods: [POST]
+
 pmsr.api_statistics_global:
   path: '/pmsr/api/statistics/global'
   defaults:
     _controller: '\Drupal\pmsr\Controller\StatisticsController::getGlobalStatistics'
+  requirements:
+    _access: 'TRUE'
+  options:
+    no_cache: TRUE
+  methods: [GET]
+
+pmsr.api_statistics_snapshot:
+  path: '/pmsr/api/statistics/snapshot'
+  defaults:
+    _controller: '\Drupal\pmsr\Controller\StatisticsController::getStatisticsSnapshot'
   requirements:
     _access: 'TRUE'
   options:
@@ -188,6 +218,22 @@ pmsr.ingest_people:
   requirements:
     _permission: 'access content'
     _role: 'authenticated'
+
+pmsr.wkf_namespaces:
+  path: '/pmsr/setup/wkf-namespaces'
+  defaults:
+    _controller: '\Drupal\pmsr\Controller\WKFNamespacesController::content'
+    _title: 'WKF-requested Namespaces'
+  requirements:
+    _permission: 'access content'
+
+pmsr.tests:
+  path: '/pmsr/tests'
+  defaults:
+    _controller: '\Drupal\pmsr\Controller\PmsrTestsController::content'
+    _title: 'PMSR Tests'
+  requirements:
+    _permission: 'access content'
 
 pmsr.process_people_ingestion:
   path: '/pmsr/api/ingest/people/process'
