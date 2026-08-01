@@ -156,10 +156,17 @@ class IngestionKgrGeoController extends ControllerBase {
       
       try {
         $delete_response = $api->deleteMediaFolder($foldername);
-        $delete_data = json_decode($delete_response);
+        $delete_data = is_string($delete_response) ? json_decode($delete_response) : NULL;
+        $api_error = trim((string) $api->getErrorMessage());
         
-        if (!$delete_data || !$delete_data->isSuccessful) {
-          $error_msg = isset($delete_data->message) ? $delete_data->message : 'Unknown error';
+        if (!$delete_data || empty($delete_data->isSuccessful)) {
+          $error_msg = isset($delete_data->message) ? (string) $delete_data->message : '';
+          if ($error_msg === '' && $api_error !== '') {
+            $error_msg = $api_error;
+          }
+          if ($error_msg === '') {
+            $error_msg = 'Unknown error';
+          }
           // If folder doesn't exist, that's OK - continue with upload
           if (strpos($error_msg, 'does not exist') !== false || strpos($error_msg, 'already deleted') !== false) {
             $progress[] = "  ℹ️ Folder doesn't exist (first upload or already clean)";
@@ -222,10 +229,17 @@ class IngestionKgrGeoController extends ControllerBase {
         
         // Upload to HAScO API using uploadMedia endpoint
         $upload_response = $api->uploadMedia($foldername, $filename, $fileContent);
-        $upload_data = json_decode($upload_response);
+        $upload_data = is_string($upload_response) ? json_decode($upload_response) : NULL;
+        $api_error = trim((string) $api->getErrorMessage());
         
-        if (!$upload_data || !$upload_data->isSuccessful) {
-          $error_msg = isset($upload_data->message) ? $upload_data->message : 'Unknown error';
+        if (!$upload_data || empty($upload_data->isSuccessful)) {
+          $error_msg = isset($upload_data->message) ? (string) $upload_data->message : '';
+          if ($error_msg === '' && $api_error !== '') {
+            $error_msg = $api_error;
+          }
+          if ($error_msg === '') {
+            $error_msg = 'Unknown error';
+          }
           $errors[] = "Failed to upload $filename: $error_msg";
           $progress[] = "    ✗ Upload failed: $error_msg";
         } else {
