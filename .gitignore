@@ -1,1 +1,4 @@
 extract_log.txt
+scripts/.pw-browsers/
+scripts/node_modules/
+scripts/.npm-cache/
