@@ -468,7 +468,9 @@ class StatisticsController extends ControllerBase {
                 $job['attempts'] = (int) ($job['attempts'] ?? 0) + 1;
                 $job['last_error'] = $e->getMessage();
                 if ($attemptNum >= 3) {
-                  // Skip after a few attempts so job can continue to completion.
+                  // Keep row cardinality consistent even when enrichment fails.
+                  $fallbackRow = $this->buildFallbackMemberStatisticsRow($contributorUri);
+                  $job['members']['rows'][] = $fallbackRow;
                   $job['members']['index'] = $index + 1;
                 }
                 $this->saveStatisticsCacheJob($job);
@@ -1298,6 +1300,30 @@ class StatisticsController extends ControllerBase {
   }
 
   /**
+   * Build a minimal member row when full enrichment fails.
+   */
+  private function buildFallbackMemberStatisticsRow(string $contributorUri): array {
+    $repModulePath = Drupal::service('extension.list.module')->getPath('rep');
+    $placeholderImage = base_path() . $repModulePath . '/images/organization_placeholder.png';
+    $fallbackLabel = $this->labelFromUri($contributorUri);
+
+    return [
+      'uri' => $contributorUri,
+      'label' => $fallbackLabel,
+      'shortName' => $fallbackLabel,
+      'fullName' => $fallbackLabel,
+      'image' => $placeholderImage,
+      'peopleCount' => 0,
+      'registeredUsersCount' => 0,
+      'platformCount' => 0,
+      'simulatorCount' => 0,
+      'registeredScenariosCount' => 0,
+      'registeredProcessesCount' => 0,
+      'registeredTasksSubtasksCount' => 0,
+    ];
+  }
+
+  /**
    * Recompute aggregate totals from member rows.
    */
   private function buildMemberTotalsFromRows(array $rows): array {
@@ -1398,6 +1424,8 @@ class StatisticsController extends ControllerBase {
           $updatedUris[] = $uri;
         }
         catch (\Exception $e) {
+          $membersByUri[$uri] = $this->buildFallbackMemberStatisticsRow($uri);
+          $updatedUris[] = $uri;
           $errors[] = 'Failed to update member row for ' . $uri . ': ' . $e->getMessage();
         }
       }
@@ -1432,6 +1460,8 @@ class StatisticsController extends ControllerBase {
           $updatedUris[] = $uri;
         }
         catch (\Exception $e) {
+          $membersByUri[$uri] = $this->buildFallbackMemberStatisticsRow($uri);
+          $updatedUris[] = $uri;
           $errors[] = 'Failed to update member row for ' . $uri . ': ' . $e->getMessage();
         }
       }
@@ -1802,6 +1832,7 @@ $output .= '</div>'; // End single row with all 5 cards
               $members[] = $this->buildMemberStatisticsRow($api, (string) $contributorUri);
             } catch (\Exception $e) {
               $hadMemberFetchErrors = true;
+              $members[] = $this->buildFallbackMemberStatisticsRow((string) $contributorUri);
               \Drupal::logger('pmsr')->warning('Failed to fetch organization ' . $contributorUri . ': ' . $e->getMessage());
             }
           }
@@ -1821,13 +1852,11 @@ $output .= '</div>'; // End single row with all 5 cards
         $memberTotals['tasksSubtasks'] += $member['registeredTasksSubtasksCount'] ?? 0;
       }
 
-      // Avoid persisting incomplete snapshots caused by transient API failures.
-      if (!$hadMemberFetchErrors) {
-        $this->setStatisticsDataValue(self::STATS_MEMBERS_DATA_KEY, [
-          'members' => $members,
-          'totals' => $memberTotals,
-        ]);
-      }
+      // Persist the complete cardinality snapshot (including fallback rows).
+      $this->setStatisticsDataValue(self::STATS_MEMBERS_DATA_KEY, [
+        'members' => $members,
+        'totals' => $memberTotals,
+      ]);
     }
 
     // Display members table (up to 10 columns + Description column + Total column)

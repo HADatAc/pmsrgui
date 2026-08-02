@@ -270,6 +270,28 @@ body.pmsr-module-enabled .navbar .navbar-brand img {
   height: 140px!important;
 }
 
+/* Show landing title in the top banner next to the logo. */
+body.pmsr-module-enabled #navbar-top .navbar-brand,
+body.pmsr-module-enabled #navbar-main .navbar-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.9rem;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+body.pmsr-module-enabled #navbar-top .navbar-brand::after,
+body.pmsr-module-enabled #navbar-main .navbar-brand::after {
+  content: 'Portuguese Medical Simulation Repository';
+  color: #183418;
+  font-size: clamp(2.1rem, 3vw, 2.9rem);
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  max-width: none;
+}
+
 /* HIDE CREATE USER ACCOUNT */
 a[href*="/user/password"],
 a[href*="user/register"] {
@@ -281,6 +303,11 @@ a[href*="user/register"] {
   body.pmsr-module-enabled .navbar .navbar-brand img {
     height: 70px!important;
     width: 70px;
+  }
+  body.pmsr-module-enabled #navbar-top .navbar-brand::after,
+  body.pmsr-module-enabled #navbar-main .navbar-brand::after {
+    font-size: 1.35rem;
+    max-width: 13rem;
   }
   body.pmsr-module-enabled img.img-fluid.d-inline-block.align-top {
     padding-right: 0!important;

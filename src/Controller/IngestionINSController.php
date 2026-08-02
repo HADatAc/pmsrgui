@@ -232,32 +232,23 @@ class IngestionINSController extends ControllerBase {
     $progress[] = "[2/10] Creating Drupal file entity...";
     
     try {
-      // Check if file already exists
-      $existing_file = \Drupal::entityTypeManager()
-        ->getStorage('file')
-        ->loadByProperties(['filename' => 'INS-PMSR.xlsx']);
-      
-      if (!empty($existing_file)) {
-        $file = reset($existing_file);
-        $progress[] = "  ✓ Using existing file entity (ID: {$file->id()})";
-      } else {
-        // Copy file to public directory
-        $destination = 'public://mts/INS-PMSR.xlsx';
-        $directory = dirname($destination);
-        \Drupal::service('file_system')->prepareDirectory($directory, \Drupal\Core\File\FileSystemInterface::CREATE_DIRECTORY);
-        
-        $file_contents = file_get_contents($file_path);
-        $file = \Drupal::service('file.repository')->writeData($file_contents, $destination, \Drupal\Core\File\FileSystemInterface::EXISTS_REPLACE);
-        
-        if (!$file) {
-          $errors[] = "Failed to create file entity";
-          return $this->insIngestionResponse(false, 'Could not create file entity', $progress, $errors, $jobId);
-        }
-        
-        $file->setPermanent();
-        $file->save();
-        $progress[] = "  ✓ Created file entity (ID: {$file->id()})";
+      // Always refresh the Drupal file from current module mts content.
+      // Reusing an existing file entity by filename can preserve stale binary content.
+      $destination = 'public://mts/INS-PMSR.xlsx';
+      $directory = dirname($destination);
+      \Drupal::service('file_system')->prepareDirectory($directory, \Drupal\Core\File\FileSystemInterface::CREATE_DIRECTORY);
+
+      $file_contents = file_get_contents($file_path);
+      $file = \Drupal::service('file.repository')->writeData($file_contents, $destination, \Drupal\Core\File\FileSystemInterface::EXISTS_REPLACE);
+
+      if (!$file) {
+        $errors[] = "Failed to create/update file entity";
+        return $this->insIngestionResponse(false, 'Could not create/update file entity', $progress, $errors, $jobId);
       }
+
+      $file->setPermanent();
+      $file->save();
+      $progress[] = "  ✓ Refreshed file entity from mts/INS-PMSR.xlsx (ID: {$file->id()})";
     } catch (\Exception $e) {
       $errors[] = "Exception creating file entity: " . $e->getMessage();
       return $this->insIngestionResponse(false, 'Exception during file entity creation', $progress, $errors, $jobId);
@@ -276,11 +267,16 @@ class IngestionINSController extends ControllerBase {
     
     $api = \Drupal::service('rep.api_connector');
     
-    // Generate DataFile URI (DFL prefix)
-    $newDataFileUri = \Drupal\rep\Utils::uriGen('datafile');
-    
-    // Generate INS URI by replacing DFL with INF prefix
-    $newINSUri = str_replace("DFL", \Drupal\rep\Utils::elementPrefix('ins'), $newDataFileUri);
+    // Generate DataFile URI (DFL prefix) with fallback when repoInfo is transiently unavailable.
+    $newDataFileUri = $this->generateDataFileUriWithFallback($api, $progress);
+
+    // Generate INS URI linked to the same identifier as the DataFile URI.
+    $newINSUri = $this->buildLinkedTemplateUri($newDataFileUri, 'ins');
+
+    if ($newDataFileUri === '' || $newINSUri === '') {
+      $errors[] = 'Could not generate stable DataFile/INS URIs for ingestion.';
+      return $this->insIngestionResponse(false, 'URI generation failed', $progress, $errors, $jobId);
+    }
     
     $progress[] = "  ✓ DataFile (DFL) URI: " . $newDataFileUri;
     $progress[] = "  ✓ INS (INF) URI: " . $newINSUri;
@@ -360,20 +356,22 @@ class IngestionINSController extends ControllerBase {
     $progress[] = "[5/10] Checking for existing INS-PMSR metadata templates...";
     
     try {
-      $useremail = \Drupal::currentUser()->getEmail();
-      
-      // Get list of INS templates managed by current user
-      $response = $api->listByManagerEmail('ins', $useremail, 100, 0);
+      // IMPORTANT: cleanup must be global, not manager-scoped, otherwise
+      // stale INS-PMSR templates from prior runs/users can accumulate.
+      $response = $api->listByKeyword('ins', 'INS-PMSR', 500, 0);
       $data = json_decode($response);
       
       $existingINS = [];
       if ($data && $data->isSuccessful && !empty($data->body)) {
         foreach ($data->body as $ins) {
-          // Find INS-PMSR templates (check label or filename)
-          if (isset($ins->label) && $ins->label === 'INS-PMSR') {
+          $label = isset($ins->label) ? trim((string) $ins->label) : '';
+          $filename = isset($ins->hasDataFile->filename) ? trim((string) $ins->hasDataFile->filename) : '';
+
+          // Keep strict matching to the canonical PMSR INS template.
+          if ($label === 'INS-PMSR' || $filename === 'INS-PMSR.xlsx') {
             $existingINS[] = [
               'uri' => $ins->uri,
-              'label' => $ins->label,
+              'label' => $label,
               'dataFileUri' => $ins->hasDataFile->uri ?? null,
             ];
             $progress[] = "  → Found existing INS-PMSR: " . $ins->uri;
@@ -384,6 +382,7 @@ class IngestionINSController extends ControllerBase {
       // Delete existing INS-PMSR templates (which also deletes their DataFile graphs)
       if (!empty($existingINS)) {
         $progress[] = "  → Deleting " . count($existingINS) . " existing INS-PMSR template(s)...";
+        $deletionFailures = [];
         
         foreach ($existingINS as $ins) {
           try {
@@ -393,11 +392,23 @@ class IngestionINSController extends ControllerBase {
             if ($uningest_data && $uningest_data->isSuccessful) {
               $progress[] = "    ✓ Deleted INS template and DataFile graph: " . $ins['uri'];
             } else {
-              $progress[] = "    ⚠ Failed to delete " . $ins['uri'] . ": " . ($uningest_data->message ?? 'Unknown error');
+              $failure = "Failed to delete " . $ins['uri'] . ": " . ($uningest_data->message ?? 'Unknown error');
+              $deletionFailures[] = $failure;
+              $progress[] = "    ⚠ " . $failure;
             }
           } catch (\Exception $e) {
-            $progress[] = "    ⚠ Exception deleting " . $ins['uri'] . ": " . $e->getMessage();
+            $failure = "Exception deleting " . $ins['uri'] . ": " . $e->getMessage();
+            $deletionFailures[] = $failure;
+            $progress[] = "    ⚠ " . $failure;
           }
+        }
+
+        if (!empty($deletionFailures)) {
+          $errors = array_merge($errors, $deletionFailures);
+          return $this->insIngestionResponse(false, 'Could not fully clean previous INS-PMSR templates', $progress, $errors, $jobId, [
+            'insUri' => $newINSUri,
+            'dataFileUri' => $newDataFileUri,
+          ]);
         }
         
         $progress[] = "  ✓ Cleaned up existing INS-PMSR data (rerun-safe)";
@@ -450,9 +461,10 @@ class IngestionINSController extends ControllerBase {
       ]);
       
       // Create DataFile first (same as AddMTForm)
-      $msg1 = $api->parseObjectResponse($api->datafileAdd($datafileJSON), 'datafileAdd');
+      $datafileRawResponse = $api->datafileAdd($datafileJSON);
+      $msg1 = $api->parseObjectResponse($datafileRawResponse, 'datafileAdd');
       if ($msg1 == NULL) {
-        $errors[] = "Failed to create DataFile (DFL) entity";
+        $errors[] = "Failed to create DataFile (DFL) entity. " . $this->extractApiFailureDetail($datafileRawResponse);
         return $this->insIngestionResponse(false, 'DataFile creation failed', $progress, $errors, $jobId, [
           'insUri' => $newINSUri,
           'dataFileUri' => $newDataFileUri,
@@ -461,9 +473,10 @@ class IngestionINSController extends ControllerBase {
       $progress[] = "  ✓ Created DataFile (DFL) entity";
       
       // Create INS using elementAdd (same as AddMTForm)
-      $msg2 = $api->parseObjectResponse($api->elementAdd('ins', $insJSON), 'elementAdd');
+      $insRawResponse = $api->elementAdd('ins', $insJSON);
+      $msg2 = $api->parseObjectResponse($insRawResponse, 'elementAdd');
       if ($msg2 == NULL) {
-        $errors[] = "Failed to create INS metadata template";
+        $errors[] = "Failed to create INS metadata template. " . $this->extractApiFailureDetail($insRawResponse);
         return $this->insIngestionResponse(false, 'INS creation failed', $progress, $errors, $jobId, [
           'insUri' => $newINSUri,
           'dataFileUri' => $newDataFileUri,
@@ -1121,6 +1134,97 @@ class IngestionINSController extends ControllerBase {
     } catch (\Exception $e) {
       return $state;
     }
+  }
+
+  /**
+   * Generate DataFile URI with a deterministic fallback if Utils::uriGen fails.
+   */
+  private function generateDataFileUriWithFallback($api, array &$progress): string {
+    $generated = trim((string) \Drupal\rep\Utils::uriGen('datafile'));
+    if ($generated !== '') {
+      return $generated;
+    }
+
+    $progress[] = '  ⚠ Primary URI generator returned empty value, applying fallback strategy';
+
+    $repoNamespace = '';
+    try {
+      $repoInfoRaw = $api->repoInfo();
+      $repoObj = json_decode((string) $repoInfoRaw);
+      if ($repoObj && !empty($repoObj->isSuccessful) && isset($repoObj->body->hasDefaultNamespaceURL)) {
+        $repoNamespace = \Drupal\rep\Utils::normalizeRepositoryNamespace((string) $repoObj->body->hasDefaultNamespaceURL);
+      }
+    } catch (\Throwable $t) {
+      // Keep fallback path below.
+    }
+
+    if ($repoNamespace === '') {
+      $repoNamespace = 'https://pmsr.net/ont/';
+      $progress[] = '  ⚠ Using canonical PMSR namespace fallback for URI generation';
+    }
+
+    $prefix = (string) \Drupal\rep\Utils::elementPrefix('datafile');
+    if ($prefix === '') {
+      $prefix = 'DFL';
+    }
+
+    $uid = (string) \Drupal::currentUser()->id();
+    $suffix = (string) \Drupal::time()->getCurrentTime() . (string) random_int(10000, 99999) . $uid;
+    return $repoNamespace . $prefix . $suffix;
+  }
+
+  /**
+   * Build a template URI (for example INS/INF) that shares identifier with DataFile URI.
+   */
+  private function buildLinkedTemplateUri(string $dataFileUri, string $templateType): string {
+    $base = trim($dataFileUri);
+    if ($base === '') {
+      return '';
+    }
+
+    $dataFilePrefix = (string) \Drupal\rep\Utils::elementPrefix('datafile');
+    if ($dataFilePrefix === '') {
+      $dataFilePrefix = 'DFL';
+    }
+
+    $templatePrefix = (string) \Drupal\rep\Utils::elementPrefix($templateType);
+    if ($templatePrefix === '') {
+      return '';
+    }
+
+    if (strpos($base, $dataFilePrefix) !== FALSE) {
+      return str_replace($dataFilePrefix, $templatePrefix, $base);
+    }
+
+    return $base . '-' . $templatePrefix;
+  }
+
+  /**
+   * Return compact human-readable error detail from raw API response.
+   */
+  private function extractApiFailureDetail($rawResponse): string {
+    if ($rawResponse === NULL || $rawResponse === FALSE || $rawResponse === '') {
+      return 'No response returned by API.';
+    }
+
+    $rawText = is_string($rawResponse) ? $rawResponse : json_encode($rawResponse);
+    if (!is_string($rawText) || $rawText === '') {
+      return 'API response could not be stringified.';
+    }
+
+    $decoded = json_decode($rawText);
+    if ($decoded && isset($decoded->body)) {
+      if (is_string($decoded->body)) {
+        $body = trim($decoded->body);
+      } else {
+        $body = json_encode($decoded->body);
+      }
+      if (is_string($body) && $body !== '') {
+        return 'API message: ' . substr($body, 0, 400);
+      }
+    }
+
+    return 'Raw API response: ' . substr(preg_replace('/\s+/', ' ', $rawText), 0, 400);
   }
 
   /**

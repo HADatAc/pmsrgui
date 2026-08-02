@@ -16,7 +16,7 @@ class LandingPageController extends ControllerBase {
     // Module path
     $module_path = \Drupal::service('extension.list.module')->getPath('pmsr');
 
-    $title = $config->get('title') ?? 'Repositório Médico Português';
+    $title = 'Portuguese Medical Simulation Repository';
 
     // Load image 1
     $image_1_fid = $config->get('image_1');
@@ -70,92 +70,81 @@ class LandingPageController extends ControllerBase {
       $footer_logo = base_path() . $module_path . '/images/footer.png';
     }
 
-    // Buttons definition - 3x2 grid (3 columns, 2 rows)
-    $buttons_row1 = [
-      ['icon' => 'fas fa-magnifying-glass fa-2xl', 'label' => 'Search Scenarios and Access Data', 'url' => 'std/search/studies'],
-      ['icon' => 'fas fa-magnifying-glass fa-2xl', 'label' => 'Search Simulator<br /> By Hierarchy', 'url' => 'sir/list'],
-      ['icon' => 'fas fa-cogs fa-2xl', 'label' => 'Generate and Register Formal Scenario (WKF)', 'url' => 'rep/select/mt/wkf/table/1/9/none'],
-    ];
-
-    $buttons_row2 = [
-      ['icon' => 'fas fa-chart-simple fa-2xl', 'label' => 'Repository Statistics', 'url' => 'pmsr/statistics'],
-      ['icon' => 'fas fa-magnifying-glass fa-2xl', 'label' => 'Search Organizations and Simulator Instances By Geography', 'url' => 'social/geography-map/2268747470733a2f2f706d73722e6e65742f6f6e742f504a543137343237383334383133383332353122'],
-      ['icon' => 'fas fa-chart-bar fa-2xl', 'label' => 'Manage<br /> Simulator Instances', 'url' => 'dpl/select/instrumentinstance/1/9'],
+    $panels = [
+      [
+        'title' => 'Scenarios',
+        'panelClass' => 'pmsr-landing-panel--scenarios',
+        'actions' => [
+          ['icon' => 'fas fa-magnifying-glass fa-2xl', 'label' => 'Search Scenarios and Access Data', 'url' => 'std/search/studies'],
+          ['icon' => 'fas fa-cogs fa-2xl', 'label' => 'Generate Semantic Scenarios (WKF)', 'url' => 'rep/select/mt/wkf/table/1/9/none'],
+        ],
+      ],
+      [
+        'title' => 'Simulators',
+        'panelClass' => 'pmsr-landing-panel--simulators',
+        'actions' => [
+          ['icon' => 'fas fa-magnifying-glass fa-2xl', 'label' => 'Search Simulation Models', 'url' => 'sir/list'],
+          ['icon' => 'fas fa-chart-bar fa-2xl', 'label' => 'Manage<br /> Simulator Instances', 'url' => 'dpl/select/instrumentinstance/1/9'],
+        ],
+      ],
+      [
+        'title' => 'Statistics',
+        'panelClass' => 'pmsr-landing-panel--statistics',
+        'actions' => [
+          ['icon' => 'fas fa-chart-simple fa-2xl', 'label' => 'Repository Statistics', 'url' => 'pmsr/statistics'],
+          ['icon' => 'fas fa-magnifying-glass fa-2xl', 'label' => 'Simulator Instances by Organizations', 'url' => 'social/geography-map/2268747470733a2f2f706d73722e6e65742f6f6e742f504a543137343237383334383133383332353122'],
+        ],
+      ],
     ];
 
     // INIT HTML
-    $output = '';
-
-    // HTML FOR BUTTONS
-    $output .= '<div class="container my-5">';
-    $output .= '<div class="row">';
+    $output = '<div class="container-fluid pmsr-landing-container my-5">';
 
     //USER IS AUTHENTICATED
     if ($user->isAuthenticated()) {
-      // Row 1 - 3 columns
-      foreach ($buttons_row1 as $button) {
-        $output .= '<div class="col-4 d-flex flex-column">';
-        
-        // Base classes for styling
-        $classes = 'btn btn-primary btn-lg my-2 d-flex align-items-center justify-content-center custom-button';
+      $output .= '<div class="pmsr-landing-panels">';
+      foreach ($panels as $panel) {
+        $output .= '<section class="pmsr-landing-panel ' . $panel['panelClass'] . '">';
+        $output .= '<div class="pmsr-landing-panel__overlay">';
+        $output .= '<h3 class="pmsr-landing-panel__title">' . $panel['title'] . '</h3>';
+        $output .= '<div class="pmsr-landing-panel__actions">';
 
-        // If button['disabled'] is set, add our disabled-link class and set href="#"
-        if (!empty($button['disabled'])) {
-          $classes .= ' disabled-link';
-          $href = '#';
-        } else {
-          $href = $button['url'];
+        foreach ($panel['actions'] as $button) {
+          $classes = 'btn btn-primary btn-lg d-flex align-items-center justify-content-center custom-button pmsr-landing-action';
+          if (!empty($button['disabled'])) {
+            $classes .= ' disabled-link';
+            $href = '#';
+          }
+          else {
+            $href = $button['url'];
+          }
+
+          $output .= '<a href="' . $href . '" class="' . $classes . '">';
+          $output .= '<i class="' . $button['icon'] . ' me-2"></i><h5>' . $button['label'] . '</h5>';
+          $output .= '</a>';
         }
 
-        $output .= '<a href="' . $href . '" class="' . $classes . '">';
-        $output .= '<i class="' . $button['icon'] . ' me-2"></i>&nbsp;<h5>' . $button['label'] . '</h5>';
-        $output .= '</a>';
-        
         $output .= '</div>';
-      }
-      
-      // Close row and start new row for Row 2
-      $output .= '</div>'; // Close first row
-      $output .= '<div class="row">'; // Start second row
-      
-      // Row 2 - 3 columns
-      foreach ($buttons_row2 as $button) {
-        $output .= '<div class="col-4 d-flex flex-column">';
-        
-        // Base classes for styling
-        $classes = 'btn btn-primary btn-lg my-2 d-flex align-items-center justify-content-center custom-button';
-
-        // If button['disabled'] is set, add our disabled-link class and set href="#"
-        if (!empty($button['disabled'])) {
-          $classes .= ' disabled-link';
-          $href = '#';
-        } else {
-          $href = $button['url'];
-        }
-
-        $output .= '<a href="' . $href . '" class="' . $classes . '">';
-        $output .= '<i class="' . $button['icon'] . ' me-2"></i>&nbsp;<h5>' . $button['label'] . '</h5>';
-        $output .= '</a>';
-        
         $output .= '</div>';
+        $output .= '</section>';
       }
-    } else {
-      // USER IS NOT AUTHENTICATED
-
-      $output .= '<div class="col-12 text-center">';
-      $output .= '      <h2>Welcome to '.$config->get('title').'</h2>';
       $output .= '</div>';
-
-      // CLOSE ROW
+    }
+    else {
+      // USER IS NOT AUTHENTICATED
+      $output .= '<div class="row">';
+      $output .= '<div class="col-12 text-center">';
+      $output .= '<h2>Welcome to ' . $title . '</h2>';
+      $output .= '</div>';
       $output .= '</div>';
 
       $output .= '<div class="row">';
       $output .= '<div class="col-2"></div>';
       $output .= '<div class="col-8 mt-5 text-left" style="margin-top:2rem;">';
-      $output .= '  <p>To access the content you must be authenticated</p>';
-      $output .= '  ';
+      $output .= '<p>To access the content you must be authenticated</p>';
       $output .= '</div>';
       $output .= '<div class="col-2"></div>';
+      $output .= '</div>';
     }
 
     // CLOSE CONTAINER
@@ -177,7 +166,7 @@ class LandingPageController extends ControllerBase {
       '#markup' => $output,
       '#attached' => [
         'library' => [
-          'pmsr/styles',
+          'pmsr/pmsr-styles',
         ],
       ],
     ];
