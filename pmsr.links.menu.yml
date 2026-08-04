@@ -43,13 +43,23 @@ pmsr.ingest_ontologies:
   requirements:
     _permission: 'access content'
 
+pmsr.ingest_auxiliary_data:
+  title: 'Ingest Auxiliary Data'
+  description: 'Ingest auxiliary setup data including global analytical tools'
+  route_name: pmsr.ingest_auxiliary_data
+  parent: pmsr.pmsr_setup
+  menu_name: main
+  weight: 2
+  requirements:
+    _permission: 'access content'
+
 pmsr.ingest_instruments:
   title: 'Ingest INS Instruments'
   description: 'Ingest INS instruments into the system'
   route_name: pmsr.ingest_instruments
   parent: pmsr.pmsr_setup
   menu_name: main
-  weight: 2
+  weight: 3
   requirements:
     _permission: 'access content'
 
@@ -59,7 +69,7 @@ pmsr.ingest_geography:
   route_name: pmsr.ingest_geography
   parent: pmsr.pmsr_setup
   menu_name: main
-  weight: 3
+  weight: 4
   requirements:
     _permission: 'access content'
 
@@ -69,7 +79,7 @@ pmsr.ingest_people:
   route_name: pmsr.ingest_people
   parent: pmsr.pmsr_setup
   menu_name: main
-  weight: 4
+  weight: 5
   requirements:
     _permission: 'access content'
 
@@ -79,7 +89,7 @@ pmsr.wkf_namespaces:
   route_name: pmsr.wkf_namespaces
   parent: pmsr.pmsr_setup
   menu_name: main
-  weight: 5
+  weight: 6
   requirements:
     _permission: 'access content'
 
@@ -89,6 +99,6 @@ pmsr.tests:
   route_name: pmsr.tests
   parent: pmsr.pmsr_setup
   menu_name: main
-  weight: 6
+  weight: 7
   requirements:
     _permission: 'access content'

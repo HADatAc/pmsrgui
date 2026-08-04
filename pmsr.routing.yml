@@ -82,6 +82,25 @@ pmsr.ingest_ontologies:
     _permission: 'access content'
     _role: 'authenticated'
 
+pmsr.ingest_auxiliary_data:
+  path: '/pmsr/ingest/auxiliary-data'
+  defaults:
+    _controller: '\Drupal\pmsr\Controller\IngestionAuxiliaryDataController::content'
+    _title: 'Ingest Auxiliary Data'
+  requirements:
+    _permission: 'access content'
+    _role: 'authenticated'
+
+pmsr.process_auxiliary_data_ingestion:
+  path: '/pmsr/api/ingest/auxiliary-data/process'
+  defaults:
+    _controller: '\Drupal\pmsr\Controller\IngestionAuxiliaryDataController::processAuxiliaryDataIngestion'
+  requirements:
+    _access: 'TRUE'
+  options:
+    no_cache: TRUE
+  methods: [POST]
+
 pmsr.process_ontology_ingestion:
   path: '/pmsr/api/ingest/ontologies/process'
   defaults:

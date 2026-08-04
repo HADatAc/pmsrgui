@@ -1,0 +1,37 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix hasco: <http://hadatac.org/ont/hasco/> .
+@prefix vstoi: <http://hadatac.org/ont/vstoi#> .
+@prefix pmsrtool: <https://pmsr.net/tool/> .
+
+# Wildcard process resource: tools linked to this process are globally available.
+hasco:AnyProcess rdf:type vstoi:Process ;
+  hasco:hascoType vstoi:Process ;
+  rdfs:label "Any Process"@en ;
+  rdfs:comment "Wildcard process instance. Any AnalyticalTool linked to this process is available for all process-specific retrievals."@en .
+
+pmsrtool:AT-INDIVIDUAL-CTT-SIMULATOR rdf:type hasco:AnalyticalTool ;
+  hasco:hascoType hasco:AnalyticalTool ;
+  rdfs:label "Individual CTT Simulator"@en ;
+  rdfs:comment "Auxiliary simulator available for all processes via hasco:AnyProcess wildcard association."@en ;
+  vstoi:hasStatus "current" ;
+  vstoi:hasLanguage "R" ;
+  vstoi:hasVersion "1.0.0" ;
+  vstoi:hasSIRManagerEmail "admin@pmsr.com" ;
+  vstoi:hasEditorEmail "admin@pmsr.com" ;
+  hasco:hasProcess hasco:AnyProcess .
+
+pmsrtool:AT-COHORT-CTT-SIMULATOR rdf:type hasco:AnalyticalTool ;
+  hasco:hascoType hasco:AnalyticalTool ;
+  rdfs:label "Cohort CTT Simulator"@en ;
+  rdfs:comment "Auxiliary simulator available for all processes via hasco:AnyProcess wildcard association."@en ;
+  vstoi:hasStatus "current" ;
+  vstoi:hasLanguage "R" ;
+  vstoi:hasVersion "1.0.0" ;
+  vstoi:hasSIRManagerEmail "admin@pmsr.com" ;
+  vstoi:hasEditorEmail "admin@pmsr.com" ;
+  hasco:hasProcess hasco:AnyProcess .
+
+hasco:AnyProcess hasco:hasAnalyticalTool pmsrtool:AT-INDIVIDUAL-CTT-SIMULATOR,
+  pmsrtool:AT-COHORT-CTT-SIMULATOR .

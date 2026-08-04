@@ -210,7 +210,8 @@
             const isINSIngestion = window.location.pathname.includes('/pmsr/ingest/instruments');
             const isGeographyIngestion = window.location.pathname.includes('/pmsr/ingest/geography');
             const isPeopleIngestion = window.location.pathname.includes('/pmsr/ingest/people');
-            const isDrupalIngestion = isOntologyIngestion || isINSIngestion || isGeographyIngestion || isPeopleIngestion;
+            const isAuxiliaryIngestion = window.location.pathname.includes('/pmsr/ingest/auxiliary-data');
+            const isDrupalIngestion = isOntologyIngestion || isINSIngestion || isGeographyIngestion || isPeopleIngestion || isAuxiliaryIngestion;
 
             if (isINSIngestion && startEndpoint && statusEndpoint) {
               const btn = this;
@@ -420,7 +421,8 @@
                 }
               } else {
                 // Handle standard hascoapi backend response
-                if (data.isSuccessful) {
+                const isSuccessful = data && (data.isSuccessful === true || data.success === true);
+                if (isSuccessful) {
                   resultsDiv.innerHTML = 
                     '<div class="alert alert-success alert-dismissable fade show" role="alert">' +
                     '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +

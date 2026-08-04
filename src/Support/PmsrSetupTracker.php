@@ -28,6 +28,13 @@ final class PmsrSetupTracker {
           ['id' => 'entrypoint-soundness', 'label' => 'Entry-point soundness regression (run-tests.sh entrypoints-soundness)'],
         ],
       ],
+      'ingest_auxiliary_data' => [
+        'label' => 'Ingest Auxiliary Data',
+        'tests' => [
+          ['id' => 'auxiliary-tools-smoke', 'label' => 'Auxiliary tool registration smoke check'],
+          ['id' => 'auxiliary-tools-wildcard-policy', 'label' => 'Wildcard process URI policy check (Process URI "*" = all processes)'],
+        ],
+      ],
       'ingest_ins_instruments' => [
         'label' => 'Ingest INS Instruments',
         'tests' => [
