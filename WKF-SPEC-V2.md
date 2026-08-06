@@ -1,11 +1,12 @@
-# WKF Template Specification v1.2.2
+# WKF Template Specification v1.2.3
 
-Version: 1.2.2
-Date: 2026-08-03
+Version: 1.2.3
+Date: 2026-08-05
 Status: Production
 Purpose: Formal specification of Workflow (WKF) metadata templates for RDF/Hub based on HASCO ontology.
 
 ## Revision History
+- v1.2.3 (2026-08-05): Added normative ProcessBasedStudy rdfs:label composition rule: `<Real user name>'s <ProcessStem rdfs:label> at <YYYY/MM/DD> <HH:MM>`, sourced from ingesting user identity, ProcessStem label, and WKF ingestion submission timestamp.
 - v1.2.2 (2026-08-03): Updated STD schema to include hasURI and hasco:hasProcess. Defined row-level ProcessBasedStudy-to-Process linking semantics, including support for reusing previously ingested Process URIs (no in-file Process row required for reused process).
 - v1.2.1 (2026-08-03): Corrected Tasks typing semantics: hasco:hascoType is fixed to vstoi:Task (task archetype), while rdf:type can be vstoi:Task or any subclass of vstoi:Task.
 - v1.2.0 (2026-08-03): Added mandatory STD sheet and InfoSheet hasStudyDescription -> #STD dependency. Moved educational and study registration properties from Processes to STD.
@@ -37,6 +38,7 @@ Core entities:
 8. Process vstoi:hasTopTask MUST equal the unique top-level task.
 9. Each Process MUST have exactly one hasco:hascoType, coherent with the referenced ProcessStem hasco:hascoType.
 10. InfoSheet MUST include hasStudyDescription -> #STD.
+11. Each generated ProcessBasedStudy rdfs:label MUST be composed as `<Real user name>'s <ProcessStem rdfs:label> at <YYYY/MM/DD> <HH:MM>`.
 
 ## File Format
 - Extension: .xlsx
@@ -96,7 +98,7 @@ Row 2 headers and semantics (B-O):
 - H Institution (URI, required)
 - I Principal Investigator (URI, required)
 - J Email (email, optional)
-- K Start Date (YYYY-MM-DD, optional)
+- K Start Date (system-assigned at ingestion submission time; strict dependency for label generation)
 - L End Date (YYYY-MM-DD, optional)
 - M vstoi:hasLearningObjectives (string/list, optional)
 - N vstoi:hasCriticalActions (string/list, optional)
@@ -106,6 +108,15 @@ Normative linkage semantics:
 - hasco:hasProcess is mandatory in every non-empty STD row.
 - If hasco:hasProcess points to a Process row in the same WKF, that Process is newly created by this ingestion.
 - If hasco:hasProcess points to a preexisting Process URI, no local Processes row is required for that URI.
+
+ProcessBasedStudy rdfs:label semantics:
+- Output format MUST be `<Real user name>'s <ProcessStem rdfs:label> at <YYYY/MM/DD> <HH:MM>`.
+- `<Real user name>` MUST come from the ingesting user identity (submission context), not from STD PI values.
+- `<ProcessStem rdfs:label>` MUST come from the ProcessStem referenced by the linked Process (`prov:wasDerivedFrom`).
+- `<ProcessStem rdfs:label>` resolution is strict; ingestion MUST fail if the referenced ProcessStem cannot be found or has no rdfs:label.
+- `Start Date` remains a strict dependency for label generation.
+- Ingestion MUST set effective `Start Date` from the DataFile submission timestamp (the timestamp when the WKF ingestion request is submitted).
+- Start Date/date-time resolution is strict; ingestion MUST fail if effective `Start Date` is missing or not parseable as an exact datetime.
 
 ## ProcessStems
 Columns:
@@ -133,6 +144,10 @@ hasURI, rdf:type, hasco:hascoType, rdfs:label, rdfs:comment, vstoi:hasStatus, vs
 Typing rules:
 - hasco:hascoType MUST be exactly vstoi:Task.
 - rdf:type MUST be vstoi:Task or subclass of vstoi:Task.
+- vstoi:hasRequiredInstrument MAY be used as a mirror link to RequiredInstruments rows.
+- If vstoi:hasRequiredInstrument is used, it MUST only be populated for tasks whose rdf:type is vstoi:AutomatedTask or vstoi:InteractionTask.
+- If vstoi:hasRequiredInstrument is used, each referenced RequiredInstrument URI MUST exist in RequiredInstruments and MUST have vstoi:isRelatedToTask equal to the current task URI.
+- For tasks whose rdf:type is not vstoi:AutomatedTask and not vstoi:InteractionTask, vstoi:hasRequiredInstrument MUST be empty.
 
 Temporal operators allowed:
 after, before, parallel, choice, independent, disables, interrupts
@@ -144,7 +159,10 @@ hasURI, rdf:type, hasco:hascoType, rdfs:label, rdfs:comment, vstoi:usesInstrumen
 Rules:
 - rdf:type MUST be vstoi:RequiredInstrument.
 - hasco:hascoType MUST be present with cardinality 1.
-- vstoi:isRelatedToTask SHOULD reference an existing Task URI.
+- vstoi:usesInstrument MUST be present with cardinality 1 and MUST be URI-like (start with http).
+- vstoi:isRelatedToTask MUST be present with cardinality 1 and MUST reference an existing Task URI.
+- The task referenced by vstoi:isRelatedToTask MUST have rdf:type vstoi:AutomatedTask or vstoi:InteractionTask.
+- One RequiredInstrument row represents exactly one instrument-requirement mapping: one vstoi:usesInstrument to one vstoi:isRelatedToTask.
 
 ## URI Patterns
 Base: https://pmsr.net/ont/<TEMPLATE_ID>

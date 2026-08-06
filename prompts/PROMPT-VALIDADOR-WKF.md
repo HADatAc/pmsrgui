@@ -177,8 +177,17 @@ RequiredInstruments validation:
     - https://pmsr.net/ont/[^/]+/RIN/[A-Za-z0-9]+$
   - rdf:type must be vstoi:RequiredInstrument.
   - hasco:hascoType must be present and cardinality 1.
-  - usesInstrument should be URI-like (start with http).
-  - Related task not found -> warning.
+  - usesInstrument must be present with cardinality 1 and URI-like (start with http).
+  - isRelatedToTask must be present with cardinality 1 and resolve to an existing task URI.
+  - The referenced task rdf:type must be vstoi:AutomatedTask or vstoi:InteractionTask.
+  - One row equals one mapping: exactly one usesInstrument to exactly one isRelatedToTask.
+  - Violations above are errors WKF_00008.
+
+Required-instrument policy checks:
+- Tasks with rdf:type other than vstoi:AutomatedTask or vstoi:InteractionTask MUST NOT have vstoi:hasRequiredInstrument.
+- If a task has vstoi:hasRequiredInstrument entries, each referenced RIN must exist and point back to that same task via vstoi:isRelatedToTask.
+- If a RIN references a task via vstoi:isRelatedToTask, that task SHOULD list the RIN in vstoi:hasRequiredInstrument when that column is used in the workbook.
+- Violations of MUST rules are errors WKF_00008.
 
 Reference integrity checks:
 - Process prov:wasDerivedFrom must exist in ProcessStems.
@@ -192,6 +201,7 @@ Reference integrity checks:
   - WKF_00004 for bad ProcessStem reference.
   - WKF_00007 for Process type rule violations.
   - WKF_00005 for task hierarchy reference issues and missing top task.
+  - WKF_00008 for required-instrument policy violations and cross-sheet mapping inconsistencies.
 
 Temporal DAG check:
 - Build directed graph using only after and before operators:

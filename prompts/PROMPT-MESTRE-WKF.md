@@ -182,6 +182,9 @@ Outras regras:
 - hasTemporalDependency operadores validos: after, before, parallel, choice, independent, disables, interrupts.
 - hasSubtask pode ter multiplas URIs separadas por ponto e virgula.
 - preencher rdfs:comment com descricao util da tarefa.
+- vstoi:hasRequiredInstrument (quando usado) so pode ser preenchido em tasks com rdf:type vstoi:AutomatedTask ou vstoi:InteractionTask.
+- Para qualquer task cujo rdf:type nao seja vstoi:AutomatedTask nem vstoi:InteractionTask, vstoi:hasRequiredInstrument deve ficar vazio.
+- Quando vstoi:hasRequiredInstrument estiver preenchido, cada URI referenciada deve existir na folha RequiredInstruments e apontar de volta para a mesma task em vstoi:isRelatedToTask.
 
 ## Folha 7: RequiredInstruments
 
@@ -193,8 +196,10 @@ Regras:
 
 - rdf:type = vstoi:RequiredInstrument
 - hasco:hascoType obrigatorio (1 valor por linha)
-- cada linha SHOULD apontar para task existente em vstoi:isRelatedToTask (warning se nao resolver)
-- vstoi:usesInstrument deve usar URI de instrumento no dominio INS
+- vstoi:usesInstrument obrigatorio (1 valor por linha) e deve ser URI (http...), tipicamente no dominio INS
+- vstoi:isRelatedToTask obrigatorio (1 valor por linha) e deve apontar para task existente
+- a task referenciada em vstoi:isRelatedToTask deve ter rdf:type vstoi:AutomatedTask ou vstoi:InteractionTask
+- cada linha representa exatamente 1 mapeamento: 1 instrumento (vstoi:usesInstrument) para 1 task (vstoi:isRelatedToTask)
 
 ## Padroes de URI (obrigatorio)
 
@@ -220,7 +225,7 @@ Nota:
 8. Top task nao tem supertask.
 9. Supertask/Subtask referenciam tasks existentes.
 10. Dependencias temporais sem ciclos.
-11. RequiredInstruments ligados a tasks existentes.
+11. RequiredInstruments ligados a tasks existentes e apenas a tasks AutomatedTask/InteractionTask.
 12. Existe exatamente 1 top-level task em toda a colecao de tasks.
 13. Todas as tasks nao-topo sao descendentes diretas ou indiretas da top-level task.
 14. Namespace pmsr esta exatamente como https://pmsr.net/ont/.
@@ -229,6 +234,8 @@ Nota:
 17. Na Tasks: hasco:hascoType = vstoi:Task em todas as linhas; rdf:type = vstoi:Task ou subclasse.
 18. Na STD: hasURI e hasco:hasProcess estao preenchidos em todas as linhas de dados.
 19. Cada novo Process na folha Processes possui linha correspondente na STD ligada por hasco:hasProcess.
+20. Para tasks nao AutomatedTask/InteractionTask, vstoi:hasRequiredInstrument deve estar vazio.
+21. Se vstoi:hasRequiredInstrument for usado na Tasks, deve ser consistente com a folha RequiredInstruments (mapeamento inverso por vstoi:isRelatedToTask).
 
 ## Comportamento por plataforma
 
