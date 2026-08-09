@@ -1,0 +1,106 @@
+{
+  "https://cpr.heart.org/en/resuscitation-science/cpr-and-ecc-guidelines": {
+    "url": "https://cpr.heart.org/en/resuscitation-science/cpr-and-ecc-guidelines",
+    "ok": false,
+    "status": 403,
+    "error": "HTTPError 403: Forbidden",
+    "title": "",
+    "sample": ""
+  },
+  "https://laerdal.force.com/HelpCenter/s/": {
+    "url": "https://laerdal.force.com/HelpCenter/s/",
+    "ok": false,
+    "status": 404,
+    "error": "HTTPError 404: Not Found",
+    "title": "",
+    "sample": ""
+  },
+  "https://limbsandthings.com/us/support/": {
+    "url": "https://limbsandthings.com/us/support/",
+    "ok": false,
+    "status": 404,
+    "error": "HTTPError 404: Not Found",
+    "title": "",
+    "sample": ""
+  },
+  "https://support.3shape.com/": {
+    "url": "https://support.3shape.com/",
+    "ok": true,
+    "status": 200,
+    "error": "",
+    "title": "3Shape Help Center",
+    "sample": "3Shape Help Center --> --> &times; --> --> OTHER SITES 3Shape Home Learning &amp; Support Trainings CONTACT SUPPORT Dutch French Italian Korean Chinese Spanish Polish Japanese German English (US) Portuguese Welcome! How can we help? show contact form --> Sorry, we didn't find any relevant articles for you. Please fill out the contact form below and we will reply as soon as possible. title=\"ReCAPTCHA\" Clinic Lab All Products Getting started How to configure your TRIOS scanner and software, and create your 3Shape Account. Working with orders Collaborate with your lab, work with order forms, and import and export .dcm and .stl files. Scan and visualize Master scan paths, learn how to process scans and visualize treatment with engagement apps. Design in-house How to work with scans for in-house design and production with 3Shape studio apps. Subscriptions and warranty How to manage your TRIOS Care or TRIOS Only subscription, solve administrative issues, or claim your warranty. Clinic releas"
+  },
+  "https://support.bodyinteract.com/": {
+    "url": "https://support.bodyinteract.com/",
+    "ok": false,
+    "status": null,
+    "error": "URLError: [Errno 8] nodename nor servname provided, or not known",
+    "title": "",
+    "sample": ""
+  },
+  "https://support.butterflynetwork.com/hc/en-us": {
+    "url": "https://support.butterflynetwork.com/hc/en-us",
+    "ok": true,
+    "status": 200,
+    "error": "",
+    "title": "Butterfly Network Support Portal",
+    "sample": "Butterfly Network Support Portal :root{--SBQQ-paletteIndigo10:rgb(32, 6, 71);--SBQQ-popoverWalkthroughHeaderImage:;--SBQQ-zIndexDialog:6000;--SBQQ-colorPickerSelectorWidth:14rem;--SBQQ-nubbinSizeDefault:1rem;--SBQQ-paletteCloudBlue40:rgb(5, 98, 138);--SBQQ-colorBackgroundContextBarInverseItemHover:rgba(255, 255, 255, 0.2);--SBQQ-dropZoneSlotHeight:0.25rem;--SBQQ-colorTextTabLabelSelected:rgb(1, 118, 211);--SBQQ-colorStrokeBrandActive:rgb(3, 45, 96);--SBQQ-paletteIndigo15:rgb(31, 9, 116);--SBQQ-cardBodyPadding:0 1rem;--SBQQ-varSpacingHorizontalSmall:0.75rem;--SBQQ-tableColorBackgroundHeaderResizableHandle:rgb(174, 174, 174);--SBQQ-colorBackgroundPathActiveHover:rgb(3, 45, 96);--SBQQ-brandPrimaryTransparent:rgba(21, 137, 238, 0.1);--SBQQ-brandPrimaryTransparent40:rgba(21, 137, 238, 0.4);--SBQQ-colorBorderButtonDefault:rgb(201, 201, 201);--SBQQ-paletteIndigo20:rgb(50, 29, 113);--SBQQ-popoverColorText:rgb(201, 201, 201);--SBQQ-paletteCloudBlue30:rgb(8, 73, 104);--SBQQ-colorTextButtonDefaul"
+  },
+  "https://www.anatomage.com/table/": {
+    "url": "https://www.anatomage.com/table/",
+    "ok": true,
+    "status": 200,
+    "error": "",
+    "title": "",
+    "sample": "+\u0524 \u0002\u001a|Sf\u007fB7\u0000$\u0000\"_lNy@\u2402 \u0012 \u0000-\u007fZ B\u0001K lVo\\\u0002 \u06c4x?c\u0003`G7*8;Fqk\u000fpoaq(X3Q\u06f3>p3:5;> ?O=\u0014([(A8A\u0007oaFqDN~={m gn\u0000\u001b\u0019z\u01ad\u0015.\u0712AJ\u001b_\u06854wz\u00108\u0006=\"r =)@\u0001 0T\u038bCE\u007fDfl0; 5:p\u000eC@o d\u07c2D9d \u001a7.]B\u00001A\u000f \u000fQ\u0004o\u0006/=}u@N}f\u001a) \\ \u0018bc\u0017\"*P\" 9NjL4RH @CawJH D RH\u0574\u0017~>DT-!\u000e8}r\u0135~> 8kNq\u007fvD(fh \"0{$] N\u03ff\u0001B: N_(\u0015:\u0013Jw?\u020aDT4\u0766\u0018\\5\u9c0d\u04d9\u00a7Q{)\u0018E{ld@\u07776\u03bf\u01c0n|iFW\u0012}:{z\u000f!j 2\u024256 ] RdR}JaElxZl\u00146\u001a&\u01e5\u03e8*y\u0015Y\ua517\u00011`j\"\\k\u0012u\u04a8\u0005sG\u025e2p>\\\u07e4fZ :\u0018\u0012Q3\u0000\u07c8ms\u0000x~c\u0011[#XK\u0016\u0006-\u06406R\u001biBx\u007fN-\u0004Av{wc V?k,Kvzmql[a9t\ud506oKy\u0498mo\u000flS_f_\u0014\u07ff\u0014tt^I? K\u0019q #\u007fq\u02f2z[7\u02b05o4[ h]f\u01c1C\u047b S4u/XZ/\u0016z \u001aW `A?F\u0010,@?\u0017\u000e\u055f&cg\u0005cH_\u0742\u0007?\u007f\u0012V\u0005\u015bC Rmd/\u0010\u00d2\u025c\u07baQr\u0017C \u0319dMZ\u0002Ai\u001b}yn[ \u02dcK\u0000H{Ki_R\u0012 ]OW\u0018\u0014QNn\b;@tk?n2K\u0000Kc9x9j\"\u0011Iq\u05bb /2I\u0012-\u000fp\bM\\8Z;;y\u0015J1\u0014&K$\u05e5x4SS} 9\u0005yE& Qv ^\u001br \u0799|a8$Q\u001b|&!\u0001?\\\u0016}#_ HR\u0010>]50\u0017|~'=\u0005!e\u00035q \u00047!`9\u0006\u0018UA \u0001\u0002(Kh\u0593\u0013 `g\u0001JY\u0019\u0005@`\u045dPD)1}\u0e7d6~&T*]$vON\u007f U}oxs:f\"n J |^\u0007 v\u0003p\u0013 hG&tt,+ 5 dYv- \u001b:\u0002+ zm~\u06d2\u0011*2%G4\u04feGHQOOF=%jz v\u04e3_\"\u06a5gNtOd\u0692 #:#5\u0609* 9$*]V=C\u0002l\u0001\u0005!Y\u0010M\" \u0003\u0014 \u00027\u0003GVfJ\u000f\u01ee>\u0419SVzYkuv N\u0010\bdR\b\u0017txn%u;\u0016\\\u0017+!Yc\u0018,`\b\u0004 \u001a\u0015;H1 fV3~\u0006\u001b]\u0005G8\u0005C`t1zBb}+\u0015 \u0007vU\u0012WD*\u0006 =^\u0014D \u075a]m\u028d Dd%\u0007 `D #TD f1|N\u0004+\b/ ''yA\"*H)xF|p.[I _ \uc5ea,H]\u0013j1\u0012\u06e1#\u0000Q_0kA_S\u00155\u0011\u0014Nwtpfjzs1y\u000f4j5b\u0019'.$#\\UzqrF8/(4KPz\u0001\u7013xD\u000fc\u0003]aIn +\u07d2\u05dc FE` $ ^\u05f2:\u051c5_\u0014 lR F\u0006NN\u039b\u0014"
+  },
+  "https://www.cdc.gov/infection-control/": {
+    "url": "https://www.cdc.gov/infection-control/",
+    "ok": false,
+    "status": 403,
+    "error": "HTTPError 403: Forbidden",
+    "title": "",
+    "sample": ""
+  },
+  "https://www.fda.gov/medical-devices/device-advice-comprehensive-regulatory-assistance/medical-device-databases": {
+    "url": "https://www.fda.gov/medical-devices/device-advice-comprehensive-regulatory-assistance/medical-device-databases",
+    "ok": true,
+    "status": 200,
+    "error": "",
+    "title": "Medical Device Databases | FDA",
+    "sample": "Medical Device Databases | FDA Skip to main content Skip to FDA Search Skip to in this section menu Skip to footer links An official website of the United States government Here\u2019s how you know The .gov means it\u2019s official. Federal government websites often end in .gov or .mil. Before sharing sensitive information, make sure you're on a federal government site. The site is secure. The https:// ensures that you are connecting to the official website and that any information you provide is encrypted and transmitted securely. Recall Alert An update on the Cyclospora outbreak available here . &nbsp; Search &nbsp; Menu Search FDA Submit search Featured Report a Product Problem Contact FDA FDA Guidance Documents Recalls, Market Withdrawals and Safety Alerts Press Announcements Warning Letters Advisory Committees En Espa&#241ol Products Food Drugs Medical Devices Radiation-Emitting Products Vaccines, Blood, and Biologics Animal and Veterinary Cosmetics Tobacco Products Topics About FDA Combina"
+  },
+  "https://www.inacsl.org/healthcare-simulation-standards/": {
+    "url": "https://www.inacsl.org/healthcare-simulation-standards/",
+    "ok": false,
+    "status": 404,
+    "error": "HTTPError 404: Not Found",
+    "title": "",
+    "sample": ""
+  },
+  "https://www.iso.org/standard/72704.html": {
+    "url": "https://www.iso.org/standard/72704.html",
+    "ok": false,
+    "status": 403,
+    "error": "HTTPError 403: Forbidden",
+    "title": "",
+    "sample": ""
+  },
+  "https://www.ssih.org/": {
+    "url": "https://www.ssih.org/",
+    "ok": true,
+    "status": 200,
+    "error": "",
+    "title": "Home | SSH",
+    "sample": "Home | SSH Skip to main content Secondary Navigation Search About SSH Fund My SSH Main navigation Education Resources Credentialing Advocacy Membership Main navigation - About Purpose SSH Governance Strategic Plan About Simulation News Team Board of Directors Board Election Open Staff SSH Awards &amp; Recognition Opportunities Contact Us Relationships Corporate Roundtable Strategic Partnerships Affiliated Organizations Main navigation - Advocacy Innovation SSH Fund Speakers Bureau Recognition The SSH Pioneer Award SSH &quot;Of The Year&quot; Awards Gail Johnson Award ASCEND DAISY Team Award Early Career Mentored Research Award Engagement Building a Better Future Together Healthcare Simulation Week Government Federal Government Advocacy State and Local Government Advocacy International Advocacy Healthcare Simulation Advocacy Tracker Main navigation - Education Online Learning Live Learning Center Accreditation Prep Courses CHSE and CHSOS Courses Best Practices Workshops Virtual Learning"
+  },
+  "https://www.who.int/teams/health-product-policy-and-standards/assistive-and-medical-technology/medical-devices": {
+    "url": "https://www.who.int/teams/health-product-policy-and-standards/assistive-and-medical-technology/medical-devices",
+    "ok": true,
+    "status": 200,
+    "error": "",
+    "title": "Health products policy and standards",
+    "sample": "Health products policy and standards Skip to main content Global Regions WHO Regional websites Africa Americas South-East Asia Europe Eastern Mediterranean Western Pacific When autocomplete results are available use up and down arrows to review and enter to select. Select language Select language English Home Health Topics All topics A B C D E F G H I J K L M N O P Q R S T U V W X Y Z Resources Fact sheets Facts in pictures Multimedia Podcasts Publications Questions and answers Tools and toolkits Popular Dengue Endometriosis Excessive heat Herpes Mental disorders Mpox Countries All countries A B C D E F G H I J K L M N O P Q R S T U V W X Y Z Regions Africa Americas Europe Eastern Mediterranean South-East Asia Western Pacific WHO in countries Data by country Country presence&#160; Country cooperation strategies&#160; Country office profiles Strengthening country offices&#160; Newsroom Newsroom News releases Statements Campaigns Events Feature stories Speeches Commentaries Photo library"
+  }
+}

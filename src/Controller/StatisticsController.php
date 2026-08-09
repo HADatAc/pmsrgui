@@ -34,6 +34,8 @@ class StatisticsController extends ControllerBase {
   private const STATS_DATA_STATE_KEY = 'pmsr.statistics.data';
   private const STATS_PROJECT_URI = 'https://pmsr.net/ont/PJT1742783481383251';
   private const STATS_MEMBERS_DATA_KEY = 'members_data';
+  private const STATS_SIMULATION_MODELS_DATA_KEY = 'simulation_models_data';
+  private const STATS_SIMULATION_MODELS_CACHE_VERSION = 2;
 
   /**
    * Returns all cache tags used by statistics data.
@@ -126,6 +128,7 @@ class StatisticsController extends ControllerBase {
           'registeredUsers' => 0,
           'people' => 0,
           'simulators' => 0,
+          'components' => 0,
           'platforms' => 0,
           'scenarios' => 0,
           'processes' => 0,
@@ -225,7 +228,8 @@ class StatisticsController extends ControllerBase {
         $fraction = min(1.0, max(0.0, ($index + $retryBonus) / $contributors));
         // 76%..96%
         $percent = 76 + (int) round($fraction * 20);
-      } else {
+      }
+      else {
         $percent = 76;
       }
     }
@@ -421,6 +425,7 @@ class StatisticsController extends ControllerBase {
                 'registeredUsers' => 0,
                 'people' => 0,
                 'simulators' => 0,
+                'components' => 0,
                 'platforms' => 0,
                 'scenarios' => 0,
                 'processes' => 0,
@@ -456,6 +461,7 @@ class StatisticsController extends ControllerBase {
                 $job['members']['totals']['registeredUsers'] += (int) ($row['registeredUsersCount'] ?? 0);
                 $job['members']['totals']['people'] += (int) ($row['peopleCount'] ?? 0);
                 $job['members']['totals']['simulators'] += (int) ($row['simulatorCount'] ?? 0);
+                $job['members']['totals']['components'] += (int) ($row['registeredComponentsCount'] ?? 0);
                 $job['members']['totals']['platforms'] += (int) ($row['platformCount'] ?? 0);
                 $job['members']['totals']['scenarios'] += (int) ($row['registeredScenariosCount'] ?? 0);
                 $job['members']['totals']['processes'] += (int) ($row['registeredProcessesCount'] ?? 0);
@@ -465,17 +471,11 @@ class StatisticsController extends ControllerBase {
                 $this->saveStatisticsCacheJob($job);
               }
               catch (\Exception $e) {
+                $job['members']['index'] = $index + 1;
                 $job['attempts'] = (int) ($job['attempts'] ?? 0) + 1;
                 $job['last_error'] = $e->getMessage();
-                if ($attemptNum >= 3) {
-                  // Keep row cardinality consistent even when enrichment fails.
-                  $fallbackRow = $this->buildFallbackMemberStatisticsRow($contributorUri);
-                  $job['members']['rows'][] = $fallbackRow;
-                  $job['members']['index'] = $index + 1;
-                }
+                $job['last_message'] = 'Contributor skipped ' . ($index + 1) . '/' . count($contributors);
                 $this->saveStatisticsCacheJob($job);
-                // Stop current run and retry later to avoid hammering backend.
-                break 2;
               }
 
               break;
@@ -545,53 +545,320 @@ class StatisticsController extends ControllerBase {
 
   /**
    * Get platform count for an organization.
-   * Counts platform instances where vstoi:partOf equals the organization URI.
+   * Counts platform instances for the organization hierarchy.
    */
   private function getPlatformCountByOrganization($api, $orgUri) {
-    $count = 0;
-    $pageSize = 100;
-    $offset = 0;
-    $hasMore = true;
-    
-    try {
-      while ($hasMore) {
-        // Get platform instances (using keyword '_' to get all)
-        $response = $api->listByKeyword('platforminstance', '_', $pageSize, $offset);
-        $platforms = $api->parseObjectResponse($response, 'listByKeyword');
-        
-        if (!is_array($platforms) || empty($platforms)) {
-          $hasMore = false;
-          break;
+    $orgUri = trim((string) $orgUri);
+    if ($orgUri === '') {
+      return 0;
+    }
+
+    $visited = [];
+    $orgHierarchyUris = $this->getOrganizationHierarchyUris($api, $orgUri, $visited);
+    if (empty($orgHierarchyUris)) {
+      $orgHierarchyUris = [$orgUri];
+    }
+
+    // Fast path: single grouped payload from hascoapi (all platform instances).
+    $groupedByOrg = $this->getPlatformInstancesGroupedByOrganization($api);
+    if (!empty($groupedByOrg)) {
+      $platformUris = [];
+      foreach ($orgHierarchyUris as $hierarchyOrgUri) {
+        if (empty($hierarchyOrgUri) || !isset($groupedByOrg[$hierarchyOrgUri])) {
+          continue;
         }
-        
-        // Filter platforms by organization (vstoi:partOf)
-        foreach ($platforms as $platform) {
-          if (is_object($platform) && !empty($platform->partOf) && $platform->partOf === $orgUri) {
-            $count++;
+
+        foreach ($groupedByOrg[$hierarchyOrgUri] as $platformUri => $_present) {
+          if (!empty($platformUri)) {
+            $platformUris[$platformUri] = true;
           }
         }
-        
-        // Check if we need to fetch more
-        if (count($platforms) < $pageSize) {
-          $hasMore = false;
-        } else {
-          $offset += $pageSize;
+      }
+      return count($platformUris);
+    }
+
+    return 0;
+  }
+
+  /**
+   * Retrieve a request-scoped map of organization URI => [platformUri => true].
+   */
+  private function getPlatformInstancesGroupedByOrganization($api): array {
+    static $groupedIndex = NULL;
+    if ($groupedIndex !== NULL) {
+      return $groupedIndex;
+    }
+
+    $groupedIndex = [];
+
+    try {
+      $requestOptions = $api->getHeader();
+      if (!is_array($requestOptions)) {
+        $requestOptions = [];
+      }
+      $requestOptions['timeout'] = max((int) ($requestOptions['timeout'] ?? 0), 30);
+      $requestOptions['connect_timeout'] = max((int) ($requestOptions['connect_timeout'] ?? 0), 5);
+
+      $response = $api->perform_http_request('GET', $api->getApiUrl() . '/hascoapi/api/platforminstance/grouped-by-organization', $requestOptions);
+
+      $decoded = NULL;
+      if (is_string($response) && trim($response) !== '') {
+        $decoded = json_decode($response, TRUE);
+      }
+      elseif (is_array($response) || is_object($response)) {
+        $decoded = json_decode(json_encode($response), TRUE);
+      }
+
+      if (!is_array($decoded)) {
+        return $groupedIndex;
+      }
+
+      if (isset($decoded['body'])) {
+        $body = $decoded['body'];
+        if (is_string($body) && trim($body) !== '') {
+          $bodyDecoded = json_decode($body, TRUE);
+          if (is_array($bodyDecoded)) {
+            $decoded = $bodyDecoded;
+          }
+        }
+        elseif (is_array($body)) {
+          $decoded = $body;
         }
       }
-    } catch (\Exception $e) {
-      \Drupal::logger('pmsr')->warning('Failed to count platforms for ' . $orgUri . ': ' . $e->getMessage());
+
+      $groups = [];
+      if (isset($decoded['groups']) && is_array($decoded['groups'])) {
+        $groups = $decoded['groups'];
+      }
+      elseif (isset($decoded['data']) && is_array($decoded['data']) && isset($decoded['data']['groups']) && is_array($decoded['data']['groups'])) {
+        $groups = $decoded['data']['groups'];
+      }
+
+      foreach ($groups as $organizationUri => $platforms) {
+        if (!is_array($platforms)) {
+          continue;
+        }
+
+        $organizationUri = trim((string) $organizationUri);
+        if ($organizationUri === '' || $organizationUri === '_unassigned') {
+          continue;
+        }
+
+        if (!isset($groupedIndex[$organizationUri])) {
+          $groupedIndex[$organizationUri] = [];
+        }
+
+        foreach ($platforms as $platform) {
+          if (is_array($platform) && !empty($platform['uri'])) {
+            $groupedIndex[$organizationUri][(string) $platform['uri']] = true;
+          }
+          elseif (is_object($platform) && !empty($platform->uri)) {
+            $groupedIndex[$organizationUri][(string) $platform->uri] = true;
+          }
+        }
+      }
     }
-    
-    return $count;
+    catch (\Exception $e) {
+      \Drupal::logger('pmsr')->warning('Failed to fetch grouped platform instances: @error', [
+        '@error' => $e->getMessage(),
+      ]);
+    }
+
+    return $groupedIndex;
   }
 
   /**
    * Get simulator count for an organization.
-   * Counts unique instruments deployed on platforms owned by the organization.
+   * Uses hascoapi instrumentinstance/count endpoint with owner filter.
    */
   private function getSimulatorCountByOrganization($api, $orgUri) {
+    $orgUri = trim((string) $orgUri);
+    if ($orgUri === '') {
+      return 0;
+    }
+
+    $endpoint = '/hascoapi/api/instrumentinstance/count?organizationUri=' . rawurlencode($orgUri);
+    $count = $this->runHascoCountEndpoint($api, $endpoint);
+    if ($count !== NULL) {
+      return $count;
+    }
+
+    return 0;
+  }
+
+  /**
+   * Get component count for an organization.
+   * Uses hascoapi componentinstance/count endpoint with owner filter.
+   */
+  private function getComponentCountByOrganization($api, $orgUri) {
+    $orgUri = trim((string) $orgUri);
+    if ($orgUri === '') {
+      return 0;
+    }
+
+    // Use endpoint traversal implementation:
+    // instrument instances -> deployments -> component deployments -> component instances.
+    $endpoint = '/hascoapi/api/componentinstance/count?organizationUri=' . rawurlencode($orgUri);
+    $count = $this->runHascoCountEndpoint($api, $endpoint);
+    if ($count !== NULL) {
+      return $count;
+    }
+
+    return 0;
+  }
+
+  /**
+   * Execute hascoapi count endpoint and extract integer total.
+   * Returns NULL when payload cannot be interpreted.
+   */
+  private function runHascoCountEndpoint($api, string $endpoint): ?int {
+    try {
+      $requestOptions = $api->getHeader();
+      if (!is_array($requestOptions)) {
+        $requestOptions = [];
+      }
+      $requestOptions['timeout'] = max((int) ($requestOptions['timeout'] ?? 0), 20);
+      $requestOptions['connect_timeout'] = max((int) ($requestOptions['connect_timeout'] ?? 0), 5);
+
+      $response = $api->perform_http_request('GET', $api->getApiUrl() . $endpoint, $requestOptions);
+
+      $decoded = NULL;
+      if (is_string($response) && trim($response) !== '') {
+        $decoded = json_decode($response, TRUE);
+      }
+      elseif (is_array($response) || is_object($response)) {
+        $decoded = json_decode(json_encode($response), TRUE);
+      }
+
+      if (!is_array($decoded)) {
+        return NULL;
+      }
+
+      if (isset($decoded['body'])) {
+        $body = $decoded['body'];
+        if (is_string($body) && trim($body) !== '') {
+          $bodyDecoded = json_decode($body, TRUE);
+          if (is_array($bodyDecoded)) {
+            $decoded = $bodyDecoded;
+          }
+        }
+        elseif (is_array($body)) {
+          $decoded = $body;
+        }
+      }
+
+      if (isset($decoded['total']) && is_numeric($decoded['total'])) {
+        return (int) $decoded['total'];
+      }
+      if (isset($decoded['data']) && is_array($decoded['data']) && isset($decoded['data']['total']) && is_numeric($decoded['data']['total'])) {
+        return (int) $decoded['data']['total'];
+      }
+    }
+    catch (\Exception $e) {
+      \Drupal::logger('pmsr')->warning('Hasco count endpoint failed (@endpoint): @error', [
+        '@endpoint' => $endpoint,
+        '@error' => $e->getMessage(),
+      ]);
+    }
+
+    return NULL;
+  }
+
+  /**
+   * Fetch hascoapi organization-scoped instrument prefilter payload.
+   */
+  private function getInstrumentPrefilterPayloadForOrganization($api, string $orgUri): array {
+    static $prefilterCache = [];
+
+    $orgUri = trim($orgUri);
+    if ($orgUri === '') {
+      return [];
+    }
+
+    if (isset($prefilterCache[$orgUri])) {
+      return $prefilterCache[$orgUri];
+    }
+
+    $payload = [];
+    try {
+      $endpoint = '/hascoapi/api/instrument/prefilter?organizationUri=' . rawurlencode($orgUri);
+      $requestOptions = $api->getHeader();
+      if (!is_array($requestOptions)) {
+        $requestOptions = [];
+      }
+      // This endpoint can be heavy for large organizations (e.g., UCP).
+      $requestOptions['timeout'] = max((int) ($requestOptions['timeout'] ?? 0), 25);
+      $requestOptions['connect_timeout'] = max((int) ($requestOptions['connect_timeout'] ?? 0), 5);
+      $response = $api->perform_http_request('GET', $api->getApiUrl() . $endpoint, $requestOptions);
+      $decoded = NULL;
+
+      if (is_string($response) && trim($response) !== '') {
+        $decoded = json_decode($response, TRUE);
+      }
+      elseif (is_array($response) || is_object($response)) {
+        $decoded = json_decode(json_encode($response), TRUE);
+      }
+
+      if (is_array($decoded)) {
+        if (isset($decoded['body'])) {
+          $body = $decoded['body'];
+          if (is_string($body) && trim($body) !== '') {
+            $bodyDecoded = json_decode($body, TRUE);
+            if (is_array($bodyDecoded)) {
+              $decoded = $bodyDecoded;
+            }
+          }
+          elseif (is_array($body)) {
+            $decoded = $body;
+          }
+        }
+        $payload = $decoded;
+      }
+    }
+    catch (\Exception $e) {
+      \Drupal::logger('pmsr')->warning('Failed to fetch instrument prefilter for @org: @error', [
+        '@org' => $orgUri,
+        '@error' => $e->getMessage(),
+      ]);
+    }
+
+    $prefilterCache[$orgUri] = $payload;
+    return $payload;
+  }
+
+  /**
+   * Extract instrument rows from hascoapi prefilter payload.
+   */
+  private function extractPrefilterInstrumentRows(array $payload): array {
+    if (empty($payload)) {
+      return [];
+    }
+
+    $root = $payload;
+    if (isset($root['ok']) && $root['ok'] === FALSE) {
+      return [];
+    }
+
+    if (isset($root['payload']) && is_array($root['payload'])) {
+      $root = $root['payload'];
+    }
+
+    $rows = $root['instruments'] ?? [];
+    return is_array($rows) ? $rows : [];
+  }
+
+  /**
+   * Collect deployed instrument URIs for an organization hierarchy.
+   */
+  private function getDeployedInstrumentUrisByOrganization($api, $orgUri) {
     $uniqueInstruments = [];
     $pageSize = 100;
+    $visited = [];
+    $orgHierarchyUris = $this->getOrganizationHierarchyUris($api, $orgUri, $visited);
+    $orgHierarchySet = array_fill_keys($orgHierarchyUris, true);
+    if (empty($orgHierarchySet)) {
+      $orgHierarchySet = [$orgUri => true];
+    }
     
     try {
       // First, get all platform instances for this organization
@@ -608,9 +875,9 @@ class StatisticsController extends ControllerBase {
           break;
         }
         
-        // Filter platforms by organization
+        // Include platforms belonging to this org and its descendants.
         foreach ($batch as $platform) {
-          if (is_object($platform) && !empty($platform->partOf) && $platform->partOf === $orgUri && !empty($platform->uri)) {
+          if (is_object($platform) && !empty($platform->partOf) && isset($orgHierarchySet[(string) $platform->partOf]) && !empty($platform->uri)) {
             $platforms[] = $platform->uri;
           }
         }
@@ -636,10 +903,35 @@ class StatisticsController extends ControllerBase {
             break;
           }
           
-          // Extract instrument URIs from deployments
+          // Accept multiple API field variants for deployed instrument URI.
           foreach ($deployments as $deployment) {
-            if (is_object($deployment) && !empty($deployment->instrumentInstanceUri)) {
-              $uniqueInstruments[$deployment->instrumentInstanceUri] = true;
+            if (!is_object($deployment)) {
+              continue;
+            }
+
+            $instrumentUri = '';
+            if (!empty($deployment->instrumentInstanceUri)) {
+              $instrumentUri = (string) $deployment->instrumentInstanceUri;
+            }
+            elseif (!empty($deployment->hasInstrumentInstanceUri)) {
+              $instrumentUri = (string) $deployment->hasInstrumentInstanceUri;
+            }
+            elseif (!empty($deployment->instrumentUri)) {
+              $instrumentUri = (string) $deployment->instrumentUri;
+            }
+            elseif (!empty($deployment->hasInstrumentUri)) {
+              $instrumentUri = (string) $deployment->hasInstrumentUri;
+            }
+            elseif (!empty($deployment->instrumentInstance) && is_object($deployment->instrumentInstance) && !empty($deployment->instrumentInstance->uri)) {
+              $instrumentUri = (string) $deployment->instrumentInstance->uri;
+            }
+            elseif (!empty($deployment->instrumentInstance) && is_object($deployment->instrumentInstance) && !empty($deployment->instrumentInstance->label)) {
+              // Last resort when only embedded labels are present in API response.
+              $instrumentUri = 'label:' . (string) $deployment->instrumentInstance->label;
+            }
+
+            if ($instrumentUri !== '') {
+              $uniqueInstruments[$instrumentUri] = true;
             }
           }
           
@@ -653,8 +945,218 @@ class StatisticsController extends ControllerBase {
     } catch (\Exception $e) {
       \Drupal::logger('pmsr')->warning('Failed to count simulators for ' . $orgUri . ': ' . $e->getMessage());
     }
-    
-    return count($uniqueInstruments);
+
+    return $uniqueInstruments;
+  }
+
+  /**
+   * Fetch all component instance URIs once per request.
+   */
+  private function getAllComponentInstanceUris($api) {
+    static $cache = NULL;
+    if ($cache !== NULL) {
+      return $cache;
+    }
+
+    $uris = [];
+    $pageSize = 200;
+    $offset = 0;
+
+    try {
+      while (TRUE) {
+        $response = $api->listByKeyword('componentinstance', '_', $pageSize, $offset);
+        $batch = $api->parseObjectResponse($response, 'listByKeyword');
+        if (!is_array($batch) || empty($batch)) {
+          break;
+        }
+
+        foreach ($batch as $component) {
+          if (is_object($component) && !empty($component->uri)) {
+            $uris[(string) $component->uri] = true;
+          }
+        }
+
+        if (count($batch) < $pageSize) {
+          break;
+        }
+        $offset += $pageSize;
+      }
+    }
+    catch (\Exception $e) {
+      \Drupal::logger('pmsr')->warning('Failed to list component instances: ' . $e->getMessage());
+    }
+
+    $cache = array_keys($uris);
+    return $cache;
+  }
+
+  /**
+   * Decode a value that may already be an array or a JSON-encoded array.
+   */
+  private function decodeArrayPayload($payload): array {
+    if (is_array($payload)) {
+      return $payload;
+    }
+
+    if (is_string($payload)) {
+      $decoded = json_decode($payload, TRUE);
+      return is_array($decoded) ? $decoded : [];
+    }
+
+    return [];
+  }
+
+  /**
+   * Extract INI/COM local tokens from a component instance URI local name.
+   */
+  private function extractCpiLocalTokens(string $componentInstanceLocalId): array {
+    if (preg_match('/^CPI-(INI[^-]+)-(COM[^-]+)$/', $componentInstanceLocalId, $matches)) {
+      return [
+        'instrument_instance_local' => $matches[1],
+        'component_local' => $matches[2],
+      ];
+    }
+
+    return [
+      'instrument_instance_local' => '',
+      'component_local' => '',
+    ];
+  }
+
+  /**
+   * Build INI local id => instrument model URI map.
+   */
+  private function buildInstrumentInstanceToModelMap($api): array {
+    $map = [];
+    $pageSize = 200;
+    $offset = 0;
+
+    try {
+      while (TRUE) {
+        $response = $api->listByKeyword('instrumentinstance', '_', $pageSize, $offset);
+        $batch = $api->parseObjectResponse($response, 'listByKeyword');
+        if (!is_array($batch) || empty($batch)) {
+          break;
+        }
+
+        foreach ($batch as $instrumentInstance) {
+          if (!is_object($instrumentInstance) || empty($instrumentInstance->uri) || empty($instrumentInstance->typeUri)) {
+            continue;
+          }
+          $iniLocal = $this->extractUriLocalName((string) $instrumentInstance->uri);
+          if ($iniLocal !== '') {
+            $map[$iniLocal] = (string) $instrumentInstance->typeUri;
+          }
+        }
+
+        if (count($batch) < $pageSize) {
+          break;
+        }
+        $offset += $pageSize;
+      }
+    }
+    catch (\Exception $e) {
+      \Drupal::logger('pmsr')->warning('Failed to map instrument instances to models: ' . $e->getMessage());
+    }
+
+    return $map;
+  }
+
+  /**
+   * Build simulation model rows with component instance and role counts.
+   */
+  private function buildSimulationModelsStatistics($api): array {
+    $rows = [];
+    $projectData = $this->fetchUriObjectWithRetry($api, self::STATS_PROJECT_URI, 4);
+    $contributorUris = (isset($projectData->contributorUris) && is_array($projectData->contributorUris))
+      ? array_values($projectData->contributorUris)
+      : [];
+
+    foreach ($contributorUris as $contributorUri) {
+      $payload = $this->getInstrumentPrefilterPayloadForOrganization($api, (string) $contributorUri);
+      $instruments = $this->extractPrefilterInstrumentRows($payload);
+      if (empty($instruments)) {
+        throw new \RuntimeException('Prefilter returned no instruments for contributor ' . (string) $contributorUri);
+      }
+
+      foreach ($instruments as $instrument) {
+        if (!is_array($instrument)) {
+          continue;
+        }
+
+        $modelUri = trim((string) ($instrument['uri'] ?? $instrument['hasURI'] ?? ''));
+        if ($modelUri === '') {
+          continue;
+        }
+
+        if (!isset($rows[$modelUri])) {
+          $rows[$modelUri] = [
+            'uri' => $modelUri,
+            'label' => (string) ($instrument['label'] ?? $this->extractUriLocalName($modelUri)),
+            'componentInstances' => 0,
+            'detectors' => 0,
+            'actuators' => 0,
+            '_componentUris' => [],
+          ];
+        }
+
+        $components = isset($instrument['components']) && is_array($instrument['components'])
+          ? $instrument['components']
+          : [];
+
+        foreach ($components as $component) {
+          if (!is_array($component)) {
+            continue;
+          }
+
+          $componentUri = trim((string) ($component['uri'] ?? $component['hasURI'] ?? ''));
+          if ($componentUri === '' || isset($rows[$modelUri]['_componentUris'][$componentUri])) {
+            continue;
+          }
+
+          $rows[$modelUri]['_componentUris'][$componentUri] = true;
+          $rows[$modelUri]['componentInstances']++;
+
+          $role = strtolower(trim((string) ($component['componentRole'] ?? '')));
+          if ($role === '') {
+            throw new \RuntimeException('Prefilter returned component without componentRole for model ' . $modelUri);
+          }
+          if ($role === 'detector') {
+            $rows[$modelUri]['detectors']++;
+          }
+          elseif ($role === 'actuator') {
+            $rows[$modelUri]['actuators']++;
+          }
+        }
+      }
+    }
+
+    foreach ($rows as $modelUri => $row) {
+      unset($rows[$modelUri]['_componentUris']);
+    }
+
+    $rows = array_values($rows);
+    usort($rows, function (array $a, array $b): int {
+      return strcmp((string) $a['label'], (string) $b['label']);
+    });
+
+    return $rows;
+  }
+
+  /**
+   * Extract URI local name from a full URI string.
+   */
+  private function extractUriLocalName($uri) {
+    $uri = trim((string) $uri);
+    if ($uri === '') {
+      return '';
+    }
+
+    $pos = strrpos($uri, '/');
+    if ($pos === FALSE) {
+      return $uri;
+    }
+    return substr($uri, $pos + 1);
   }
 
   /**
@@ -1251,6 +1753,7 @@ class StatisticsController extends ControllerBase {
       'registeredUsers' => 0,
       'people' => 0,
       'simulators' => 0,
+      'components' => 0,
       'platforms' => 0,
       'scenarios' => 0,
       'processes' => 0,
@@ -1276,6 +1779,7 @@ class StatisticsController extends ControllerBase {
     $registeredUsersCount = $this->getRegisteredUsersCount($api, $contributorUri);
     $platformCount = $this->getPlatformCountByOrganization($api, $contributorUri);
     $simulatorCount = $this->getSimulatorCountByOrganization($api, $contributorUri);
+    $registeredComponentsCount = $this->getComponentCountByOrganization($api, $contributorUri);
     $managerEmails = $this->getOrganizationManagerEmails($api, $contributorUri);
     $scenarioStats = $this->collectScenarioAndProcessStatsByManagerEmails($api, $managerEmails);
     $studyUris = $scenarioStats['scenario_uris'] ?? [];
@@ -1293,33 +1797,10 @@ class StatisticsController extends ControllerBase {
       'registeredUsersCount' => $registeredUsersCount,
       'platformCount' => $platformCount,
       'simulatorCount' => $simulatorCount,
+      'registeredComponentsCount' => $registeredComponentsCount,
       'registeredScenariosCount' => count($studyUris),
       'registeredProcessesCount' => count($processUris),
       'registeredTasksSubtasksCount' => $tasksAndSubtasksCount,
-    ];
-  }
-
-  /**
-   * Build a minimal member row when full enrichment fails.
-   */
-  private function buildFallbackMemberStatisticsRow(string $contributorUri): array {
-    $repModulePath = Drupal::service('extension.list.module')->getPath('rep');
-    $placeholderImage = base_path() . $repModulePath . '/images/organization_placeholder.png';
-    $fallbackLabel = $this->labelFromUri($contributorUri);
-
-    return [
-      'uri' => $contributorUri,
-      'label' => $fallbackLabel,
-      'shortName' => $fallbackLabel,
-      'fullName' => $fallbackLabel,
-      'image' => $placeholderImage,
-      'peopleCount' => 0,
-      'registeredUsersCount' => 0,
-      'platformCount' => 0,
-      'simulatorCount' => 0,
-      'registeredScenariosCount' => 0,
-      'registeredProcessesCount' => 0,
-      'registeredTasksSubtasksCount' => 0,
     ];
   }
 
@@ -1336,6 +1817,7 @@ class StatisticsController extends ControllerBase {
       $totals['registeredUsers'] += (int) ($row['registeredUsersCount'] ?? 0);
       $totals['people'] += (int) ($row['peopleCount'] ?? 0);
       $totals['simulators'] += (int) ($row['simulatorCount'] ?? 0);
+      $totals['components'] += (int) ($row['registeredComponentsCount'] ?? 0);
       $totals['platforms'] += (int) ($row['platformCount'] ?? 0);
       $totals['scenarios'] += (int) ($row['registeredScenariosCount'] ?? 0);
       $totals['processes'] += (int) ($row['registeredProcessesCount'] ?? 0);
@@ -1424,8 +1906,6 @@ class StatisticsController extends ControllerBase {
           $updatedUris[] = $uri;
         }
         catch (\Exception $e) {
-          $membersByUri[$uri] = $this->buildFallbackMemberStatisticsRow($uri);
-          $updatedUris[] = $uri;
           $errors[] = 'Failed to update member row for ' . $uri . ': ' . $e->getMessage();
         }
       }
@@ -1460,8 +1940,6 @@ class StatisticsController extends ControllerBase {
           $updatedUris[] = $uri;
         }
         catch (\Exception $e) {
-          $membersByUri[$uri] = $this->buildFallbackMemberStatisticsRow($uri);
-          $updatedUris[] = $uri;
           $errors[] = 'Failed to update member row for ' . $uri . ': ' . $e->getMessage();
         }
       }
@@ -1540,6 +2018,8 @@ class StatisticsController extends ControllerBase {
    * Returns the Statistics page.
    */
   public function content() {
+    @set_time_limit(180);
+
     // Get API connector service
     $api = \Drupal::service('rep.api_connector');
 
@@ -1749,7 +2229,7 @@ class StatisticsController extends ControllerBase {
     $output .= '<div class="card-body">';
     $output .= '<h6 class="card-title text-primary" style="font-weight: 600;">Simulator Models</h6>';
     $output .= '<h2 class="display-5 mb-2" style="font-weight: 700; color: #0d6efd;">' . $instrumentsCount . '</h2>';
-    $output .= '<small class="text-muted">INS Ontology</small>';
+    $output .= '<a href="/pmsr/statistics/simulation-models-breakdown" class="btn btn-outline-primary btn-sm">View All →</a>';
     $output .= '</div>';
     $output .= '</div>';
     $output .= '</div>';
@@ -1806,6 +2286,7 @@ $output .= '</div>'; // End single row with all 5 cards
       'registeredUsers' => 0,
       'people' => 0,
       'simulators' => 0,
+      'components' => 0,
       'platforms' => 0,
       'scenarios' => 0,
       'processes' => 0,
@@ -1818,45 +2299,40 @@ $output .= '</div>'; // End single row with all 5 cards
       if (isset($membersData['totals']) && is_array($membersData['totals'])) {
         $memberTotals = array_merge($memberTotals, $membersData['totals']);
       }
-    } elseif ($deferLiveFetch) {
-      $membersLoadingDeferred = TRUE;
-    } else {
-      $hadMemberFetchErrors = false;
-      try {
-        $projectData = $this->fetchUriObjectWithRetry($api, $projectUri, 4);
 
-        if ($projectData && isset($projectData->contributorUris) && is_array($projectData->contributorUris)) {
-          // Fetch each contributor organization
-          foreach ($projectData->contributorUris as $contributorUri) {
-            try {
-              $members[] = $this->buildMemberStatisticsRow($api, (string) $contributorUri);
-            } catch (\Exception $e) {
-              $hadMemberFetchErrors = true;
-              $members[] = $this->buildFallbackMemberStatisticsRow((string) $contributorUri);
-              \Drupal::logger('pmsr')->warning('Failed to fetch organization ' . $contributorUri . ': ' . $e->getMessage());
-            }
+      $cachedComponentsTotal = (int) ($memberTotals['components'] ?? 0);
+      $cachedSimulatorsTotal = (int) ($memberTotals['simulators'] ?? 0);
+      if ($cachedComponentsTotal === 0 && $cachedSimulatorsTotal > 0 && !empty($members)) {
+        // Avoid expensive synchronous prefilter fan-out on page load.
+        // Recompute member/component totals via background statistics worker.
+        $membersLoadingDeferred = TRUE;
+
+        $job = $this->getStatisticsCacheJob();
+        if ($this->isStatisticsCacheJobRunning($job)) {
+          if (!empty($job['job_id'])) {
+            $this->triggerStatisticsCacheWorker((string) $job['job_id']);
           }
+        } else {
+          $job = $this->createStatisticsCacheJobState();
+          $this->saveStatisticsCacheJob($job);
+          $this->triggerStatisticsCacheWorker((string) $job['job_id']);
         }
-      } catch (\Exception $e) {
-        // This is expected when project is not yet loaded into the knowledge graph
-        \Drupal::logger('pmsr')->info('PMSR project not found in knowledge graph: ' . $e->getMessage());
       }
+    } else {
+      // Avoid expensive synchronous member recomputation on page load.
+      // Delegate first-build and rebuild work to the background statistics job.
+      $membersLoadingDeferred = TRUE;
 
-      foreach ($members as $member) {
-        $memberTotals['registeredUsers'] += $member['registeredUsersCount'] ?? 0;
-        $memberTotals['people'] += $member['peopleCount'] ?? 0;
-        $memberTotals['simulators'] += $member['simulatorCount'] ?? 0;
-        $memberTotals['platforms'] += $member['platformCount'] ?? 0;
-        $memberTotals['scenarios'] += $member['registeredScenariosCount'] ?? 0;
-        $memberTotals['processes'] += $member['registeredProcessesCount'] ?? 0;
-        $memberTotals['tasksSubtasks'] += $member['registeredTasksSubtasksCount'] ?? 0;
+      $job = $this->getStatisticsCacheJob();
+      if ($this->isStatisticsCacheJobRunning($job)) {
+        if (!empty($job['job_id'])) {
+          $this->triggerStatisticsCacheWorker((string) $job['job_id']);
+        }
+      } else {
+        $job = $this->createStatisticsCacheJobState();
+        $this->saveStatisticsCacheJob($job);
+        $this->triggerStatisticsCacheWorker((string) $job['job_id']);
       }
-
-      // Persist the complete cardinality snapshot (including fallback rows).
-      $this->setStatisticsDataValue(self::STATS_MEMBERS_DATA_KEY, [
-        'members' => $members,
-        'totals' => $memberTotals,
-      ]);
     }
 
     // Display members table (up to 10 columns + Description column + Total column)
@@ -1872,6 +2348,7 @@ $output .= '</div>'; // End single row with all 5 cards
       $totalRegisteredUsers = (int) ($memberTotals['registeredUsers'] ?? 0);
       $totalPeople = (int) ($memberTotals['people'] ?? 0);
       $totalSimulators = (int) ($memberTotals['simulators'] ?? 0);
+      $totalComponents = (int) ($memberTotals['components'] ?? 0);
       $totalPlatforms = (int) ($memberTotals['platforms'] ?? 0);
       $totalScenarios = (int) ($memberTotals['scenarios'] ?? 0);
       $totalProcesses = (int) ($memberTotals['processes'] ?? 0);
@@ -2023,8 +2500,23 @@ $output .= '</div>'; // End single row with all 5 cards
       $output .= '<strong style="font-size: 2.4rem; color: #0d6efd;">' . $totalSimulators . '</strong>';
       $output .= '</td>';
       $output .= '</tr>';
+
+      // Row 10: Registered Components
+      $output .= '<tr>';
+      $output .= '<td class="align-middle" style="padding: 15px; background-color: #f8f9fa;"><strong>Registered Components</strong></td>';
+      for ($i = 0; $i < $displayCount; $i++) {
+        $member = $members[$i];
+        $componentsCount = $member['registeredComponentsCount'] ?? 0;
+        $output .= '<td class="text-center align-middle" style="padding: 15px; background-color: white;">';
+        $output .= '<strong style="font-size: 2.4rem; color: #0d6efd;">' . $componentsCount . '</strong>';
+        $output .= '</td>';
+      }
+      $output .= '<td class="text-center align-middle" style="padding: 15px; background-color: #e9ecef; border-left: 3px solid #0d6efd;">';
+      $output .= '<strong style="font-size: 2.4rem; color: #0d6efd;">' . $totalComponents . '</strong>';
+      $output .= '</td>';
+      $output .= '</tr>';
       
-      // Row 10: Registered Simulation Laboratories
+      // Row 11: Registered Simulation Laboratories
       $output .= '<tr>';
       $output .= '<td class="align-middle" style="padding: 15px; background-color: #f8f9fa;"><strong>Registered Simulation Laboratories</strong></td>';
       for ($i = 0; $i < $displayCount; $i++) {
@@ -2133,6 +2625,130 @@ $output .= '</div>'; // End single row with all 5 cards
   }
 
   /**
+   * Dedicated page for Simulation Models Breakdown table.
+   */
+  public function simulationModelsBreakdownPage() {
+    @set_time_limit(180);
+
+    $api = \Drupal::service('rep.api_connector');
+
+    $statsJob = $this->getStatisticsCacheJob();
+    if ($this->isStatisticsCacheJobStale($statsJob)) {
+      if (!empty($statsJob['job_id'])) {
+        $this->triggerStatisticsCacheWorker((string) $statsJob['job_id']);
+      }
+    }
+    $statsJob = $this->getStatisticsCacheJob();
+    $deferLiveFetch = $this->isStatisticsCacheJobRunning($statsJob);
+    if ($deferLiveFetch && !empty($statsJob['job_id'])) {
+      $this->triggerStatisticsCacheWorker((string) $statsJob['job_id']);
+    }
+
+    $simulationModels = [];
+    $storedSimulationModels = $this->getStatisticsDataValue(self::STATS_SIMULATION_MODELS_DATA_KEY);
+    $hasFreshSimulationModelsCache = FALSE;
+    if (is_array($storedSimulationModels)
+      && isset($storedSimulationModels['version'])
+      && (int) $storedSimulationModels['version'] === self::STATS_SIMULATION_MODELS_CACHE_VERSION
+      && isset($storedSimulationModels['rows'])
+      && is_array($storedSimulationModels['rows'])) {
+      $simulationModels = $storedSimulationModels['rows'];
+      $hasFreshSimulationModelsCache = TRUE;
+    }
+
+    if (!$hasFreshSimulationModelsCache && !$deferLiveFetch) {
+      try {
+        $simulationModels = $this->buildSimulationModelsStatistics($api);
+        $this->setStatisticsDataValue(self::STATS_SIMULATION_MODELS_DATA_KEY, [
+          'version' => self::STATS_SIMULATION_MODELS_CACHE_VERSION,
+          'rows' => $simulationModels,
+        ]);
+      }
+      catch (\Exception $e) {
+        \Drupal::logger('pmsr')->error('Failed to build simulation models breakdown live: @error', [
+          '@error' => $e->getMessage(),
+        ]);
+
+        // Defer heavy/statistical recomputation to background worker.
+        $deferLiveFetch = TRUE;
+        $job = $this->getStatisticsCacheJob();
+        if ($this->isStatisticsCacheJobRunning($job)) {
+          if (!empty($job['job_id'])) {
+            $this->triggerStatisticsCacheWorker((string) $job['job_id']);
+          }
+        } else {
+          $job = $this->createStatisticsCacheJobState();
+          $this->saveStatisticsCacheJob($job);
+          $this->triggerStatisticsCacheWorker((string) $job['job_id']);
+        }
+      }
+    }
+
+    $output = '';
+    $output .= '<div class="container-fluid mt-4">';
+    $output .= '<div class="row">';
+    $output .= '<div class="col-12">';
+    $output .= '<h2>Simulation Models Breakdown</h2>';
+    $output .= '<p class="text-muted mb-3">Per instrument model: total component instances and detector/actuator component split.</p>';
+
+    if (!empty($simulationModels)) {
+      $output .= '<div class="table-responsive">';
+      $output .= '<table class="table table-sm table-bordered" style="border-color: #ced4da;">';
+      $output .= '<thead style="background-color: #f8f9fa;">';
+      $output .= '<tr>';
+      $output .= '<th style="width: 45%;">Simulation Model</th>';
+      $output .= '<th class="text-center" style="width: 20%;">Component Instances</th>';
+      $output .= '<th class="text-center" style="width: 17.5%;">Detectors</th>';
+      $output .= '<th class="text-center" style="width: 17.5%;">Actuators</th>';
+      $output .= '</tr>';
+      $output .= '</thead><tbody>';
+
+      foreach ($simulationModels as $model) {
+        $encodedUri = base64_encode((string) $model['uri']);
+        $modelLink = '/rep/uri/' . $encodedUri . '?destination=/pmsr/statistics/simulation-models-breakdown';
+        $output .= '<tr>';
+        $output .= '<td><a href="' . htmlspecialchars($modelLink) . '">' . htmlspecialchars((string) ($model['label'] ?? '')) . '</a></td>';
+        $output .= '<td class="text-center"><strong>' . (int) ($model['componentInstances'] ?? 0) . '</strong></td>';
+        $output .= '<td class="text-center">' . (int) ($model['detectors'] ?? 0) . '</td>';
+        $output .= '<td class="text-center">' . (int) ($model['actuators'] ?? 0) . '</td>';
+        $output .= '</tr>';
+      }
+
+      $output .= '</tbody></table>';
+      $output .= '</div>';
+    } else {
+      $output .= '<div class="alert alert-info" role="alert">';
+      $output .= 'Simulation model details are not available yet. Click Refresh Statistics to warm this section.';
+      $output .= '</div>';
+    }
+
+    $output .= '<div class="mt-4">';
+    $output .= '<a href="/pmsr/statistics" class="btn btn-secondary">← Back to Statistics</a>';
+    $output .= '</div>';
+    $output .= '</div></div></div>';
+
+    return [
+      '#title' => 'Statistics > Simulation Models Breakdown',
+      '#markup' => Markup::create($output),
+      '#attached' => [
+        'library' => [
+          'pmsr/statistics',
+        ],
+      ],
+      '#cache' => [
+        'contexts' => ['url'],
+        'tags' => [
+          'pmsr_statistics:global',
+          'pmsr_statistics:instances',
+          'pmsr_ontology:ins',
+          'dp2_pmsr',
+        ],
+        'max-age' => 0,
+      ],
+    ];
+  }
+
+  /**
    * API endpoint: consolidated statistics snapshot used by tests/baselines.
    */
   public function getStatisticsSnapshot() {
@@ -2152,6 +2768,7 @@ $output .= '</div>'; // End single row with all 5 cards
       'registered_processes_total' => 0,
       'registered_tasks_subtasks_total' => 0,
       'registered_simulators_total' => 0,
+      'registered_components_total' => 0,
       'registered_simulation_laboratories_total' => 0,
     ];
 
@@ -2198,6 +2815,7 @@ $output .= '</div>'; // End single row with all 5 cards
       $data['registered_processes_total'] = (int) ($totals['processes'] ?? 0);
       $data['registered_tasks_subtasks_total'] = (int) ($totals['tasksSubtasks'] ?? 0);
       $data['registered_simulators_total'] = (int) ($totals['simulators'] ?? 0);
+      $data['registered_components_total'] = (int) ($totals['components'] ?? 0);
       $data['registered_simulation_laboratories_total'] = (int) ($totals['platforms'] ?? 0);
     }
 

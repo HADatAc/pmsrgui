@@ -319,7 +319,7 @@ final class PmsrSetupTracker {
     // INS stage evidence.
     if (!self::isStageExecuted($state, 'ingest_ins_instruments')) {
       $insTriples = (int) ($namespaces['ins']['triples'] ?? 0);
-      $hasInsTemplate = self::hasEntityWithLabel($api, 'ins', 'INS-PMSR');
+      $hasInsTemplate = self::hasEntityWithLabel($api, 'ins', 'INS-PMSR-V3');
 
       // Explicit: INS template entity in DB.
       if ($hasInsTemplate) {
@@ -328,7 +328,7 @@ final class PmsrSetupTracker {
           'ingest_ins_instruments',
           'ins-ingestion-smoke',
           true,
-          'Explicit record found: INS template entity INS-PMSR exists.'
+          'Explicit record found: INS template entity INS-PMSR-V3 exists.'
         );
       }
       // Fallback inference from namespace graph triples.
@@ -370,8 +370,8 @@ final class PmsrSetupTracker {
     // KGR People evidence.
     if (!self::isStageExecuted($state, 'ingest_kgr_people')) {
       $hasPeopleKgr = self::hasEntityWithLabel($api, 'kgr', 'KGR-PEOPLE');
-      $hasDp2Pmsr = self::hasEntityWithLabel($api, 'dp2', 'DP2-PMSR');
-      $hasDp2Piaget = self::hasEntityWithLabel($api, 'dp2', 'DP2-PIAGET');
+      $hasDp2Pmsr = self::hasEntityWithLabel($api, 'dp2', 'DP2-PMSR-V3');
+      $hasDp2Piaget = self::hasEntityWithLabel($api, 'dp2', 'DP2-PIAGET-V3');
 
       if ($hasPeopleKgr || $hasDp2Pmsr || $hasDp2Piaget) {
         $evidence = [];
@@ -379,10 +379,10 @@ final class PmsrSetupTracker {
           $evidence[] = 'KGR-PEOPLE';
         }
         if ($hasDp2Pmsr) {
-          $evidence[] = 'DP2-PMSR';
+          $evidence[] = 'DP2-PMSR-V3';
         }
         if ($hasDp2Piaget) {
-          $evidence[] = 'DP2-PIAGET';
+          $evidence[] = 'DP2-PIAGET-V3';
         }
 
         self::markEvidence(

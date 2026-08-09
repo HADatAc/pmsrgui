@@ -17,14 +17,30 @@ use Drupal\rep\Vocabulary\VSTOI;
  */
 class IngestionINSController extends ControllerBase {
 
+  private const INS_PRIMARY_FILENAME = 'INS-PMSR-V3.xlsx';
+
+  private const INS_EXPECTED_INFOSHEET_KEYS = [
+    'hasDependencies',
+    'Instruments',
+    'SlotElements',
+    'ComponentStems',
+    'Components',
+    'CodeBooks',
+    'CodeBookSlots',
+    'ResponseOptions',
+    'Annotations',
+    'AnnotationStems',
+  ];
+
   /**
    * Display the INS ingestion page.
    */
   public function ingestInstruments() {
     $output = '';
+    $insFile = self::INS_PRIMARY_FILENAME;
     
     $output .= '<div class="container-fluid mt-4">';
-    $output .= '<p>This page will ingest INS (Instrument Specification) templates from the INS-PMSR.xlsx file into the system.</p>';
+    $output .= '<p>This page will ingest INS (Instrument Specification) templates from the ' . $insFile . ' file into the system.</p>';
     
     $output .= '<div class="card mt-4">';
     $output .= '<div class="card-header bg-primary text-white">';
@@ -32,7 +48,7 @@ class IngestionINSController extends ControllerBase {
     $output .= '</div>';
     $output .= '<div class="card-body">';
     $output .= '<ul>';
-    $output .= '<li><strong>File:</strong> INS-PMSR.xlsx</li>';
+    $output .= '<li><strong>File:</strong> ' . $insFile . '</li>';
     $output .= '<li><strong>Type:</strong> Instrument Specification (INS)</li>';
     $output .= '<li><strong>Location:</strong> mts/ directory</li>';
     $output .= '</ul>';
@@ -159,7 +175,7 @@ class IngestionINSController extends ControllerBase {
    * Process the INS ingestion.
    * 
    * Follows the same pattern as AddMTForm (rep module) for consistency:
-   * 1. Locates the INS-PMSR.xlsx file in the mts/ directory
+  * 1. Locates the INS-PMSR-V3.xlsx file in the mts/ directory
    * 2. Creates a Drupal file entity for tracking
    * 3. Generates unique URIs for DataFile (DFL) and INS (INF)
    * 4. Checks for and cleans existing INS instance data (if any)
@@ -209,17 +225,32 @@ class IngestionINSController extends ControllerBase {
     
     // Step 1: Locate the INS file
     $module_path = \Drupal::service('extension.list.module')->getPath('pmsr');
-    $file_path = DRUPAL_ROOT . '/' . $module_path . '/mts/INS-PMSR.xlsx';
-    
-    $progress[] = "[1/10] Locating INS-PMSR.xlsx file...";
-    
+    $primary_file_path = DRUPAL_ROOT . '/' . $module_path . '/mts/' . self::INS_PRIMARY_FILENAME;
+    $selected_filename = self::INS_PRIMARY_FILENAME;
+    $file_path = $primary_file_path;
+
+    $progress[] = "[1/10] Locating " . self::INS_PRIMARY_FILENAME . " file...";
+
     if (!file_exists($file_path)) {
-      $errors[] = "INS-PMSR.xlsx file not found at: " . $file_path;
+      $errors[] = self::INS_PRIMARY_FILENAME . " file not found at: " . $primary_file_path;
       \Drupal::logger('pmsr')->error("INS: File not found at $file_path");
       return $this->insIngestionResponse(false, 'INS file not found', $progress, $errors, $jobId);
     }
-    
-    $progress[] = "  ✓ File found: INS-PMSR.xlsx";
+
+    $progress[] = "  ✓ File found: " . $selected_filename;
+
+    // Strict INS-SPEC conformance: reject any unexpected InfoSheet key.
+    $infoSheetValidation = $this->validateINSInfoSheetKeySet($file_path);
+    if (!$infoSheetValidation['success']) {
+      $errors[] = $infoSheetValidation['message'];
+      \Drupal::logger('pmsr')->error('INS preflight failed: ' . $infoSheetValidation['message']);
+      return $this->insIngestionResponse(false, 'INS InfoSheet validation failed', $progress, $errors, $jobId);
+    }
+    if (!empty($infoSheetValidation['warnings'])) {
+      foreach ($infoSheetValidation['warnings'] as $warning) {
+        $progress[] = '  ⚠ ' . $warning;
+      }
+    }
     if ($jobId !== NULL) {
       $this->persistINSIngestionJobState($jobId, 'RUNNING', $progress, $errors, [
         'message' => 'INS file located',
@@ -234,7 +265,7 @@ class IngestionINSController extends ControllerBase {
     try {
       // Always refresh the Drupal file from current module mts content.
       // Reusing an existing file entity by filename can preserve stale binary content.
-      $destination = 'public://mts/INS-PMSR.xlsx';
+      $destination = 'public://mts/' . $selected_filename;
       $directory = dirname($destination);
       \Drupal::service('file_system')->prepareDirectory($directory, \Drupal\Core\File\FileSystemInterface::CREATE_DIRECTORY);
 
@@ -248,7 +279,7 @@ class IngestionINSController extends ControllerBase {
 
       $file->setPermanent();
       $file->save();
-      $progress[] = "  ✓ Refreshed file entity from mts/INS-PMSR.xlsx (ID: {$file->id()})";
+      $progress[] = "  ✓ Refreshed file entity from mts/{$selected_filename} (ID: {$file->id()})";
     } catch (\Exception $e) {
       $errors[] = "Exception creating file entity: " . $e->getMessage();
       return $this->insIngestionResponse(false, 'Exception during file entity creation', $progress, $errors, $jobId);
@@ -352,13 +383,11 @@ class IngestionINSController extends ControllerBase {
       ]);
     }
     
-    // Step 5: Check for and delete existing INS-PMSR metadata templates
-    $progress[] = "[5/10] Checking for existing INS-PMSR metadata templates...";
+    // Step 5: Check for and delete existing INS metadata templates
+    $progress[] = "[5/10] Checking for existing INS metadata templates...";
     
     try {
-      // IMPORTANT: cleanup must be global, not manager-scoped, otherwise
-      // stale INS-PMSR templates from prior runs/users can accumulate.
-      $response = $api->listByKeyword('ins', 'INS-PMSR', 500, 0);
+      $response = $api->listByKeyword('ins', 'INS-PMSR-V3', 500, 0);
       $data = json_decode($response);
       
       $existingINS = [];
@@ -367,21 +396,21 @@ class IngestionINSController extends ControllerBase {
           $label = isset($ins->label) ? trim((string) $ins->label) : '';
           $filename = isset($ins->hasDataFile->filename) ? trim((string) $ins->hasDataFile->filename) : '';
 
-          // Keep strict matching to the canonical PMSR INS template.
-          if ($label === 'INS-PMSR' || $filename === 'INS-PMSR.xlsx') {
+          // Keep strict matching to canonical PMSR INS V3 template only.
+          if ($label === 'INS-PMSR-V3' || $filename === self::INS_PRIMARY_FILENAME) {
             $existingINS[] = [
               'uri' => $ins->uri,
               'label' => $label,
               'dataFileUri' => $ins->hasDataFile->uri ?? null,
             ];
-            $progress[] = "  → Found existing INS-PMSR: " . $ins->uri;
+            $progress[] = "  → Found existing INS template: " . $ins->uri;
           }
         }
       }
       
-      // Delete existing INS-PMSR templates (which also deletes their DataFile graphs)
+      // Delete existing INS templates (which also deletes their DataFile graphs)
       if (!empty($existingINS)) {
-        $progress[] = "  → Deleting " . count($existingINS) . " existing INS-PMSR template(s)...";
+        $progress[] = "  → Deleting " . count($existingINS) . " existing INS template(s)...";
         $deletionFailures = [];
         
         foreach ($existingINS as $ins) {
@@ -405,15 +434,15 @@ class IngestionINSController extends ControllerBase {
 
         if (!empty($deletionFailures)) {
           $errors = array_merge($errors, $deletionFailures);
-          return $this->insIngestionResponse(false, 'Could not fully clean previous INS-PMSR templates', $progress, $errors, $jobId, [
+          return $this->insIngestionResponse(false, 'Could not fully clean previous INS templates', $progress, $errors, $jobId, [
             'insUri' => $newINSUri,
             'dataFileUri' => $newDataFileUri,
           ]);
         }
-        
-        $progress[] = "  ✓ Cleaned up existing INS-PMSR data (rerun-safe)";
+
+        $progress[] = "  ✓ Cleaned up existing INS template data (rerun-safe)";
       } else {
-        $progress[] = "  ✓ No existing INS-PMSR templates found (first run)";
+        $progress[] = "  ✓ No existing INS templates found (first run)";
       }
     } catch (\Exception $e) {
       $progress[] = "  ⚠ Could not check for existing templates: " . $e->getMessage();
@@ -441,8 +470,8 @@ class IngestionINSController extends ControllerBase {
         "uri" => $newDataFileUri,
         "typeUri" => \Drupal\rep\Vocabulary\HASCO::DATAFILE,
         "hascoTypeUri" => \Drupal\rep\Vocabulary\HASCO::DATAFILE,
-        "label" => 'INS-PMSR',
-        "filename" => 'INS-PMSR.xlsx',
+        "label" => 'INS-PMSR-V3',
+        "filename" => $selected_filename,
         "fileStatus" => \Drupal\rep\Constant::FILE_STATUS_UNPROCESSED,
         "hasSIRManagerEmail" => $useremail,
         "id" => $file->id(),
@@ -453,7 +482,7 @@ class IngestionINSController extends ControllerBase {
         "uri" => $newINSUri,
         "typeUri" => \Drupal\rep\Vocabulary\HASCO::INS,
         "hascoTypeUri" => \Drupal\rep\Vocabulary\HASCO::INS,
-        "label" => 'INS-PMSR',
+        "label" => 'INS-PMSR-V3',
         "hasDataFileUri" => $newDataFileUri,
         "hasVersion" => '1.0',
         "comment" => 'INS metadata template for PMSR simulator models',
@@ -547,7 +576,7 @@ class IngestionINSController extends ControllerBase {
       $template->hasDataFileUri = $newDataFileUri;
       $template->hasDataFile = new \stdClass();
       $template->hasDataFile->id = $file->id();
-      $template->hasDataFile->filename = 'INS-PMSR.xlsx';
+      $template->hasDataFile->filename = $selected_filename;
       
       // Trigger ingestion with 'ins' concept and '_' status (auto-detect)
       $ingest_result = $api->uploadTemplate('ins', $template, '_');
@@ -676,6 +705,11 @@ class IngestionINSController extends ControllerBase {
 
       if ($ingestionVerified) {
         $progress[] = "  ✓ Template successfully processed!";
+        if ($finalFileStatus === 'PROCESSED' && $finalTemplateStatus !== 'PROCESSED') {
+          $progress[] = "  ✓ Backend terminal status reached via DataFile processing.";
+        } else {
+          $progress[] = "  ✓ Backend terminal status reached for INS ingestion.";
+        }
       } else if ($ingestionFailed) {
         $errors[] = $ingestionFailureReason !== ''
           ? $ingestionFailureReason
@@ -804,7 +838,7 @@ class IngestionINSController extends ControllerBase {
         ]);
       }
       
-      // Find the INS template (there should only be one INS-PMSR)
+      // Find the INS template (there should only be one active INS PMSR template)
       $insUri = null;
       foreach ($data->body as $ins) {
         if (isset($ins->uri) && strpos($ins->uri, 'INF') !== false) {
@@ -1225,6 +1259,196 @@ class IngestionINSController extends ControllerBase {
     }
 
     return 'Raw API response: ' . substr(preg_replace('/\s+/', ' ', $rawText), 0, 400);
+  }
+
+  /**
+   * Validate INS InfoSheet keys strictly against implemented INS contract.
+   */
+  private function validateINSInfoSheetKeySet(string $filePath): array {
+    if (!is_readable($filePath)) {
+      return [
+        'success' => FALSE,
+        'message' => 'INS workbook is not readable: ' . $filePath,
+        'warnings' => [],
+      ];
+    }
+
+    $zip = new \ZipArchive();
+    if ($zip->open($filePath) !== TRUE) {
+      return [
+        'success' => FALSE,
+        'message' => 'Unable to open INS workbook: ' . $filePath,
+        'warnings' => [],
+      ];
+    }
+
+    try {
+      $workbookXml = $zip->getFromName('xl/workbook.xml');
+      $relsXml = $zip->getFromName('xl/_rels/workbook.xml.rels');
+      if (!is_string($workbookXml) || !is_string($relsXml)) {
+        return [
+          'success' => FALSE,
+          'message' => 'Workbook metadata is invalid for INS file: ' . $filePath,
+          'warnings' => [],
+        ];
+      }
+
+      $infoSheetPath = $this->findSheetPathInWorkbook($workbookXml, $relsXml, 'InfoSheet');
+      if ($infoSheetPath === NULL) {
+        return [
+          'success' => FALSE,
+          'message' => 'INS workbook is missing InfoSheet.',
+          'warnings' => [],
+        ];
+      }
+
+      $sheetXml = $zip->getFromName($infoSheetPath);
+      if (!is_string($sheetXml) || $sheetXml === '') {
+        return [
+          'success' => FALSE,
+          'message' => 'INS InfoSheet is empty or unreadable.',
+          'warnings' => [],
+        ];
+      }
+
+      $sharedStrings = [];
+      $sharedXml = $zip->getFromName('xl/sharedStrings.xml');
+      if (is_string($sharedXml) && $sharedXml !== '') {
+        $sharedStrings = $this->parseSharedStrings($sharedXml);
+      }
+
+      $foundKeys = [];
+      preg_replace_callback('/<row\b[^>]*r="(\d+)"[^>]*>.*?<\/row>/s', function (array $matches) use (&$foundKeys, $sharedStrings) {
+        $rowNum = (int) $matches[1];
+        $rowXml = $matches[0];
+
+        if ($rowNum <= 1) {
+          return $rowXml;
+        }
+
+        if (!preg_match('/<c\b[^>]*r="A\d+"[^>]*>.*?<\/c>/s', $rowXml, $cellMatch)) {
+          return $rowXml;
+        }
+
+        $key = $this->extractCellText($cellMatch[0], $sharedStrings);
+        if ($key !== '') {
+          $foundKeys[] = $key;
+        }
+
+        return $rowXml;
+      }, $sheetXml);
+
+      $foundKeys = array_values(array_unique(array_map('trim', $foundKeys)));
+      $expected = self::INS_EXPECTED_INFOSHEET_KEYS;
+
+      $missing = array_values(array_diff($expected, $foundKeys));
+      $extra = array_values(array_diff($foundKeys, $expected));
+
+      if (!empty($missing) || !empty($extra)) {
+        $parts = [];
+        if (!empty($missing)) {
+          $parts[] = 'missing keys: ' . implode(', ', $missing);
+        }
+        if (!empty($extra)) {
+          $parts[] = 'unexpected keys: ' . implode(', ', $extra);
+        }
+
+        return [
+          'success' => FALSE,
+          'message' => 'INS InfoSheet key-set does not match INS-SPEC (' . implode(' | ', $parts) . ')',
+          'warnings' => [],
+        ];
+      }
+
+      return [
+        'success' => TRUE,
+        'message' => 'INS InfoSheet keys validated.',
+        'warnings' => [],
+      ];
+    }
+    finally {
+      $zip->close();
+    }
+  }
+
+  /**
+   * Resolve sheet XML path by sheet name.
+   */
+  private function findSheetPathInWorkbook(string $workbookXml, string $relsXml, string $sheetName): ?string {
+    $relMap = [];
+    if (preg_match_all('/<Relationship[^>]*Id="([^"]+)"[^>]*Target="([^"]+)"/i', $relsXml, $relMatches, PREG_SET_ORDER)) {
+      foreach ($relMatches as $m) {
+        $relMap[$m[1]] = $m[2];
+      }
+    }
+
+    if (!preg_match_all('/<sheet[^>]*name="([^"]+)"[^>]*r:id="([^"]+)"/i', $workbookXml, $sheetMatches, PREG_SET_ORDER)) {
+      return NULL;
+    }
+
+    foreach ($sheetMatches as $m) {
+      if ($m[1] !== $sheetName) {
+        continue;
+      }
+
+      $target = $relMap[$m[2]] ?? '';
+      if ($target === '') {
+        return NULL;
+      }
+
+      if (strpos($target, 'worksheets/') === 0) {
+        return 'xl/' . $target;
+      }
+
+      return 'xl/worksheets/' . basename($target);
+    }
+
+    return NULL;
+  }
+
+  /**
+   * Parse shared strings table into an index map.
+   */
+  private function parseSharedStrings(string $sharedXml): array {
+    $strings = [];
+    if (!preg_match_all('/<si[^>]*>(.*?)<\/si>/s', $sharedXml, $siMatches, PREG_SET_ORDER)) {
+      return $strings;
+    }
+
+    foreach ($siMatches as $si) {
+      $text = '';
+      if (preg_match_all('/<t[^>]*>(.*?)<\/t>/s', $si[1], $tMatches)) {
+        $text = implode('', $tMatches[1]);
+      }
+      $strings[] = html_entity_decode($text, ENT_QUOTES | ENT_XML1, 'UTF-8');
+    }
+
+    return $strings;
+  }
+
+  /**
+   * Extract text value from a worksheet cell XML fragment.
+   */
+  private function extractCellText(string $cellXml, array $sharedStrings): string {
+    $cellType = '';
+    if (preg_match('/\bt="([^"]+)"/', $cellXml, $typeMatch)) {
+      $cellType = $typeMatch[1];
+    }
+
+    if ($cellType === 's' && preg_match('/<v>(.*?)<\/v>/s', $cellXml, $vMatch)) {
+      $idx = (int) trim($vMatch[1]);
+      return isset($sharedStrings[$idx]) ? trim($sharedStrings[$idx]) : '';
+    }
+
+    if (preg_match_all('/<t[^>]*>(.*?)<\/t>/s', $cellXml, $tMatches)) {
+      return trim(html_entity_decode(implode('', $tMatches[1]), ENT_QUOTES | ENT_XML1, 'UTF-8'));
+    }
+
+    if (preg_match('/<v>(.*?)<\/v>/s', $cellXml, $vMatch)) {
+      return trim(html_entity_decode($vMatch[1], ENT_QUOTES | ENT_XML1, 'UTF-8'));
+    }
+
+    return '';
   }
 
   /**

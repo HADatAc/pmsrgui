@@ -1,0 +1,26 @@
+{
+  "workbook": "mts/INS-PMSR-V2.xlsx",
+  "pass": true,
+  "summary": {
+    "errors": 0,
+    "warnings": 0,
+    "instruments": 75,
+    "components": 166,
+    "slots": 154,
+    "codebooks": 25,
+    "codebook_slots": 66,
+    "response_options": 73,
+    "detector_count": 75,
+    "actuator_count": 75
+  },
+  "sheet_counts": {
+    "Instruments": 75,
+    "SlotElements": 154,
+    "ComponentStems": 244,
+    "Components": 166,
+    "CodeBooks": 25,
+    "CodeBookSlots": 66,
+    "ResponseOptions": 73
+  },
+  "findings": []
+}

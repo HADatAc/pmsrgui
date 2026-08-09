@@ -1,0 +1,76 @@
+instrument_uri,instrument_label,total_components,detectors,actuators,other
+pmsr:/INS1739823398493725,Laerdal Nursing Anne Mannequin,8,1,1,6
+pmsr:/INS1739452868256965,SimSleeves Lymphedema Simulator,3,1,1,1
+ncit:C16830,Medical Device,2,1,1,0
+pmsr:/INS1739287021517805,Diagnostic Simulators,2,1,1,0
+pmsr:/INS1739287092102085,Medical Examination Simulators,2,1,1,0
+pmsr:/INS1739287159797795,High-Fidelity Mannequin,2,1,1,0
+pmsr:/INS1739287212610855,Dani Model,2,1,1,0
+pmsr:/INS1739287640585765,Rectal Examination Simulator,2,1,1,0
+pmsr:/INS1739288006994165,Diagnostic Imaging Simulator,2,1,1,0
+pmsr:/INS1739288153666735,Diagnostic Ultrasound,2,1,1,0
+pmsr:/INS1739288297796655,Vascular Access Ultrasound Simulator,2,1,1,0
+pmsr:/INS1739288428472235,Ultrasound,2,1,1,0
+pmsr:/INS1739288499528465,Chison Cbit-9 Stationary Ultrasound,2,1,1,0
+pmsr:/INS1739288566447555,Portable Ultrasound,2,1,1,0
+pmsr:/INS1739288625580975,Butterfly IQ+,2,1,1,0
+pmsr:/INS1739288691415495,Butterfly Ultrasound Probes,2,1,1,0
+pmsr:/INS1739300958884615,Imaging,2,1,1,0
+pmsr:/INS1739301009974715,ARTEC LEO Scanner,2,1,1,0
+pmsr:/INS1739301081410085,Intraoral Scanner,2,1,1,0
+pmsr:/INS1739301133578555,Extraoral Scanner,2,1,1,0
+pmsr:/INS1739301189412025,CAD-CAM System,2,1,1,0
+pmsr:/INS1739301317613705,Automated External Defibrilator,2,1,1,0
+pmsr:/INS1739301711235865,Care Simulators,2,1,1,0
+pmsr:/INS1739301814401805,Medical Procedure Simulator,2,1,1,0
+pmsr:/INS1739301891301765,Suture Simulator,2,1,1,0
+pmsr:/INS1739302175458785,Vascular Access Simulator,2,1,1,0
+pmsr:/INS1739303008518495,Ventilator Care Simulator,2,1,1,0
+pmsr:/INS1739303195193785,Geriatic Care Simulator,2,1,1,0
+pmsr:/INS1739303333850795,Oncology Care Simulator,2,1,1,0
+pmsr:/INS1739392122823235,Procedure Simulator,2,1,1,0
+pmsr:/INS1739392182337835,Cardiac Procedure Simulator,2,1,1,0
+pmsr:/INS1739392275798255,ResusciAnne DAE Simulator,2,1,1,0
+pmsr:/INS1739392367425715,Laerdal DAE Simulator,2,1,1,0
+pmsr:/INS1739397137461495,Low-Fidelity Mannequin,2,1,1,0
+pmsr:/INS1739397556188145,Gynaecological Examination Mannequin,2,1,1,0
+pmsr:/INS1739398437257165,Airway Simulator,2,1,1,0
+pmsr:/INS1739398519577895,Laerdal Airway Simulator,2,1,1,0
+pmsr:/INS1739400689838665,Nursing Care Simulator,2,1,1,0
+pmsr:/INS1739401557396065,Laerdal Nursing Care Simulator,2,1,1,0
+pmsr:/INS1739401657491675,Urine Bag Maintenance Simulator,2,1,1,0
+pmsr:/INS1739401836683455,Stomach Bag Maintenance Simulator,2,1,1,0
+pmsr:/INS1739402037946315,IV Fluid Administration,2,1,1,0
+pmsr:/INS1739402230863265,Blood Pressure Measurement Simulator,2,1,1,0
+pmsr:/INS1739402477829135,Rectal Medicine Administration Simulator,2,1,1,0
+pmsr:/INS1739402585415785,Vaginal Medicine Administration Simulator,2,1,1,0
+pmsr:/INS1739403078441215,Male Genitalia Catherization Simulator,2,1,1,0
+pmsr:/INS1739403188428355,Female Genitalia Catherization Simulator,2,1,1,0
+pmsr:/INS1739403291912375,Penis Foreskin Cleaning Simulator,2,1,1,0
+pmsr:/INS1739404046114785,Intramuscular Injections Simulator,2,1,1,0
+pmsr:/INS1739404158691525,Ear Irrigation Simulator,2,1,1,0
+pmsr:/INS1739451831725785,Virtual Patient Anatomy Simulator,2,1,1,0
+pmsr:/INS1739452063713965,Anatomage Table Simulator,2,1,1,0
+pmsr:/INS1739452783104705,Skin Care Procedure Simulator,2,1,1,0
+pmsr:/INS1739453043505715,Pitting Edema Simulator,2,1,1,0
+pmsr:/INS1739482671461295,Prostate Model,2,1,1,0
+pmsr:/INS1739483351917145,Male Inguinal Hernia Anatomy Model,2,1,1,0
+pmsr:/INS1739487989328225,Laerdal ALS Baby Trainer 200,2,1,1,0
+pmsr:/INS1739488340413085,Virtual Patient Interaction Simulator,2,1,1,0
+pmsr:/INS1739819116467195,Anatomage Large Table,2,1,1,0
+pmsr:/INS1739819599670195,Anatomage Small Tablet,2,1,1,0
+pmsr:/INS1739819782231595,Anatomage Clinical Table,2,1,1,0
+pmsr:/INS1739819868350395,Anatomage Vet Table,2,1,1,0
+pmsr:/INS1739819955334025,Anatomage Science Table,2,1,1,0
+pmsr:/INS1739820624939265,Cancer Patient Simulator,2,1,1,0
+pmsr:/INS1739821032633525,Monitoring Virtual Simulator,2,1,1,0
+pmsr:/INS1739878730369725,Body Interact Simulator,2,1,1,0
+pmsr:/INS1739878788687655,Sophia Body Interact AI Assistant,2,1,1,0
+pmsr:/INS1739879206550705,Cancer Patient Simulator,2,1,1,0
+pmsr:/INS1740087239872215,Physiology Simulator,2,1,1,0
+pmsr:/INS1740087575777435,Patient Monitor Simulator,2,1,1,0
+pmsr:/INS1740143777940835,Male Examination Mannequin,2,1,1,0
+pmsr:/INS1740143878244085,Obstetric Simulator,2,1,1,0
+pmsr:PhysicalMedicalDevice,Physical Medical Device,2,1,1,0
+pmsr:PhysicalMedicalSimulator,Physical Medical Simulator,2,1,1,0
+pmsr:VirtualMedicalSimulator,Virtual Medical Simulator,2,1,1,0

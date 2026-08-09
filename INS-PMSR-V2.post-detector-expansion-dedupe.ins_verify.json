@@ -1,0 +1,39 @@
+{
+  "workbook": "mts/INS-PMSR-V2.xlsx",
+  "pass": true,
+  "summary": {
+    "errors": 0,
+    "warnings": 1,
+    "instruments": 75,
+    "components": 394,
+    "slots": 382,
+    "codebooks": 25,
+    "codebook_slots": 66,
+    "response_options": 73,
+    "detector_count": 303,
+    "actuator_count": 75
+  },
+  "sheet_counts": {
+    "Instruments": 75,
+    "SlotElements": 382,
+    "ComponentStems": 472,
+    "Components": 394,
+    "CodeBooks": 25,
+    "CodeBookSlots": 66,
+    "ResponseOptions": 73
+  },
+  "findings": [
+    {
+      "code": "DET_ACT_PARITY",
+      "severity": "WARN",
+      "message": "Detector/Actuator count mismatch.",
+      "count": 1,
+      "samples": [
+        {
+          "detector_count": 303,
+          "actuator_count": 75
+        }
+      ]
+    }
+  ]
+}

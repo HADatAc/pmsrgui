@@ -1,0 +1,26 @@
+codebook_uri,codebook_label,option_count,codebook_webdoc,missing_codebook_webdoc,clinical_signal,qualifier_signal,options_missing_webdoc,options_missing_comment,sample_options
+pmsr:/CBK1738190767525383,CB,4,,yes,no,no,4,0,State 1 | State 2 | State 3 | State 4
+pmsr:/CBK1786054978465927000,Actuator State Codebook,3,,yes,no,no,3,0,Off | On | Standby
+pmsr:/CBK1738087261869295,Airway Medical Device Responses,3,,yes,yes,yes,3,0,Low | Medium | High
+pmsr:/CBK1786055194373684000,Anal Canal Condition Codebook,3,,yes,yes,yes,3,0,Normal | Tender | Bleeding
+pmsr:/CBK1786055194373647000,DAE Trainer Prompt Codebook,3,,yes,yes,yes,3,0,No Prompt | Prepare Shock | Shock Delivered
+pmsr:/CBK1786054978465925000,Detector State Codebook,3,,yes,no,yes,3,0,Detected | Not Detected | Unknown
+pmsr:/CBK1786055194373672000,IV Access Status Codebook,3,,yes,no,yes,3,0,Not Started | Successful Access | Compromised Access
+pmsr:/CBK1786055194373708000,Lymphedema Severity Codebook,3,,yes,yes,yes,3,0,Mild | Moderate | Severe
+pmsr:/CBK1786055194373659000,Microphone Signal State Codebook,3,,yes,no,yes,3,0,Muted | Low Signal | Clear Signal
+pmsr:/CBK1786055194373696000,Pressure Duration Level Codebook,3,,yes,yes,yes,3,0,Short | Moderate | Prolonged
+pmsr:/CBK1740097825927975,Pupil Simulator Size,3,,yes,yes,yes,3,0,Constricted | Normal | Dilated
+pmsr:/CBK1786055194373597000,Shock Link Monitor State Codebook,3,,yes,yes,yes,3,0,No Alert | Warning | Critical Alert
+pmsr:/CBK1786055194373636000,SimPad Mode Codebook,3,,yes,no,no,3,0,Setup | Scenario Running | Paused
+pmsr:/CBK1786055194373623000,Skill Guide Status Codebook,3,,yes,no,no,3,0,Inactive | Guidance Active | Feedback Complete
+pmsr:/CBK1786055194373719000,Skin Volume Change Level Codebook,3,,yes,no,yes,3,0,No Change | Noticeable Increase | Pronounced Increase
+pmsr:/CBK1786055194373731000,Tissue Penetration Depth Codebook,3,,yes,no,no,3,0,Superficial | Expected Depth | Too Deep
+pmsr:/CBK1738096258564815,Chest Inflator Responses,2,,yes,no,yes,2,0,ROP1738095646552695 | ROP1738095538691005
+pmsr:/CBK1738186252574965,Eletrodes Adult Responses,2,,yes,no,no,2,0,Detached | Attached
+pmsr:/CBK1738187728844755,Eletrodes Pediatric Responses,2,,yes,no,no,2,0,Detached | Attached
+pmsr:/CBK1738088009248155,Intubation Results,2,,yes,yes,no,2,0,Inactive | Active
+pmsr:/CBK1738148623334734,PASS and FAIL,2,,yes,no,no,2,0,ROP1738148696123634 | ROP1738148709128504
+pmsr:/CBK1738239681967443,Pulse Bulb Response,2,,yes,yes,no,2,0,ROP1738240077172043 | ROP1738240106626233
+pmsr:/CBK1738098997597015,Pulse Detection,2,,yes,yes,yes,2,0,ROP1738099044174655 | ROP1738099077224615
+pmsr:/CBK1738096048734595,Stomach Inflator Responses,2,,yes,no,yes,2,0,ROP1738095892998425 | ROP1738095777366775
+pmsr:/CBK1740091832821965,IV Access Locations,1,,yes,no,no,0,0,ROP1740092924252535

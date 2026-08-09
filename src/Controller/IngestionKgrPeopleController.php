@@ -14,6 +14,8 @@ use Symfony\Component\Process\Process;
  */
 class IngestionKgrPeopleController extends ControllerBase {
 
+  private const DP2_FILES = ['DP2-PMSR-V3.xlsx', 'DP2-PIAGET-V3.xlsx'];
+
   /**
    * Ingest KGR people data.
    */
@@ -37,7 +39,7 @@ class IngestionKgrPeopleController extends ControllerBase {
     $output .= '<li>Organization memberships (foaf:member)</li>';
     $output .= '<li>Email addresses (foaf:mbox)</li>';
     $output .= '</ul>';
-    $output .= '<p class="mt-3">After KGR-PEOPLE.xlsx ingestion, DP2-PMSR.xlsx and then DP2-PIAGET.xlsx will be ingested using generic MT ingestion endpoints with type <code>dp2</code>.</p>';
+    $output .= '<p class="mt-3">After KGR-PEOPLE.xlsx ingestion, DP2-PMSR-V3.xlsx and then DP2-PIAGET-V3.xlsx will be ingested using generic MT ingestion endpoints with type <code>dp2</code>.</p>';
     $output .= '</div>';
     $output .= '</div>';
     
@@ -87,8 +89,8 @@ class IngestionKgrPeopleController extends ControllerBase {
    * 
    * Ingests:
    * 1. KGR-PEOPLE.xlsx - Person profiles, memberships, and emails
-  * 2. DP2-PMSR.xlsx - Instrument instances, platforms, and deployments
-  * 3. DP2-PIAGET.xlsx - Instrument instances, platforms, and deployments
+  * 2. DP2-PMSR-V3.xlsx - Instrument instances, platforms, deployments, and component deployments
+  * 3. DP2-PIAGET-V3.xlsx - Instrument instances, platforms, deployments, and component deployments
    */
   public function processPeopleIngestion(Request $request) {
     PmsrSetupTracker::markStageStarted('ingest_kgr_people', 'KGR people ingestion started');
@@ -380,7 +382,7 @@ class IngestionKgrPeopleController extends ControllerBase {
     $progress[] = "=== Ingesting DP2 Data ===";
     $progress[] = "";
 
-    $dp2Files = ['DP2-PMSR.xlsx', 'DP2-PIAGET.xlsx'];
+    $dp2Files = self::DP2_FILES;
     $dp2_success_count = 0;
     $dp2_error_count = 0;
     
@@ -404,19 +406,44 @@ class IngestionKgrPeopleController extends ControllerBase {
         $filesize = filesize($filePath);
         $progress[] = "  ✓ Found $filename (" . round($filesize / 1024, 2) . " KB)";
 
+        // Step 1.5: Fail fast on local DP2 preflight validation errors.
+        $progress[] = "";
+        $progress[] = "[Step 1.5/3] Running DP2 preflight verification for $filename...";
+        $preflight = $this->runDp2Preflight($filePath, $mts_dir, $dp2_label);
+        foreach ($preflight['progress'] as $line) {
+          $progress[] = "  " . $line;
+        }
+        if (!$preflight['success']) {
+          $errors[] = "DP2 preflight failed for $filename: " . $preflight['message'];
+          \Drupal::logger('pmsr')->error("DP2 preflight failed for $filename: " . $preflight['message']);
+          $dp2_error_count++;
+          $progress[] = "";
+          continue;
+        }
+
         try {
           // STEP 0: Delete existing DataFile and DP2 entity if they exist
           $progress[] = "";
           $progress[] = "[Step 2/3] Checking for existing $dp2_label...";
 
           try {
-            // Search for existing DP2 with matching label
             $existing_dp2_response = $api->listByKeyword('dp2', $dp2_label, 100, 0);
             $existing_dp2_data = json_decode($existing_dp2_response);
 
-            if ($existing_dp2_data && isset($existing_dp2_data->body) && is_array($existing_dp2_data->body) && count($existing_dp2_data->body) > 0) {
-              foreach ($existing_dp2_data->body as $existing_dp2) {
-                if (isset($existing_dp2->uri) && isset($existing_dp2->label) && $existing_dp2->label === $dp2_label) {
+            $existing_candidates = [];
+            if ($existing_dp2_data && isset($existing_dp2_data->body) && is_array($existing_dp2_data->body)) {
+              foreach ($existing_dp2_data->body as $cand) {
+                if (is_object($cand) && !empty($cand->uri)) {
+                  $existing_candidates[(string) $cand->uri] = $cand;
+                }
+              }
+            }
+
+            if (!empty($existing_candidates)) {
+              foreach ($existing_candidates as $existing_dp2) {
+                $existing_label = isset($existing_dp2->label) ? (string) $existing_dp2->label : '';
+                $same_exact_label = ($existing_label === $dp2_label);
+                if (isset($existing_dp2->uri) && $same_exact_label) {
                   $progress[] = "  → Found existing DP2: " . $existing_dp2->uri;
                   \Drupal::logger('pmsr')->info("DP2: Found existing DP2 to delete: " . $existing_dp2->uri);
 
@@ -433,8 +460,9 @@ class IngestionKgrPeopleController extends ControllerBase {
                       \Drupal::logger('pmsr')->info("DP2: Deleted DataFile and RDF data: " . $existing_datafile_uri);
                     } else {
                       $error_msg = isset($delete_df_response->message) ? $delete_df_response->message : 'DataFile may already be deleted or named graph no longer exists';
-                      $progress[] = "    ⚠ Could not delete DataFile: " . $error_msg . " (non-critical - will proceed with ingestion)";
-                      \Drupal::logger('pmsr')->info("DP2: DataFile delete skipped: " . $error_msg . " for URI: " . $existing_datafile_uri);
+                      $progress[] = "    ✗ Could not delete DataFile: " . $error_msg;
+                      \Drupal::logger('pmsr')->error("DP2: DataFile delete failed: " . $error_msg . " for URI: " . $existing_datafile_uri);
+                      throw new \RuntimeException("Cannot safely re-ingest " . $dp2_label . ": previous DataFile graph deletion failed for " . $existing_datafile_uri . " (" . $error_msg . ")");
                     }
                   }
 
@@ -572,7 +600,7 @@ class IngestionKgrPeopleController extends ControllerBase {
                     $dp2_error_count++;
                   } else {
                     $progress[] = "  ✓ $filename ingested successfully";
-                    $progress[] = "    → Instrument instances, platforms, and deployments loaded";
+                    $progress[] = "    → Instrument instances, platforms, deployments, and component deployments loaded";
                     \Drupal::logger('pmsr')->info("DP2: Successfully ingested $filename");
                     $dp2_success_count++;
                   }
@@ -610,7 +638,7 @@ class IngestionKgrPeopleController extends ControllerBase {
     
     if ($dp2_success_count > 0) {
       $progress[] = "✓ DP2 files ingested successfully";
-      $progress[] = "✓ Instrument instances, platforms, and deployments loaded";
+      $progress[] = "✓ Instrument instances, platforms, deployments, and component deployments loaded";
     }
     
     if ($kgr_error_count > 0 || $dp2_error_count > 0) {
@@ -888,6 +916,87 @@ class IngestionKgrPeopleController extends ControllerBase {
     }
 
     return trim($value);
+  }
+
+  /**
+   * Run strict DP2 preflight verifier and block ingestion on any error.
+   */
+  private function runDp2Preflight(string $workbookPath, string $mtsDir, string $prefix): array {
+    $modulePath = \Drupal::service('extension.list.module')->getPath('pmsr');
+    $moduleRoot = DRUPAL_ROOT . '/' . $modulePath;
+    $scriptPath = $moduleRoot . '/scripts/dp2_verify.py';
+    $insWorkbook = $mtsDir . '/INS-PMSR-V3.xlsx';
+    $outDir = $moduleRoot . '/tests/reports';
+
+    if (!file_exists($scriptPath)) {
+      return [
+        'success' => FALSE,
+        'message' => 'DP2 verifier script not found at ' . $scriptPath,
+        'progress' => ['✗ Preflight script is missing.'],
+      ];
+    }
+
+    if (!file_exists($insWorkbook)) {
+      return [
+        'success' => FALSE,
+        'message' => 'INS workbook not found at ' . $insWorkbook,
+        'progress' => ['✗ INS workbook required for slot validation is missing.'],
+      ];
+    }
+
+    if (!is_dir($outDir)) {
+      @mkdir($outDir, 0775, TRUE);
+    }
+
+    $command = [
+      '/usr/bin/python3',
+      $scriptPath,
+      $workbookPath,
+      '--ins-workbook',
+      $insWorkbook,
+      '--out-dir',
+      $outDir,
+      '--prefix',
+      $prefix . '.preflight',
+    ];
+
+    $process = new Process($command, $moduleRoot, NULL, NULL, 240);
+    $process->run();
+
+    $stdout = trim((string) $process->getOutput());
+    $stderr = trim((string) $process->getErrorOutput());
+
+    if (!$process->isSuccessful()) {
+      $details = $stderr !== '' ? $stderr : $stdout;
+      if ($details === '') {
+        $details = 'Unknown preflight failure';
+      }
+      return [
+        'success' => FALSE,
+        'message' => $details,
+        'progress' => [
+          '✗ Preflight verification reported errors.',
+          '→ ' . substr($details, 0, 600),
+        ],
+      ];
+    }
+
+    $progress = ['✓ Preflight verification passed.'];
+    if ($stdout !== '') {
+      $lines = preg_split('/\r\n|\r|\n/', $stdout);
+      foreach ($lines as $line) {
+        $line = trim($line);
+        if ($line !== '') {
+          $progress[] = '→ ' . $line;
+        }
+      }
+    }
+
+    return [
+      'success' => TRUE,
+      'message' => 'DP2 preflight passed',
+      'progress' => $progress,
+    ];
   }
 
   /**

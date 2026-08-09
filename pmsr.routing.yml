@@ -14,6 +14,14 @@ pmsr.statistics:
   requirements:
     _permission: 'access content'
 
+pmsr.statistics_simulation_models_breakdown:
+  path: '/pmsr/statistics/simulation-models-breakdown'
+  defaults:
+    _controller: 'Drupal\pmsr\Controller\StatisticsController::simulationModelsBreakdownPage'
+    _title: 'Statistics > Simulation Models Breakdown'
+  requirements:
+    _permission: 'access content'
+
 pmsr.statistics_refresh_page:
   path: '/pmsr/statistics/refresh'
   defaults:

@@ -107,6 +107,7 @@ build_snapshot() {
       registered_processes_total: 0,
       registered_tasks_subtasks_total: 0,
       registered_simulators_total: 0,
+      registered_components_total: 0,
       registered_simulation_laboratories_total: 0
     }'
 }

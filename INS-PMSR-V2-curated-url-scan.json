@@ -1,0 +1,142 @@
+{
+  "https://bodyinteract.com/": {
+    "url": "https://bodyinteract.com/",
+    "ok": true,
+    "status": 200,
+    "error": "",
+    "title": "Body Interact - Virtual Patients Simulator | Body Interact"
+  },
+  "https://cpr.heart.org/en/resuscitation-science/cpr-and-ecc-guidelines": {
+    "url": "https://cpr.heart.org/en/resuscitation-science/cpr-and-ecc-guidelines",
+    "ok": false,
+    "status": 403,
+    "error": "HTTPError 403: Forbidden",
+    "title": ""
+  },
+  "https://laerdal.com/us/products/simulation-training/": {
+    "url": "https://laerdal.com/us/products/simulation-training/",
+    "ok": true,
+    "status": 200,
+    "error": "",
+    "title": "Simulation and Training | Laerdal Medical"
+  },
+  "https://laerdal.force.com/HelpCenter/s/": {
+    "url": "https://laerdal.force.com/HelpCenter/s/",
+    "ok": false,
+    "status": 404,
+    "error": "HTTPError 404: Not Found",
+    "title": ""
+  },
+  "https://limbsandthings.com/us/support/": {
+    "url": "https://limbsandthings.com/us/support/",
+    "ok": false,
+    "status": 404,
+    "error": "HTTPError 404: Not Found",
+    "title": ""
+  },
+  "https://support.3shape.com/": {
+    "url": "https://support.3shape.com/",
+    "ok": true,
+    "status": 200,
+    "error": "",
+    "title": "3Shape Help Center"
+  },
+  "https://support.bodyinteract.com/": {
+    "url": "https://support.bodyinteract.com/",
+    "ok": false,
+    "status": null,
+    "error": "URLError: [Errno 8] nodename nor servname provided, or not known",
+    "title": ""
+  },
+  "https://support.butterflynetwork.com/hc/en-us": {
+    "url": "https://support.butterflynetwork.com/hc/en-us",
+    "ok": true,
+    "status": 200,
+    "error": "",
+    "title": "Butterfly Network Support Portal"
+  },
+  "https://support.medit.com/hc/en-us": {
+    "url": "https://support.medit.com/hc/en-us",
+    "ok": false,
+    "status": 403,
+    "error": "HTTPError 403: Forbidden",
+    "title": ""
+  },
+  "https://webstore.iec.ch/publication/67072": {
+    "url": "https://webstore.iec.ch/publication/67072",
+    "ok": false,
+    "status": 404,
+    "error": "HTTPError 404: Not Found",
+    "title": ""
+  },
+  "https://www.anatomage.com/contact/": {
+    "url": "https://www.anatomage.com/contact/",
+    "ok": true,
+    "status": 200,
+    "error": "",
+    "title": "Anatomage | Contact Us"
+  },
+  "https://www.anatomage.com/table/": {
+    "url": "https://www.anatomage.com/table/",
+    "ok": true,
+    "status": 200,
+    "error": "",
+    "title": ""
+  },
+  "https://www.cdc.gov/infection-control/": {
+    "url": "https://www.cdc.gov/infection-control/",
+    "ok": false,
+    "status": 403,
+    "error": "HTTPError 403: Forbidden",
+    "title": ""
+  },
+  "https://www.chison.com/products/": {
+    "url": "https://www.chison.com/products/",
+    "ok": true,
+    "status": 200,
+    "error": "",
+    "title": "Cart-Based Color Doppler Ultrasound, 3D/4D Ultrasound System, Handheld Ultrasound Machine for Sale"
+  },
+  "https://www.fda.gov/medical-devices/device-advice-comprehensive-regulatory-assistance/medical-device-databases": {
+    "url": "https://www.fda.gov/medical-devices/device-advice-comprehensive-regulatory-assistance/medical-device-databases",
+    "ok": true,
+    "status": 200,
+    "error": "",
+    "title": "Medical Device Databases | FDA"
+  },
+  "https://www.inacsl.org/healthcare-simulation-standards/": {
+    "url": "https://www.inacsl.org/healthcare-simulation-standards/",
+    "ok": false,
+    "status": 404,
+    "error": "HTTPError 404: Not Found",
+    "title": ""
+  },
+  "https://www.iso.org/standard/72704.html": {
+    "url": "https://www.iso.org/standard/72704.html",
+    "ok": false,
+    "status": 403,
+    "error": "HTTPError 403: Forbidden",
+    "title": ""
+  },
+  "https://www.nascohealthcare.com/": {
+    "url": "https://www.nascohealthcare.com/",
+    "ok": true,
+    "status": 200,
+    "error": "",
+    "title": "Nasco Healthcare - Supporting Frontline Healthcare Workers"
+  },
+  "https://www.ssih.org/": {
+    "url": "https://www.ssih.org/",
+    "ok": true,
+    "status": 200,
+    "error": "",
+    "title": "Home | SSH"
+  },
+  "https://www.who.int/teams/health-product-policy-and-standards/assistive-and-medical-technology/medical-devices": {
+    "url": "https://www.who.int/teams/health-product-policy-and-standards/assistive-and-medical-technology/medical-devices",
+    "ok": true,
+    "status": 200,
+    "error": "",
+    "title": "Health products policy and standards"
+  }
+}

@@ -7,7 +7,7 @@
   'use strict';
 
   const INS_STEP_TITLES = [
-    'Locate INS-PMSR.xlsx file',
+    'Locate INS-PMSR-V3.xlsx file',
     'Create Drupal file entity',
     'Generate URIs',
     'Check existing INS instance data',

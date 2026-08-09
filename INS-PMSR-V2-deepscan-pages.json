@@ -1,0 +1,940 @@
+{
+  "seed_urls": [
+    "https://bodyinteract.com/",
+    "https://laerdal.com/us/products/simulation-training/",
+    "https://support.3shape.com/",
+    "https://support.butterflynetwork.com/hc/en-us",
+    "https://www.anatomage.com/contact/",
+    "https://www.anatomage.com/table/",
+    "https://www.chison.com/products/",
+    "https://www.fda.gov/medical-devices/device-advice-comprehensive-regulatory-assistance/medical-device-databases",
+    "https://www.nascohealthcare.com/",
+    "https://www.ssih.org/",
+    "https://www.who.int/teams/health-product-policy-and-standards/assistive-and-medical-technology/medical-devices"
+  ],
+  "seed_to_pages": {
+    "https://bodyinteract.com/": [
+      "https://bodyinteract.com/",
+      "https://bodyinteract.com",
+      "https://bodyinteract.com/comments/feed/",
+      "https://bodyinteract.com/feed/",
+      "https://bodyinteract.com/wp-content/plugins/cookie-notice/css/front.min.css?ver=3.1.4",
+      "https://bodyinteract.com/wp-content/plugins/salient-nectar-slider/css/nectar-slider.css?ver=1.7.8",
+      "https://bodyinteract.com/wp-content/plugins/salient-social/css/style.css?ver=1.2.6",
+      "https://bodyinteract.com/wp-content/themes/salient/css/build/elements/element-fancy-box.css?ver=18.2.1",
+      "https://bodyinteract.com/wp-content/themes/salient/css/build/elements/element-milestone.css?ver=18.2.1",
+      "https://bodyinteract.com/wp-content/themes/salient/css/build/elements/element-recent-posts.css?ver=18.2.1",
+      "https://bodyinteract.com/wp-content/themes/salient/css/build/elements/element-rotating-words-title.css?ver=18.2.1",
+      "https://bodyinteract.com/wp-content/themes/salient/css/build/elements/element-video-lightbox.css?ver=18.2.1"
+    ],
+    "https://laerdal.com/us/products/simulation-training/": [
+      "https://laerdal.com/us/products/simulation-training/",
+      "https://laerdal.com/at/products/simulation-training/",
+      "https://laerdal.com/au/products/simulation-training/",
+      "https://laerdal.com/be-fr/products/simulation-training/",
+      "https://laerdal.com/be-nl/products/simulation-training/",
+      "https://laerdal.com/br/products/simulation-training/",
+      "https://laerdal.com/ca/products/simulation-training/",
+      "https://laerdal.com/ch/products/simulation-training/",
+      "https://laerdal.com/cn/products/simulation-training/",
+      "https://laerdal.com/de/products/simulation-training/",
+      "https://laerdal.com/distributors/products/simulation-training/",
+      "https://laerdal.com/dk/products/simulation-training/"
+    ],
+    "https://support.3shape.com/": [
+      "https://support.3shape.com/",
+      "https://support.3shape.com",
+      "https://support.3shape.com/cn_CN",
+      "https://support.3shape.com/de_DE",
+      "https://support.3shape.com/en_US",
+      "https://support.3shape.com/en_US/3shape-design-service-automate",
+      "https://support.3shape.com/en_US/3shape-produce",
+      "https://support.3shape.com/en_US/3shape-unite",
+      "https://support.3shape.com/en_US/clinic-case-management",
+      "https://support.3shape.com/en_US/clinic-release-notes",
+      "https://support.3shape.com/en_US/clinic-setup-and-configuration",
+      "https://support.3shape.com/en_US/dental-system"
+    ],
+    "https://support.butterflynetwork.com/hc/en-us": [
+      "https://support.butterflynetwork.com/hc/en-us",
+      "https://support.butterflynetwork.com/s/sfsites/l/%7B%22mode%22%3A%22PROD%22%2C%22dfs%22%3A%2221%22%2C%22app%22%3A%22siteforce%3AcommunityApp%22%2C%22loaded%22%3A%7B%22APPLICATION%40markup%3A%2F%2Fsiteforce%3AcommunityApp%22%3A%221692_mtviYwT4OQy30JbfgmF_yA%22%7D%2C%22styleContext%22%3A%7B%22c%22%3A%22other%22%2C%22x%22%3A%5B%223%22%2C%22SLDS%22%2C%22isDesktop%22%5D%2C%22tokens%22%3A%5B%22markup%3A%2F%2Fsiteforce%3AserializedTokens%22%2C%22markup%3A%2F%2Fforce%3AsldsTokens%22%2C%22markup%3A%2F%2Fsiteforce%3AcommunityTokens%22%2C%22markup%3A%2F%2Fforce%3AformFactorLarge%22%2C%22markup%3A%2F%2Fsiteforce%3AcommunityFormFactorLarge%22%2C%22markup%3A%2F%2Fsiteforce%3AauraDynamicTokens%22%2C%22markup%3A%2F%2Fsiteforce%3AsldsFontOverride%22%5D%2C%22tuid%22%3A%22XYQG36kiceEgKLZd-w9iPg%22%2C%22cuid%22%3A1613928980%7D%2C%22pathPrefix%22%3A%22%22%7D/app.css?3=&aura.attributes=%7B%22ac%22%3A%22%22%2C%22authenticated%22%3A%22false%22%2C%22brandingSetId%22%3A%2253a1dce7-c4c4-42bc-890d-1ee56a7a9946%22%2C%22formFactor%22%3A%22LARGE%22%2C%22isHybrid%22%3A%22false%22%2C%22language%22%3A%22en_US%22%2C%22pageId%22%3A%227f9c4bb0-f5ae-4e14-92b7-bbcbe426a2d9%22%2C%22publishedChangelistNum%22%3A%2219%22%2C%22schema%22%3A%22Published%22%2C%22themeLayoutType%22%3A%22Home%22%2C%22uds%22%3A%22true%22%2C%22viewType%22%3A%22Published%22%7D",
+      "https://support.butterflynetwork.com/s/sfsites/runtimedownload/fonts.css?lastMod=1771611762000&brandSet=53a1dce7-c4c4-42bc-890d-1ee56a7a9946",
+      "https://support.butterflynetwork.com/sfsites/c/resource/Favicon"
+    ],
+    "https://www.anatomage.com/contact/": [
+      "https://www.anatomage.com/contact/",
+      "https://www.anatomage.com/anatomage.com/careers/"
+    ],
+    "https://www.anatomage.com/table/": [
+      "https://www.anatomage.com/table/"
+    ],
+    "https://www.chison.com/products/": [
+      "https://www.chison.com/products/",
+      "https://www.chison.com/b-w-ultrasound/",
+      "https://www.chison.com/b-w-ultrasound/eco-1.html",
+      "https://www.chison.com/b-w-ultrasound/eco-2.html",
+      "https://www.chison.com/b-w-ultrasound/eco-3-expert.html",
+      "https://www.chison.com/cart-based-ultrasound/",
+      "https://www.chison.com/contacts/service-support/",
+      "https://www.chison.com/handheld-ultrasound/",
+      "https://www.chison.com/hotproduct/handheld-ultrasound-for-pregnancy.html",
+      "https://www.chison.com/hotproduct/handheld-veterinary-ultrasound.html",
+      "https://www.chison.com/hotproduct/livestock-ultrasound-machine.html",
+      "https://www.chison.com/hotproduct/mobile-ultrasound-machine-for-sale.html"
+    ],
+    "https://www.fda.gov/medical-devices/device-advice-comprehensive-regulatory-assistance/medical-device-databases": [
+      "https://www.fda.gov/medical-devices/device-advice-comprehensive-regulatory-assistance/medical-device-databases",
+      "https://www.fda.gov/about-fda/cdrh-transparency/total-product-life-cycle-medical-devices",
+      "https://www.fda.gov/combination-products",
+      "https://www.fda.gov/medical-devices/classify-your-medical-device/product-code-classification-database",
+      "https://www.fda.gov/medical-devices/medical-device-databases/corrective-actions-electronic-products",
+      "https://www.fda.gov/medsun-medical-product-safety-network",
+      "https://www.fda.gov/radiation-emitting-products",
+      "https://www.fda.gov/tobacco-products",
+      "http://www.fda.gov/BiologicsBloodVaccines/SafetyAvailability/Recalls/default.htm",
+      "https://www.fda.gov/",
+      "https://www.fda.gov/MedicalDevices/DeviceRegulationandGuidance/HowtoMarketYourDevice/PremarketSubmissions/HumanitarianDeviceExemption/default.htm",
+      "https://www.fda.gov/MedicalDevices/DeviceRegulationandGuidance/PostmarketRequirements/PostApprovaStudies/default.htm"
+    ],
+    "https://www.nascohealthcare.com/": [
+      "https://www.nascohealthcare.com/",
+      "https://www.nascohealthcare.com/about/our-purpose/",
+      "https://www.nascohealthcare.com/contact/contact-us/",
+      "https://www.nascohealthcare.com/news-and-events/all-tradeshows/",
+      "https://www.nascohealthcare.com/news-and-events/local-events-news/",
+      "https://www.nascohealthcare.com/online-orders-terms-and-conditions-of-sale/",
+      "https://www.nascohealthcare.com/testimonials/",
+      "https://www.nascohealthcare.com/warranty/"
+    ],
+    "https://www.ssih.org/": [
+      "https://www.ssih.org/",
+      "https://www.ssih.org/about-simulation",
+      "https://www.ssih.org/accreditation-faq",
+      "https://www.ssih.org/commission-international-simulation-accreditation-cisa",
+      "https://www.ssih.org/corporate-roundtable",
+      "https://www.ssih.org/defining-excellence-healthcare-simulation-programs-2nd-edition",
+      "https://www.ssih.org/healthcare-simulation-advocacy-tracker",
+      "https://www.ssih.org/healthcare-simulation-dictionary",
+      "https://www.ssih.org/healthcare-simulation-safety",
+      "https://www.ssih.org/healthcare-simulation-week-2026",
+      "https://www.ssih.org/healthcare-simulationist-code-ethics",
+      "https://www.ssih.org/international-simulation-data-registry-isdr-20"
+    ],
+    "https://www.who.int/teams/health-product-policy-and-standards/assistive-and-medical-technology/medical-devices": [
+      "https://www.who.int/teams/health-product-policy-and-standards/assistive-and-medical-technology/medical-devices",
+      "https://www.who.int/ResourcePackages/WHO/assets/dist/styles/grid.min.css?v=14.0.7729.19775",
+      "https://www.who.int/ResourcePackages/WHO/assets/dist/styles/main.min.css?v=14.0.7729.19775",
+      "https://www.who.int/ResourcePackages/WHO/assets/dist/styles/origin.min.css?v=14.0.7729.19775",
+      "https://www.who.int/ResourcePackages/WHO/assets/dist/styles/print.min.css?v=14.0.7729.19775",
+      "https://www.who.int/mega-menu/about-us/who-funding/investment-case",
+      "https://www.who.int/mega-menu/health-topics/resources",
+      "https://www.who.int/mega-menu/health-topics/resources/fact-sheets",
+      "https://www.who.int/mega-menu/health-topics/resources/facts-in-pictures",
+      "https://www.who.int/mega-menu/health-topics/resources/multimedia",
+      "https://www.who.int/mega-menu/health-topics/resources/podcasts",
+      "https://www.who.int/mega-menu/health-topics/resources/publications"
+    ]
+  },
+  "pages": [
+    {
+      "url": "https://bodyinteract.com/",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "Body Interact - Virtual Patients Simulator | Body Interact",
+      "text_sample": "Body Interact - Virtual Patients Simulator | Body Interact .nectar-color-accent-color,body a,label span,body [class^=\"icon-\"].icon-default-style,.blog-recent[data-style*=\"classic_enhanced\"] .post-meta a:hover i,.masonry.classic_enhanced .post .post-meta a:hover i,.comment-list .comment-meta a:hover,.comment-list .comment-meta a:focus,.comment-author a:hover,.comment-author a:focus,.post .post-header h2 a,.post .post-header a:hover,.post .post-header a:focus,#single-below-header a:hover,#single-b"
+    },
+    {
+      "url": "https://bodyinteract.com",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "Body Interact - Virtual Patients Simulator | Body Interact",
+      "text_sample": "Body Interact - Virtual Patients Simulator | Body Interact .nectar-color-accent-color,body a,label span,body [class^=\"icon-\"].icon-default-style,.blog-recent[data-style*=\"classic_enhanced\"] .post-meta a:hover i,.masonry.classic_enhanced .post .post-meta a:hover i,.comment-list .comment-meta a:hover,.comment-list .comment-meta a:focus,.comment-author a:hover,.comment-author a:focus,.post .post-header h2 a,.post .post-header a:hover,.post .post-header a:focus,#single-below-header a:hover,#single-b"
+    },
+    {
+      "url": "https://bodyinteract.com/comments/feed/",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "Comments for Body Interact",
+      "text_sample": "Comments for Body Interact https://bodyinteract.com Simulation with Virtual Patients Fri, 17 Jul 2026 11:50:26 +0000 hourly 1 https://wordpress.org/?v=6.9.4"
+    },
+    {
+      "url": "https://bodyinteract.com/feed/",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "Body Interact",
+      "text_sample": "Body Interact https://bodyinteract.com Simulation with Virtual Patients Fri, 17 Jul 2026 10:47:12 +0000 en-US hourly 1 https://wordpress.org/?v=6.9.4 https://bodyinteract.com/wp-content/uploads/2020/08/cropped-BI_icon-32x32.jpg Body Interact https://bodyinteract.com 32 32 Take The Wind Awarded the Empresa Verde\u00ae Award 2026 https://bodyinteract.com/blog/take-the-wind-awarded-empresa-verde-2026/ Fri, 17 Jul 2026 10:45:30 +0000 https://bodyinteract.com/?p=34841 The post Take The Wind Awarded the Em"
+    },
+    {
+      "url": "https://bodyinteract.com/wp-content/plugins/cookie-notice/css/front.min.css?ver=3.1.4",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "",
+      "text_sample": "#cookie-notice{position:fixed;min-width:100%;height:auto;z-index:100000;font-size:13px;letter-spacing:0;line-height:20px;left:0;text-align:center;font-weight:400;font-family:-apple-system,BlinkMacSystemFont,Arial,Roboto,\"Helvetica Neue\",sans-serif}#cookie-notice,#cookie-notice *{-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box}#cookie-notice.cn-animated{-webkit-animation-duration:.5s!important;animation-duration:.5s!important;-webkit-animation-fill-mode:both;animati"
+    },
+    {
+      "url": "https://bodyinteract.com/wp-content/plugins/salient-nectar-slider/css/nectar-slider.css?ver=1.7.8",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "",
+      "text_sample": "/*------------------------------------------------------------------------- [Table Of Contents] 1. Slider Core 2. Slider Styles 3. Slider Controls 4. Responsive -------------------------------------------------------------------------*/ /*-------------------------------------------------------------------------*/ /* 1. Slider Core /*-------------------------------------------------------------------------*/ .swiper-slide { position: relative; background-position: center; background-repeat: no-re"
+    },
+    {
+      "url": "https://bodyinteract.com/wp-content/plugins/salient-social/css/style.css?ver=1.2.6",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "",
+      "text_sample": "/*--------------------------------------------------------------------------- [Table Of Contents] 1. Hover style 2. Fixed style 3. Minimal style 4. Nectar Love ---------------------------------------------------------------------------*/ /************ 1. Hover style **************/ #single-below-header .nectar-social.hover { margin-right: 14px; } #single-below-header .nectar-social.hover[data-rm-love=\"1\"] { margin-right: 0; } .nectar-social.hover { position :relative; } .nectar-social.hover > *:"
+    },
+    {
+      "url": "https://bodyinteract.com/wp-content/themes/salient/css/build/elements/element-fancy-box.css?ver=18.2.1",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "",
+      "text_sample": ".nectar-fancy-box{overflow:hidden;position:relative;padding:13%}.full-width-content .vc_col-sm-12 .vc_col-sm-12>.wpb_wrapper>.nectar-fancy-box,.full-width-content>.span_12>.vc_col-sm-12>.wpb_wrapper>.nectar-fancy-box{padding:5%}.full-width-content .vc_col-sm-12 .vc_col-sm-12>.wpb_wrapper>.nectar-fancy-box .inner,.full-width-content>.span_12>.vc_col-sm-12>.wpb_wrapper>.nectar-fancy-box .inner{padding-bottom:8%}.nectar-fancy-box:after{display:block;position:absolute;content:' ';width:100%;height:6"
+    },
+    {
+      "url": "https://bodyinteract.com/wp-content/themes/salient/css/build/elements/element-milestone.css?ver=18.2.1",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "",
+      "text_sample": ".nectar-milestone{text-align:center;transition:opacity .15s ease}.nectar-milestone:not(.animated-in){opacity:0}.nectar-milestone[data-ms-align=right],.span_12.right .nectar-milestone{text-align:right}.nectar-milestone[data-ms-align=left]{text-align:left}.span_12.right .nectar-milestone[data-symbol-alignment=superscript]{padding-right:40px}body .nectar-milestone .number h1,body .nectar-milestone .number h2,body .nectar-milestone .number h3,body .nectar-milestone .number h4,body .nectar-milestone "
+    },
+    {
+      "url": "https://bodyinteract.com/wp-content/themes/salient/css/build/elements/element-recent-posts.css?ver=18.2.1",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "",
+      "text_sample": ".home .blog-recent .col .post-header{margin-bottom:12px}.blog-recent .mejs-container{margin-bottom:15px}.home .blog-recent .col .post-header h3{margin-bottom:3px}.blog-recent[data-style=default] .col .post-header h3{margin-bottom:3px;letter-spacing:-.2px;font-size:16px;line-height:23px}.blog-recent .col .post-header a,.blog-recent .col .post-header h3 a:hover{color:inherit}.blog-recent .col{margin-bottom:40px}.blog-recent .col .video-wrap{position:relative;padding-bottom:54.25%;padding-top:5px;h"
+    },
+    {
+      "url": "https://bodyinteract.com/wp-content/themes/salient/css/build/elements/element-rotating-words-title.css?ver=18.2.1",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "",
+      "text_sample": ".nectar-rotating-words-title .beginning-text,.nectar-rotating-words-title .dynamic-words,.nectar-rotating-words-title .ending-text{line-height:1.2;display:inline}.nectar-rotating-words-title .dynamic-words>span:not(.active){position:absolute;opacity:0;pointer-events:none;left:0;top:0}.nectar-rotating-words-title .beginning-text,.nectar-rotating-words-title .dynamic-words,.nectar-rotating-words-title .ending-text{vertical-align:middle}.nectar-rotating-words-title:not(.element_stagger_words) .head"
+    },
+    {
+      "url": "https://bodyinteract.com/wp-content/themes/salient/css/build/elements/element-video-lightbox.css?ver=18.2.1",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "",
+      "text_sample": ".nectar-video-box .play_button_mouse_follow{transition:opacity .3s ease}.nectar-video-box .play_button_mouse_follow:not(.visible){opacity:0}.nectar-video-box .play_button_mouse_follow:before{border-width:2px}.nectar-video-box .play_button_mouse_follow svg{width:12px}.nectar-video-box .play_button_mouse_follow.nectar_video_lightbox{width:94px;height:94px;left:0;top:0;margin-top:-47px;margin-left:-47px;pointer-events:none}.nectar-video-box[data-mouse-style=see_through_contrast] .play_button_mouse_"
+    },
+    {
+      "url": "https://laerdal.com/us/products/simulation-training/",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "Simulation and Training | Laerdal Medical",
+      "text_sample": "Simulation and Training | Laerdal Medical Skip to content <language-picker :america=\"[{&quot;name&quot;:&quot;Am&#xE9;rica Latina&quot;,&quot;url&quot;:&quot;/la/products/simulation-training/&quot;,&quot;isVisible&quot;:true,&quot;flagFilename&quot;:&quot;la&quot;,&quot;invertedFlagFilename&quot;:&quot;&quot;,&quot;hasInvertedFlag&quot;:false},{&quot;name&quot;:&quot;Brasil&quot;,&quot;url&quot;:&quot;/br/products/simulation-training/&quot;,&quot;isVisible&quot;:true,&quot;flagFilename&quot;:&qu"
+    },
+    {
+      "url": "https://laerdal.com/at/products/simulation-training/",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "simulation training | Laerdal Medical",
+      "text_sample": "simulation training | Laerdal Medical !function (v, y, T) { var S = v.location, k = \"script\", D = \"instrumentationKey\", C = \"ingestionendpoint\", I = \"disableExceptionTracking\", E = \"ai.device.\", b = \"toLowerCase\", w = (D[b](), \"crossOrigin\"), N = \"POST\", e = \"appInsightsSDK\", t = T.name || \"appInsights\", n = ((T.name || v[e]) && (v[e] = t), v[t] || function (l) { var u = !1, d = !1, g = { initialize: !0, queue: [], sv: \"6\", version: 2, config: l }; function m(e, t) { var n = {}, a = \"Browser\"; r"
+    },
+    {
+      "url": "https://laerdal.com/au/products/simulation-training/",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "simulation training | Laerdal Medical",
+      "text_sample": "simulation training | Laerdal Medical Skip to content <language-picker :america=\"[{&quot;name&quot;:&quot;Am&#xE9;rica Latina&quot;,&quot;url&quot;:&quot;/la/products/simulation-training/&quot;,&quot;isVisible&quot;:true,&quot;flagFilename&quot;:&quot;la&quot;,&quot;invertedFlagFilename&quot;:&quot;&quot;,&quot;hasInvertedFlag&quot;:false},{&quot;name&quot;:&quot;Brasil&quot;,&quot;url&quot;:&quot;/br/products/simulation-training/&quot;,&quot;isVisible&quot;:true,&quot;flagFilename&quot;:&quot;b"
+    },
+    {
+      "url": "https://laerdal.com/be-fr/products/simulation-training/",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "simulation training | Laerdal Medical",
+      "text_sample": "simulation training | Laerdal Medical aller directement au contenu <language-picker :america=\"[{&quot;name&quot;:&quot;Am&#xE9;rica Latina&quot;,&quot;url&quot;:&quot;/la/products/simulation-training/&quot;,&quot;isVisible&quot;:true,&quot;flagFilename&quot;:&quot;la&quot;,&quot;invertedFlagFilename&quot;:&quot;&quot;,&quot;hasInvertedFlag&quot;:false},{&quot;name&quot;:&quot;Brasil&quot;,&quot;url&quot;:&quot;/br/products/simulation-training/&quot;,&quot;isVisible&quot;:true,&quot;flagFilename&"
+    },
+    {
+      "url": "https://laerdal.com/be-nl/products/simulation-training/",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "simulation training | Laerdal Medical",
+      "text_sample": "simulation training | Laerdal Medical !function (v, y, T) { var S = v.location, k = \"script\", D = \"instrumentationKey\", C = \"ingestionendpoint\", I = \"disableExceptionTracking\", E = \"ai.device.\", b = \"toLowerCase\", w = (D[b](), \"crossOrigin\"), N = \"POST\", e = \"appInsightsSDK\", t = T.name || \"appInsights\", n = ((T.name || v[e]) && (v[e] = t), v[t] || function (l) { var u = !1, d = !1, g = { initialize: !0, queue: [], sv: \"6\", version: 2, config: l }; function m(e, t) { var n = {}, a = \"Browser\"; r"
+    },
+    {
+      "url": "https://laerdal.com/br/products/simulation-training/",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "simulation training | Laerdal Medical",
+      "text_sample": "simulation training | Laerdal Medical Ir para o conte\u00fado <language-picker :america=\"[{&quot;name&quot;:&quot;Am&#xE9;rica Latina&quot;,&quot;url&quot;:&quot;/la/products/simulation-training/&quot;,&quot;isVisible&quot;:true,&quot;flagFilename&quot;:&quot;la&quot;,&quot;invertedFlagFilename&quot;:&quot;&quot;,&quot;hasInvertedFlag&quot;:false},{&quot;name&quot;:&quot;Brasil&quot;,&quot;url&quot;:&quot;/br/products/simulation-training/&quot;,&quot;isVisible&quot;:false,&quot;flagFilename&quot;:&qu"
+    },
+    {
+      "url": "https://laerdal.com/ca/products/simulation-training/",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "simulation training | Laerdal Medical",
+      "text_sample": "simulation training | Laerdal Medical Skip to content <language-picker :america=\"[{&quot;name&quot;:&quot;Am&#xE9;rica Latina&quot;,&quot;url&quot;:&quot;/la/products/simulation-training/&quot;,&quot;isVisible&quot;:true,&quot;flagFilename&quot;:&quot;la&quot;,&quot;invertedFlagFilename&quot;:&quot;&quot;,&quot;hasInvertedFlag&quot;:false},{&quot;name&quot;:&quot;Brasil&quot;,&quot;url&quot;:&quot;/br/products/simulation-training/&quot;,&quot;isVisible&quot;:true,&quot;flagFilename&quot;:&quot;b"
+    },
+    {
+      "url": "https://laerdal.com/ch/products/simulation-training/",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "simulation training | Laerdal Medical",
+      "text_sample": "simulation training | Laerdal Medical !function (v, y, T) { var S = v.location, k = \"script\", D = \"instrumentationKey\", C = \"ingestionendpoint\", I = \"disableExceptionTracking\", E = \"ai.device.\", b = \"toLowerCase\", w = (D[b](), \"crossOrigin\"), N = \"POST\", e = \"appInsightsSDK\", t = T.name || \"appInsights\", n = ((T.name || v[e]) && (v[e] = t), v[t] || function (l) { var u = !1, d = !1, g = { initialize: !0, queue: [], sv: \"6\", version: 2, config: l }; function m(e, t) { var n = {}, a = \"Browser\"; r"
+    },
+    {
+      "url": "https://laerdal.com/cn/products/simulation-training/",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "&#x6A21;&#x62DF;&#x57F9;&#x8BAD; | Laerdal Medical",
+      "text_sample": "&#x6A21;&#x62DF;&#x57F9;&#x8BAD; | Laerdal Medical !function (v, y, T) { var S = v.location, k = \"script\", D = \"instrumentationKey\", C = \"ingestionendpoint\", I = \"disableExceptionTracking\", E = \"ai.device.\", b = \"toLowerCase\", w = (D[b](), \"crossOrigin\"), N = \"POST\", e = \"appInsightsSDK\", t = T.name || \"appInsights\", n = ((T.name || v[e]) && (v[e] = t), v[t] || function (l) { var u = !1, d = !1, g = { initialize: !0, queue: [], sv: \"6\", version: 2, config: l }; function m(e, t) { var n = {}, a ="
+    },
+    {
+      "url": "https://laerdal.com/de/products/simulation-training/",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "simulation training | Laerdal Medical",
+      "text_sample": "simulation training | Laerdal Medical !function (v, y, T) { var S = v.location, k = \"script\", D = \"instrumentationKey\", C = \"ingestionendpoint\", I = \"disableExceptionTracking\", E = \"ai.device.\", b = \"toLowerCase\", w = (D[b](), \"crossOrigin\"), N = \"POST\", e = \"appInsightsSDK\", t = T.name || \"appInsights\", n = ((T.name || v[e]) && (v[e] = t), v[t] || function (l) { var u = !1, d = !1, g = { initialize: !0, queue: [], sv: \"6\", version: 2, config: l }; function m(e, t) { var n = {}, a = \"Browser\"; r"
+    },
+    {
+      "url": "https://laerdal.com/distributors/products/simulation-training/",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "simulation training | Laerdal Medical",
+      "text_sample": "simulation training | Laerdal Medical Skip to content <language-picker :america=\"[{&quot;name&quot;:&quot;Am&#xE9;rica Latina&quot;,&quot;url&quot;:&quot;/la/products/simulation-training/&quot;,&quot;isVisible&quot;:true,&quot;flagFilename&quot;:&quot;la&quot;,&quot;invertedFlagFilename&quot;:&quot;&quot;,&quot;hasInvertedFlag&quot;:false},{&quot;name&quot;:&quot;Brasil&quot;,&quot;url&quot;:&quot;/br/products/simulation-training/&quot;,&quot;isVisible&quot;:true,&quot;flagFilename&quot;:&quot;b"
+    },
+    {
+      "url": "https://laerdal.com/dk/products/simulation-training/",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "simulation training | Laerdal Medical",
+      "text_sample": "simulation training | Laerdal Medical !function (v, y, T) { var S = v.location, k = \"script\", D = \"instrumentationKey\", C = \"ingestionendpoint\", I = \"disableExceptionTracking\", E = \"ai.device.\", b = \"toLowerCase\", w = (D[b](), \"crossOrigin\"), N = \"POST\", e = \"appInsightsSDK\", t = T.name || \"appInsights\", n = ((T.name || v[e]) && (v[e] = t), v[t] || function (l) { var u = !1, d = !1, g = { initialize: !0, queue: [], sv: \"6\", version: 2, config: l }; function m(e, t) { var n = {}, a = \"Browser\"; r"
+    },
+    {
+      "url": "https://support.3shape.com/",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "3Shape Help Center",
+      "text_sample": "3Shape Help Center --> --> &times; --> --> OTHER SITES 3Shape Home Learning &amp; Support Trainings CONTACT SUPPORT Dutch French Italian Korean Chinese Spanish Polish Japanese German English (US) Portuguese Welcome! How can we help? show contact form --> Sorry, we didn't find any relevant articles for you. Please fill out the contact form below and we will reply as soon as possible. title=\"ReCAPTCHA\" Clinic Lab All Products Getting started How to configure your TRIOS scanner and software, and cr"
+    },
+    {
+      "url": "https://support.3shape.com",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "3Shape Help Center",
+      "text_sample": "3Shape Help Center --> --> &times; --> --> OTHER SITES 3Shape Home Learning &amp; Support Trainings CONTACT SUPPORT Dutch French Italian Korean Chinese Spanish Polish Japanese German English (US) Portuguese Welcome! How can we help? show contact form --> Sorry, we didn't find any relevant articles for you. Please fill out the contact form below and we will reply as soon as possible. title=\"ReCAPTCHA\" Clinic Lab All Products Getting started How to configure your TRIOS scanner and software, and cr"
+    },
+    {
+      "url": "https://support.3shape.com/cn_CN",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "3Shape Help Center",
+      "text_sample": "3Shape Help Center --> --> &times; --> --> OTHER SITES 3Shape Home Community Trainings CONTACT SUPPORT Dutch French Italian Korean Chinese Spanish Polish Japanese German English (US) Portuguese Welcome! How can we help? show contact form --> Sorry, we didn't find any relevant articles for you. Please fill out the contact form below and we will reply as soon as possible. title=\"ReCAPTCHA\" \u00e8\u00af\u008a\u00e6\u0089\u0080 \u00e5\u00ae\u009e\u00e9\u00aa\u008c\u00e5\u00ae\u00a4 \u00e6\u0089\u0080\u00e6\u009c\u0089\u00e4\u00ba\u00a7\u00e5\u0093\u0081 \u00e6\u0089\u00ab\u00e6\u008f\u008f\u00e5\u00b9\u00b6\u00e5\u008f\u00af\u00e8\u00a7\u0086\u00e5\u008c\u0096 \u00e6\u008e\u008c\u00e6\u008f\u00a1\u00e6\u0089\u00ab\u00e6\u008f\u008f\u00e8\u00b7\u00af\u00e5\u00be\u0084\u00ef\u00bc\u008c\u00e5\u00ad\u00a6\u00e4\u00b9 \u00e5\u00a6\u0082\u00e4\u00bd\u0095\u00e5\u00a4\u0084\u00e7\u0090\u0086\u00e6\u0089\u00ab\u00e6\u008f\u008f\u00e5\u00b9\u00b6\u00e4\u00bd\u00bf\u00e7\u0094\u00a8\u00e5\u008f\u0082\u00e4\u00b8\u008e"
+    },
+    {
+      "url": "https://support.3shape.com/de_DE",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "3Shape Help Center",
+      "text_sample": "3Shape Help Center --> --> &times; --> --> OTHER SITES 3Shape Home Community Trainings CONTACT SUPPORT Dutch French Italian Korean Chinese Spanish Polish Japanese German English (US) Portuguese Welcome! How can we help? show contact form --> Sorry, we didn't find any relevant articles for you. Please fill out the contact form below and we will reply as soon as possible. title=\"ReCAPTCHA\" Klinik Labor Alle Produkte Erste Schritte So konfigurieren Sie Ihren TRIOS -Scanner und die Software und erst"
+    },
+    {
+      "url": "https://support.3shape.com/en_US",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "3Shape Help Center",
+      "text_sample": "3Shape Help Center --> --> &times; --> --> OTHER SITES 3Shape Home Learning &amp; Support Trainings CONTACT SUPPORT Dutch French Italian Korean Chinese Spanish Polish Japanese German English (US) Portuguese Welcome! How can we help? show contact form --> Sorry, we didn't find any relevant articles for you. Please fill out the contact form below and we will reply as soon as possible. title=\"ReCAPTCHA\" Clinic Lab All Products Getting started How to configure your TRIOS scanner and software, and cr"
+    },
+    {
+      "url": "https://support.3shape.com/en_US/3shape-design-service-automate",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "3Shape Design Services - 3Shape",
+      "text_sample": "3Shape Design Services - 3Shape --> --> &times; --> --> OTHER SITES 3Shape Home Learning &amp; Support Trainings CONTACT SUPPORT Dutch French Italian Spanish Korean Chinese Polish Japanese German English (US) Portuguese All Products 3Shape Design Services 3Shape Design Services show contact form --> Sorry, we didn't find any relevant articles for you. Please fill out the contact form below and we will reply as soon as possible. title=\"ReCAPTCHA\" 3Shape Design Services 3Shape Automate Troubleshoo"
+    },
+    {
+      "url": "https://support.3shape.com/en_US/3shape-produce",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "3Shape Produce - 3Shape",
+      "text_sample": "3Shape Produce - 3Shape --> --> &times; --> --> OTHER SITES 3Shape Home Learning &amp; Support Trainings CONTACT SUPPORT Dutch French Italian Korean Chinese Spanish Polish Japanese German English (US) Portuguese All Products 3Shape Produce 3Shape Produce show contact form --> Sorry, we didn't find any relevant articles for you. Please fill out the contact form below and we will reply as soon as possible. title=\"ReCAPTCHA\" 3Shape Produce How to Requirements for setting up the machine via 3Shape P"
+    },
+    {
+      "url": "https://support.3shape.com/en_US/3shape-unite",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "3Shape Unite - 3Shape",
+      "text_sample": "3Shape Unite - 3Shape --> --> &times; --> --> OTHER SITES 3Shape Home Learning &amp; Support Trainings CONTACT SUPPORT Dutch French Italian Korean Chinese Spanish Polish Japanese German English (US) Portuguese All Products 3Shape Unite 3Shape Unite show contact form --> Sorry, we didn't find any relevant articles for you. Please fill out the contact form below and we will reply as soon as possible. title=\"ReCAPTCHA\" 3Shape Unite 3Shape Unite fundamentals General info 3Shape Unite lifecycle polic"
+    },
+    {
+      "url": "https://support.3shape.com/en_US/clinic-case-management",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "Working with orders - 3Shape",
+      "text_sample": "Working with orders - 3Shape --> --> &times; --> --> OTHER SITES 3Shape Home Learning &amp; Support Trainings CONTACT SUPPORT Dutch French Italian Korean Chinese Spanish Polish Japanese German English (US) Portuguese Clinic Working with orders Working with orders show contact form --> Sorry, we didn't find any relevant articles for you. Please fill out the contact form below and we will reply as soon as possible. title=\"ReCAPTCHA\" Working with orders Create and modify an order What to do when yo"
+    },
+    {
+      "url": "https://support.3shape.com/en_US/clinic-release-notes",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "Clinic release notes - 3Shape",
+      "text_sample": "Clinic release notes - 3Shape --> --> &times; --> --> OTHER SITES 3Shape Home Learning &amp; Support Trainings CONTACT SUPPORT Dutch French Italian Korean Chinese Spanish Polish Japanese German English (US) Portuguese Clinic Clinic release notes Clinic release notes show contact form --> Sorry, we didn't find any relevant articles for you. Please fill out the contact form below and we will reply as soon as possible. title=\"ReCAPTCHA\" Clinic release notes What's New in TRIOS & Unite What's New in"
+    },
+    {
+      "url": "https://support.3shape.com/en_US/clinic-setup-and-configuration",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "Getting started - 3Shape",
+      "text_sample": "Getting started - 3Shape --> --> &times; --> --> OTHER SITES 3Shape Home Learning &amp; Support Trainings CONTACT SUPPORT Dutch French Italian Korean Chinese Spanish Polish Japanese German English (US) Portuguese Clinic Getting started Getting started show contact form --> Sorry, we didn't find any relevant articles for you. Please fill out the contact form below and we will reply as soon as possible. title=\"ReCAPTCHA\" Getting started Software Setup How to How to enable LinuDent integration with"
+    },
+    {
+      "url": "https://support.3shape.com/en_US/dental-system",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "3Shape Dental System - 3Shape",
+      "text_sample": "3Shape Dental System - 3Shape --> --> &times; --> --> OTHER SITES 3Shape Home Learning &amp; Support Trainings CONTACT SUPPORT Dutch French Italian Korean Chinese Spanish Polish Japanese German English (US) Portuguese All Products 3Shape Dental System 3Shape Dental System show contact form --> Sorry, we didn't find any relevant articles for you. Please fill out the contact form below and we will reply as soon as possible. title=\"ReCAPTCHA\" 3Shape Dental System 3Shape Dental System How to Archive"
+    },
+    {
+      "url": "https://support.butterflynetwork.com/hc/en-us",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "Butterfly Network Support Portal",
+      "text_sample": "Butterfly Network Support Portal .siteforceContentArea .comm-layout-column .ui-widget:not(:last-child),.siteforceContentArea .cb-section_column .ui-widget:not(:last-child){margin-bottom:var(--lwc-uiWidgetMarginBottom,1.5rem)}.siteforceContentArea .comm-layout-column:not(:empty){padding-top:var(--lwc-layoutVerticalPadding,0.75rem);padding-bottom:var(--lwc-layoutVerticalPadding,0.75rem)}:root{--dxp-g-root:var(--lwc-dxpGRoot,#FFFFFF);--dxp-g-root-1:var(--lwc-dxpGRoot1,rgb(235, 235, 235));--dxp-g-ro"
+    },
+    {
+      "url": "https://support.butterflynetwork.com/s/sfsites/l/%7B%22mode%22%3A%22PROD%22%2C%22dfs%22%3A%2221%22%2C%22app%22%3A%22siteforce%3AcommunityApp%22%2C%22loaded%22%3A%7B%22APPLICATION%40markup%3A%2F%2Fsiteforce%3AcommunityApp%22%3A%221692_mtviYwT4OQy30JbfgmF_yA%22%7D%2C%22styleContext%22%3A%7B%22c%22%3A%22other%22%2C%22x%22%3A%5B%223%22%2C%22SLDS%22%2C%22isDesktop%22%5D%2C%22tokens%22%3A%5B%22markup%3A%2F%2Fsiteforce%3AserializedTokens%22%2C%22markup%3A%2F%2Fforce%3AsldsTokens%22%2C%22markup%3A%2F%2Fsiteforce%3AcommunityTokens%22%2C%22markup%3A%2F%2Fforce%3AformFactorLarge%22%2C%22markup%3A%2F%2Fsiteforce%3AcommunityFormFactorLarge%22%2C%22markup%3A%2F%2Fsiteforce%3AauraDynamicTokens%22%2C%22markup%3A%2F%2Fsiteforce%3AsldsFontOverride%22%5D%2C%22tuid%22%3A%22XYQG36kiceEgKLZd-w9iPg%22%2C%22cuid%22%3A1613928980%7D%2C%22pathPrefix%22%3A%22%22%7D/app.css?3=&aura.attributes=%7B%22ac%22%3A%22%22%2C%22authenticated%22%3A%22false%22%2C%22brandingSetId%22%3A%2253a1dce7-c4c4-42bc-890d-1ee56a7a9946%22%2C%22formFactor%22%3A%22LARGE%22%2C%22isHybrid%22%3A%22false%22%2C%22language%22%3A%22en_US%22%2C%22pageId%22%3A%227f9c4bb0-f5ae-4e14-92b7-bbcbe426a2d9%22%2C%22publishedChangelistNum%22%3A%2219%22%2C%22schema%22%3A%22Published%22%2C%22themeLayoutType%22%3A%22Home%22%2C%22uds%22%3A%22true%22%2C%22viewType%22%3A%22Published%22%7D",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "",
+      "text_sample": ":root{--lwc-mqLarge:only screen and (min-width: 64.0625em);--lwc-mqSingleColumnRecordLayout:(max-width: 599px);--lwc-mqMediumLandscape:only screen and (min-width: 48em) and (min-aspect-ratio: 4/3);--lwc-mqMedium:only screen and (min-width: 48em);--lwc-mqHighRes:only screen and (-webkit-min-device-pixel-ratio: 2), screen and (min-device-pixel-ratio: 2),screen and (min-resolution: 192dpi),screen and (min-resolution: 2dppx);--lwc-mqSmall:only screen and (max-width: 47.9375em);--lwc-paletteIndigo10:"
+    },
+    {
+      "url": "https://support.butterflynetwork.com/s/sfsites/runtimedownload/fonts.css?lastMod=1771611762000&brandSet=53a1dce7-c4c4-42bc-890d-1ee56a7a9946",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "",
+      "text_sample": "@font-face { font-family:'Salesforce Sans'; font-style:normal; font-weight:400; src: local('SalesforceSans'), url(data:application/x-font-woff;base64,d09GRgABAAAAAIhIABIAAAABEBgAAQKPAAAAAAAAAAAAAAAAAAAAAAAAAABHREVGAABx6AAAACgAAAAoBA4FA0dQT1MAAHIQAAAP5gAANmznTq3PR1NVQgAAgfgAAAZNAAAOiFzBlDBPUy8yAAACEAAAAFkAAABghqhkX1ZETVgAAAWAAAADcgAABeBvKnaYY21hcAAACPQAAAOSAAAEvuzozFFjdnQgAAAUQAAAAFcAAAHiCFwIGGZwZ20AAAyIAAAF7QAACqJjDp3ZZ2FzcAAAcdwAAAAMAAAADAAIABtnbHlmAAAYdAAAVpIAAJs2e3edmWhlYWQAAAGUAAAANgAAADYH7A"
+    },
+    {
+      "url": "https://support.butterflynetwork.com/sfsites/c/resource/Favicon",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "",
+      "text_sample": "\u0000\u0000\u0001\u0000\u0003\u0000\u0010\u0010\u0000\u0000\u0001\u0000 \u0000h\u0004\u0000\u00006\u0000\u0000\u0000 \u0000\u0000\u0001\u0000 \u0000\u0010\u0000\u0000\u0004\u0000\u000000\u0000\u0000\u0001\u0000 \u0000%\u0000\u0000F\u0015\u0000\u0000(\u0000\u0000\u0000\u0010\u0000\u0000\u0000 \u0000\u0000\u0000\u0001\u0000 \u0000\u0000\u0000\u0000\u0000\u0000\u0004\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000y'\u0000y'\u0007y'\u0005y'\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000y'\u0000y'\u0003y' x'\u0000y'\u0000\u0000\u0000\u0000\u0000y'\u0000y'Zy'y'*z'\u0000y'\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000y'\u0000y'\u0000y'\u0019y'y'~|'\u0000z'\u0000\u0000\u0000\u0000\u0000y'\u0000y'qy'y'y'Qy'\u0001y'\u0000y'\u0000y'\u0000y'4y'y'y'}'\u0001z'\u0000\u0000\u0000\u0000\u0000y'\u0000y'oy'y'y'y'Cy'\u0000y'\u0000y'%y'y'y'y'~&\u0000z'\u0000\u0000\u0000\u0000\u0000y'\u0000y'Ly'y'y'y'y' y' y'uy'y'y'y'zy'\u0000y'\u0000\u0000\u0000\u0000\u0000y'\u0000y' y'y'y'y'y'py'Gy'y'y'y'y'\u0019y'\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000v%\u0000y'\u0000y' y'Py'y'y'y'uy'y'y'ay'\u0016y'\u0000y'\u0000\u0000\u0000\u0000\u0000y'\u0000y'\u0017y'|y'y'y'y'y'y'ny'y'y"
+    },
+    {
+      "url": "https://www.anatomage.com/contact/",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "Anatomage | Contact Us",
+      "text_sample": "Anatomage | Contact Us Products Anatomage Table Anatomage Xtreme Reality Anatomage Theater Anatomage Lessons Anatomage Tablet Science Explore All Products Institutions Medical Schools Undergraduate Healthcare K-12 Medical &#038; Simulation Centers Solutions Future of the Classroom Cadaver Labs Surgical Training Patient Communications White Papers Case Studies Technology Community Anatomage Conference Anatomage Webinars Anatomage Share Distributors Anatomage Tournaments Anatomage Posters Company "
+    },
+    {
+      "url": "https://www.anatomage.com/anatomage.com/careers/",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "Anatomage | Careers",
+      "text_sample": "Anatomage | Careers Products Anatomage Table Anatomage Xtreme Reality Anatomage Theater Anatomage Lessons Anatomage Tablet Science Explore All Products Institutions Medical Schools Undergraduate Healthcare K-12 Medical &#038; Simulation Centers Solutions Future of the Classroom Cadaver Labs Surgical Training Patient Communications White Papers Case Studies Technology Community Anatomage Conference Anatomage Webinars Anatomage Share Distributors Anatomage Tournaments Anatomage Posters Company Abo"
+    },
+    {
+      "url": "https://www.anatomage.com/table/",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "",
+      "text_sample": "+\u0524 \u0002\u001a|Sf\u007fB7\u0000$\u0000\"_lNy@\u2402 \u0012 \u0000-\u007fZ B\u0001K lVo\\\u0002 \u06c4x?c\u0003`G7*8;Fqk\u000fpoaq(X3Q\u06f3>p3:5;> ?O=\u0014([(A8A\u0007oaFqDN~={m gn\u0000\u001b\u0019z\u01ad\u0015.\u0712AJ\u001b_\u06854wz\u00108\u0006=\"r =)@\u0001 0T\u038bCE\u007fDfl0; 5:p\u000eC@o d\u07c2D9d \u001a7.]B\u00001A\u000f \u000fQ\u0004o\u0006/=}u@N}f\u001a) \\ \u0018bc\u0017\"*P\" 9NjL4RH @CawJH D RH\u0574\u0017~>DT-!\u000e8}r\u0135~> 8kNq\u007fvD(fh \"0{$] N\u03ff\u0001B: N_(\u0015:\u0013Jw?\u020aDT4\u0766\u0018\\5\u9c0d\u04d9\u00a7Q{)\u0018E{ld@\u07776\u03bf\u01c0n|iFW\u0012}:{z\u000f!j 2\u024256 ] RdR}JaElxZl\u00146\u001a&\u01e5\u03e8*y\u0015Y\ua517\u00011`j\"\\k\u0012u\u04a8\u0005sG\u025e2p>\\\u07e4fZ :\u0018\u0012Q3\u0000\u07c8ms\u0000x~c\u0011[#XK\u0016\u0006-\u06406R\u001biBx\u007fN-\u0004Av{wc V?k,Kvzmql[a9t\ud506oKy\u0498mo\u000flS_f_\u0014\u07ff\u0014tt^I? K\u0019q #\u007fq\u02f2z[7\u02b05o4[ h]f\u01c1C\u047b S4u/XZ/\u0016z \u001aW `A?F\u0010,@?\u0017\u000e\u055f&cg\u0005cH_\u0742\u0007?\u007f\u0012V\u0005\u015bC Rmd/\u0010\u00d2\u025c\u07baQr\u0017C \u0319dMZ\u0002A"
+    },
+    {
+      "url": "https://www.chison.com/products/",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "Cart-Based Color Doppler Ultrasound, 3D/4D Ultrasound System, Handheld Ultrasound Machine for Sale",
+      "text_sample": "Cart-Based Color Doppler Ultrasound, 3D/4D Ultrasound System, Handheld Ultrasound Machine for Sale Home Products Cart-based Ultrasound SonoPort SonoMax XBit CBit QBit Portable Ultrasound SonoGO SonoAir SonoBook EBit ECO SonoTouch Handheld Ultrasound SonoEye APP Download B&W Ultrasound About Us Company Overview R&D Strength Global R&D Center Intelligent Ultrasound Platform National Scientific Research Global Users Social Responsibility 3D Virtual ShowRoom Specialties Chison Hub Blog Clinical Insi"
+    },
+    {
+      "url": "https://www.chison.com/b-w-ultrasound/",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "B&W Ultrasound",
+      "text_sample": "B&W Ultrasound Home Products Cart-based Ultrasound SonoPort SonoMax XBit CBit QBit Portable Ultrasound SonoGO SonoAir SonoBook EBit ECO SonoTouch Handheld Ultrasound SonoEye APP Download B&W Ultrasound About Us Company Overview R&D Strength Global R&D Center Intelligent Ultrasound Platform National Scientific Research Global Users Social Responsibility 3D Virtual ShowRoom Specialties Chison Hub Blog Clinical Insights Global Care Stories News Contact Us Contact Us Service&Support Join Us En Cn ES"
+    },
+    {
+      "url": "https://www.chison.com/b-w-ultrasound/eco-1.html",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "ECO Portable Ultrasound Machine",
+      "text_sample": "ECO Portable Ultrasound Machine Home Products Cart-based Ultrasound SonoPort SonoMax XBit CBit QBit Portable Ultrasound SonoGO SonoAir SonoBook EBit ECO SonoTouch Handheld Ultrasound SonoEye APP Download B&W Ultrasound About Us Company Overview R&D Strength Global R&D Center Intelligent Ultrasound Platform National Scientific Research Global Users Social Responsibility 3D Virtual ShowRoom Specialties Chison Hub Blog Clinical Insights Global Care Stories News Contact Us Contact Us Service&Support"
+    },
+    {
+      "url": "https://www.chison.com/b-w-ultrasound/eco-2.html",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "ECO 2 Ultrasound Machine",
+      "text_sample": "ECO 2 Ultrasound Machine Home Products Cart-based Ultrasound SonoPort SonoMax XBit CBit QBit Portable Ultrasound SonoGO SonoAir SonoBook EBit ECO SonoTouch Handheld Ultrasound SonoEye APP Download B&W Ultrasound About Us Company Overview R&D Strength Global R&D Center Intelligent Ultrasound Platform National Scientific Research Global Users Social Responsibility 3D Virtual ShowRoom Specialties Chison Hub Blog Clinical Insights Global Care Stories News Contact Us Contact Us Service&Support Join U"
+    },
+    {
+      "url": "https://www.chison.com/b-w-ultrasound/eco-3-expert.html",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "ECO 3 Ultrasound Machine",
+      "text_sample": "ECO 3 Ultrasound Machine Home Products Cart-based Ultrasound SonoPort SonoMax XBit CBit QBit Portable Ultrasound SonoGO SonoAir SonoBook EBit ECO SonoTouch Handheld Ultrasound SonoEye APP Download B&W Ultrasound About Us Company Overview R&D Strength Global R&D Center Intelligent Ultrasound Platform National Scientific Research Global Users Social Responsibility 3D Virtual ShowRoom Specialties Chison Hub Blog Clinical Insights Global Care Stories News Contact Us Contact Us Service&Support Join U"
+    },
+    {
+      "url": "https://www.chison.com/cart-based-ultrasound/",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "Cart Based Ultrasound",
+      "text_sample": "Cart Based Ultrasound Home Products Cart-based Ultrasound SonoPort SonoMax XBit CBit QBit Portable Ultrasound SonoGO SonoAir SonoBook EBit ECO SonoTouch Handheld Ultrasound SonoEye APP Download B&W Ultrasound About Us Company Overview R&D Strength Global R&D Center Intelligent Ultrasound Platform National Scientific Research Global Users Social Responsibility 3D Virtual ShowRoom Specialties Chison Hub Blog Clinical Insights Global Care Stories News Contact Us Contact Us Service&Support Join Us E"
+    },
+    {
+      "url": "https://www.chison.com/contacts/service-support/",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "Ultrasound Service and Support",
+      "text_sample": "Ultrasound Service and Support Home Products Cart-based Ultrasound SonoPort SonoMax XBit CBit QBit Portable Ultrasound SonoGO SonoAir SonoBook EBit ECO SonoTouch Handheld Ultrasound SonoEye APP Download B&W Ultrasound About Us Company Overview R&D Strength Global R&D Center Intelligent Ultrasound Platform National Scientific Research Global Users Social Responsibility 3D Virtual ShowRoom Specialties Chison Hub Blog Clinical Insights Global Care Stories News Contact Us Contact Us Service&Support "
+    },
+    {
+      "url": "https://www.chison.com/handheld-ultrasound/",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "Handheld Ultrasound Machin for Sale",
+      "text_sample": "Handheld Ultrasound Machin for Sale Home Products Cart-based Ultrasound SonoPort SonoMax XBit CBit QBit Portable Ultrasound SonoGO SonoAir SonoBook EBit ECO SonoTouch Handheld Ultrasound SonoEye APP Download B&W Ultrasound About Us Company Overview R&D Strength Global R&D Center Intelligent Ultrasound Platform National Scientific Research Global Users Social Responsibility 3D Virtual ShowRoom Specialties Chison Hub Blog Clinical Insights Global Care Stories News Contact Us Contact Us Service&Sup"
+    },
+    {
+      "url": "https://www.chison.com/hotproduct/handheld-ultrasound-for-pregnancy.html",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "Handheld Ultrasound For Pregnancy",
+      "text_sample": "Handheld Ultrasound For Pregnancy Home Products Cart-based Ultrasound SonoPort SonoMax XBit CBit QBit Portable Ultrasound SonoGO SonoAir SonoBook EBit ECO SonoTouch Handheld Ultrasound SonoEye APP Download B&W Ultrasound About Us Company Overview R&D Strength Global R&D Center Intelligent Ultrasound Platform National Scientific Research Global Users Social Responsibility 3D Virtual ShowRoom Specialties Chison Hub Blog Clinical Insights Global Care Stories News Contact Us Contact Us Service&Suppo"
+    },
+    {
+      "url": "https://www.chison.com/hotproduct/handheld-veterinary-ultrasound.html",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "Handheld Veterinary Ultrasound",
+      "text_sample": "Handheld Veterinary Ultrasound Home Products Cart-based Ultrasound SonoPort SonoMax XBit CBit QBit Portable Ultrasound SonoGO SonoAir SonoBook EBit ECO SonoTouch Handheld Ultrasound SonoEye APP Download B&W Ultrasound About Us Company Overview R&D Strength Global R&D Center Intelligent Ultrasound Platform National Scientific Research Global Users Social Responsibility 3D Virtual ShowRoom Specialties Chison Hub Blog Clinical Insights Global Care Stories News Contact Us Contact Us Service&Support "
+    },
+    {
+      "url": "https://www.chison.com/hotproduct/livestock-ultrasound-machine.html",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "Livestock Ultrasound Machine",
+      "text_sample": "Livestock Ultrasound Machine Home Products Cart-based Ultrasound SonoPort SonoMax XBit CBit QBit Portable Ultrasound SonoGO SonoAir SonoBook EBit ECO SonoTouch Handheld Ultrasound SonoEye APP Download B&W Ultrasound About Us Company Overview R&D Strength Global R&D Center Intelligent Ultrasound Platform National Scientific Research Global Users Social Responsibility 3D Virtual ShowRoom Specialties Chison Hub Blog Clinical Insights Global Care Stories News Contact Us Contact Us Service&Support Jo"
+    },
+    {
+      "url": "https://www.chison.com/hotproduct/mobile-ultrasound-machine-for-sale.html",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "Portable Ultrasound Machine for Sale & Price | CHISON",
+      "text_sample": "Portable Ultrasound Machine for Sale & Price | CHISON Home Products Cart-based Ultrasound SonoPort SonoMax XBit CBit QBit Portable Ultrasound SonoGO SonoAir SonoBook EBit ECO SonoTouch Handheld Ultrasound SonoEye APP Download B&W Ultrasound About Us Company Overview R&D Strength Global R&D Center Intelligent Ultrasound Platform National Scientific Research Global Users Social Responsibility 3D Virtual ShowRoom Specialties Chison Hub Blog Clinical Insights Global Care Stories News Contact Us Cont"
+    },
+    {
+      "url": "https://www.fda.gov/medical-devices/device-advice-comprehensive-regulatory-assistance/medical-device-databases",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "Medical Device Databases | FDA",
+      "text_sample": "Medical Device Databases | FDA Skip to main content Skip to FDA Search Skip to in this section menu Skip to footer links An official website of the United States government Here\u2019s how you know The .gov means it\u2019s official. Federal government websites often end in .gov or .mil. Before sharing sensitive information, make sure you're on a federal government site. The site is secure. The https:// ensures that you are connecting to the official website and that any information you provide is encrypte"
+    },
+    {
+      "url": "https://www.fda.gov/about-fda/cdrh-transparency/total-product-life-cycle-medical-devices",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "Total Product Life Cycle for Medical Devices | FDA",
+      "text_sample": "Total Product Life Cycle for Medical Devices | FDA Skip to main content Skip to FDA Search Skip to in this section menu Skip to footer links An official website of the United States government Here\u2019s how you know The .gov means it\u2019s official. Federal government websites often end in .gov or .mil. Before sharing sensitive information, make sure you're on a federal government site. The site is secure. The https:// ensures that you are connecting to the official website and that any information you"
+    },
+    {
+      "url": "https://www.fda.gov/combination-products",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "Combination Products | FDA",
+      "text_sample": "Combination Products | FDA Skip to main content Skip to FDA Search Skip to in this section menu Skip to footer links An official website of the United States government Here\u2019s how you know The .gov means it\u2019s official. Federal government websites often end in .gov or .mil. Before sharing sensitive information, make sure you're on a federal government site. The site is secure. The https:// ensures that you are connecting to the official website and that any information you provide is encrypted an"
+    },
+    {
+      "url": "https://www.fda.gov/medical-devices/classify-your-medical-device/product-code-classification-database",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "Product Code Classification Database | FDA",
+      "text_sample": "Product Code Classification Database | FDA Skip to main content Skip to FDA Search Skip to in this section menu Skip to footer links An official website of the United States government Here\u2019s how you know The .gov means it\u2019s official. Federal government websites often end in .gov or .mil. Before sharing sensitive information, make sure you're on a federal government site. The site is secure. The https:// ensures that you are connecting to the official website and that any information you provide"
+    },
+    {
+      "url": "https://www.fda.gov/medical-devices/medical-device-databases/corrective-actions-electronic-products",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "Corrective Actions for Electronic Products | FDA",
+      "text_sample": "Corrective Actions for Electronic Products | FDA Skip to main content Skip to FDA Search Skip to in this section menu Skip to footer links An official website of the United States government Here\u2019s how you know The .gov means it\u2019s official. Federal government websites often end in .gov or .mil. Before sharing sensitive information, make sure you're on a federal government site. The site is secure. The https:// ensures that you are connecting to the official website and that any information you p"
+    },
+    {
+      "url": "https://www.fda.gov/medsun-medical-product-safety-network",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "MedSun: Medical Product Safety Network | FDA",
+      "text_sample": "MedSun: Medical Product Safety Network | FDA Skip to main content Skip to FDA Search Skip to in this section menu Skip to footer links An official website of the United States government Here\u2019s how you know The .gov means it\u2019s official. Federal government websites often end in .gov or .mil. Before sharing sensitive information, make sure you're on a federal government site. The site is secure. The https:// ensures that you are connecting to the official website and that any information you provi"
+    },
+    {
+      "url": "https://www.fda.gov/radiation-emitting-products",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "Radiation-Emitting Products | FDA",
+      "text_sample": "Radiation-Emitting Products | FDA Skip to main content Skip to FDA Search Skip to in this section menu Skip to footer links An official website of the United States government Here\u2019s how you know The .gov means it\u2019s official. Federal government websites often end in .gov or .mil. Before sharing sensitive information, make sure you're on a federal government site. The site is secure. The https:// ensures that you are connecting to the official website and that any information you provide is encry"
+    },
+    {
+      "url": "https://www.fda.gov/tobacco-products",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "Tobacco Products | FDA",
+      "text_sample": "Tobacco Products | FDA Skip to main content Skip to FDA Search Skip to in this section menu Skip to footer links An official website of the United States government Here\u2019s how you know The .gov means it\u2019s official. Federal government websites often end in .gov or .mil. Before sharing sensitive information, make sure you're on a federal government site. The site is secure. The https:// ensures that you are connecting to the official website and that any information you provide is encrypted and tr"
+    },
+    {
+      "url": "http://www.fda.gov/BiologicsBloodVaccines/SafetyAvailability/Recalls/default.htm",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "Recalls (Biologics) | FDA",
+      "text_sample": "Recalls (Biologics) | FDA Skip to main content Skip to FDA Search Skip to in this section menu Skip to footer links An official website of the United States government Here\u2019s how you know The .gov means it\u2019s official. Federal government websites often end in .gov or .mil. Before sharing sensitive information, make sure you're on a federal government site. The site is secure. The https:// ensures that you are connecting to the official website and that any information you provide is encrypted and"
+    },
+    {
+      "url": "https://www.fda.gov/",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "U.S. Food and Drug Administration",
+      "text_sample": "U.S. Food and Drug Administration Skip to main content Skip to FDA Search Skip to in this section menu Skip to footer links An official website of the United States government Here\u2019s how you know The .gov means it\u2019s official. Federal government websites often end in .gov or .mil. Before sharing sensitive information, make sure you're on a federal government site. The site is secure. The https:// ensures that you are connecting to the official website and that any information you provide is encry"
+    },
+    {
+      "url": "https://www.fda.gov/MedicalDevices/DeviceRegulationandGuidance/HowtoMarketYourDevice/PremarketSubmissions/HumanitarianDeviceExemption/default.htm",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "Humanitarian Device Exemption | FDA",
+      "text_sample": "Humanitarian Device Exemption | FDA Skip to main content Skip to FDA Search Skip to in this section menu Skip to footer links An official website of the United States government Here\u2019s how you know The .gov means it\u2019s official. Federal government websites often end in .gov or .mil. Before sharing sensitive information, make sure you're on a federal government site. The site is secure. The https:// ensures that you are connecting to the official website and that any information you provide is enc"
+    },
+    {
+      "url": "https://www.fda.gov/MedicalDevices/DeviceRegulationandGuidance/PostmarketRequirements/PostApprovaStudies/default.htm",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "Post-Approval Studies Program | FDA",
+      "text_sample": "Post-Approval Studies Program | FDA Skip to main content Skip to FDA Search Skip to in this section menu Skip to footer links An official website of the United States government Here\u2019s how you know The .gov means it\u2019s official. Federal government websites often end in .gov or .mil. Before sharing sensitive information, make sure you're on a federal government site. The site is secure. The https:// ensures that you are connecting to the official website and that any information you provide is enc"
+    },
+    {
+      "url": "https://www.nascohealthcare.com/",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "Nasco Healthcare - Supporting Frontline Healthcare Workers",
+      "text_sample": "Nasco Healthcare - Supporting Frontline Healthcare Workers Skip to content Partner Portal ES About Us Who We Are Testimonials Our Products Our Leading Products ALEX Gen AI Casualty Care Rescue Randy Casualty Care Rescue Randy Training Videos DANi Teen &#038; Young Adult Trainer TERi\u2122 MVR Technologies Tradeshows Contact Us Contact Us Jobs Shop About Us Who We Are Testimonials Our Products Our Leading Products ALEX Gen AI Casualty Care Rescue Randy Casualty Care Rescue Randy Training Videos DANi T"
+    },
+    {
+      "url": "https://www.nascohealthcare.com/about/our-purpose/",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "Nasco Healthcare - Leadership in the Healthcare Realm",
+      "text_sample": "Nasco Healthcare - Leadership in the Healthcare Realm Skip to content Partner Portal ES About Us Who We Are Testimonials Our Products Our Leading Products ALEX Gen AI Casualty Care Rescue Randy Casualty Care Rescue Randy Training Videos DANi Teen &#038; Young Adult Trainer TERi\u2122 MVR Technologies Tradeshows Contact Us Contact Us Jobs Shop About Us Who We Are Testimonials Our Products Our Leading Products ALEX Gen AI Casualty Care Rescue Randy Casualty Care Rescue Randy Training Videos DANi Teen &"
+    },
+    {
+      "url": "https://www.nascohealthcare.com/cdn-cgi/l/email-protection",
+      "ok": false,
+      "status": 404,
+      "error": "HTTPError 404: Not Found",
+      "title": "",
+      "text_sample": ""
+    },
+    {
+      "url": "https://www.nascohealthcare.com/contact/contact-us/",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "Nasco Healthcare - Contact",
+      "text_sample": "Nasco Healthcare - Contact Skip to content Partner Portal ES About Us Who We Are Testimonials Our Products Our Leading Products ALEX Gen AI Casualty Care Rescue Randy Casualty Care Rescue Randy Training Videos DANi Teen &#038; Young Adult Trainer TERi\u2122 MVR Technologies Tradeshows Contact Us Contact Us Jobs Shop About Us Who We Are Testimonials Our Products Our Leading Products ALEX Gen AI Casualty Care Rescue Randy Casualty Care Rescue Randy Training Videos DANi Teen &#038; Young Adult Trainer T"
+    },
+    {
+      "url": "https://www.nascohealthcare.com/news-and-events/all-tradeshows/",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "Nasco Healthcare - Future Tradeshows",
+      "text_sample": "Nasco Healthcare - Future Tradeshows Skip to content Partner Portal ES About Us Who We Are Testimonials Our Products Our Leading Products ALEX Gen AI Casualty Care Rescue Randy Casualty Care Rescue Randy Training Videos DANi Teen &#038; Young Adult Trainer TERi\u2122 MVR Technologies Tradeshows Contact Us Contact Us Jobs Shop About Us Who We Are Testimonials Our Products Our Leading Products ALEX Gen AI Casualty Care Rescue Randy Casualty Care Rescue Randy Training Videos DANi Teen &#038; Young Adult"
+    },
+    {
+      "url": "https://www.nascohealthcare.com/news-and-events/local-events-news/",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "Nasco Healthcare - Local Events and News",
+      "text_sample": "Nasco Healthcare - Local Events and News Skip to content Partner Portal ES About Us Who We Are Testimonials Our Products Our Leading Products ALEX Gen AI Casualty Care Rescue Randy Casualty Care Rescue Randy Training Videos DANi Teen &#038; Young Adult Trainer TERi\u2122 MVR Technologies Tradeshows Contact Us Contact Us Jobs Shop About Us Who We Are Testimonials Our Products Our Leading Products ALEX Gen AI Casualty Care Rescue Randy Casualty Care Rescue Randy Training Videos DANi Teen &#038; Young A"
+    },
+    {
+      "url": "https://www.nascohealthcare.com/online-orders-terms-and-conditions-of-sale/",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "Nasco Healthcare - Terms of Use",
+      "text_sample": "Nasco Healthcare - Terms of Use Skip to content Partner Portal ES About Us Who We Are Testimonials Our Products Our Leading Products ALEX Gen AI Casualty Care Rescue Randy Casualty Care Rescue Randy Training Videos DANi Teen &#038; Young Adult Trainer TERi\u2122 MVR Technologies Tradeshows Contact Us Contact Us Jobs Shop About Us Who We Are Testimonials Our Products Our Leading Products ALEX Gen AI Casualty Care Rescue Randy Casualty Care Rescue Randy Training Videos DANi Teen &#038; Young Adult Trai"
+    },
+    {
+      "url": "https://www.nascohealthcare.com/testimonials/",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "Nasco Healthcare Testimonials - Hear from our clients",
+      "text_sample": "Nasco Healthcare Testimonials - Hear from our clients Skip to content Partner Portal ES About Us Who We Are Testimonials Our Products Our Leading Products ALEX Gen AI Casualty Care Rescue Randy Casualty Care Rescue Randy Training Videos DANi Teen &#038; Young Adult Trainer TERi\u2122 MVR Technologies Tradeshows Contact Us Contact Us Jobs Shop About Us Who We Are Testimonials Our Products Our Leading Products ALEX Gen AI Casualty Care Rescue Randy Casualty Care Rescue Randy Training Videos DANi Teen &"
+    },
+    {
+      "url": "https://www.nascohealthcare.com/warranty/",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "Nasco Healthcare - Warranty Policy",
+      "text_sample": "Nasco Healthcare - Warranty Policy Skip to content Partner Portal ES About Us Who We Are Testimonials Our Products Our Leading Products ALEX Gen AI Casualty Care Rescue Randy Casualty Care Rescue Randy Training Videos DANi Teen &#038; Young Adult Trainer TERi\u2122 MVR Technologies Tradeshows Contact Us Contact Us Jobs Shop About Us Who We Are Testimonials Our Products Our Leading Products ALEX Gen AI Casualty Care Rescue Randy Casualty Care Rescue Randy Training Videos DANi Teen &#038; Young Adult T"
+    },
+    {
+      "url": "https://www.ssih.org/",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "Home | SSH",
+      "text_sample": "Home | SSH Skip to main content Secondary Navigation Search About SSH Fund My SSH Main navigation Education Resources Credentialing Advocacy Membership Main navigation - About Purpose SSH Governance Strategic Plan About Simulation News Team Board of Directors Board Election Open Staff SSH Awards &amp; Recognition Opportunities Contact Us Relationships Corporate Roundtable Strategic Partnerships Affiliated Organizations Main navigation - Advocacy Innovation SSH Fund Speakers Bureau Recognition Th"
+    },
+    {
+      "url": "https://www.ssih.org/about-simulation",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "About Simulation | SSH",
+      "text_sample": "About Simulation | SSH Skip to main content Secondary Navigation Search About SSH Fund My SSH Main navigation Education Resources Credentialing Advocacy Membership Main navigation - About Purpose SSH Governance Strategic Plan About Simulation News Team Board of Directors Board Election Open Staff SSH Awards &amp; Recognition Opportunities Contact Us Relationships Corporate Roundtable Strategic Partnerships Affiliated Organizations Main navigation - Advocacy Innovation SSH Fund Speakers Bureau Re"
+    },
+    {
+      "url": "https://www.ssih.org/accreditation-faq",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "Accreditation FAQ | SSH",
+      "text_sample": "Accreditation FAQ | SSH Skip to main content Secondary Navigation Search About SSH Fund My SSH Main navigation Education Resources Credentialing Advocacy Membership Main navigation - About Purpose SSH Governance Strategic Plan About Simulation News Team Board of Directors Board Election Open Staff SSH Awards &amp; Recognition Opportunities Contact Us Relationships Corporate Roundtable Strategic Partnerships Affiliated Organizations Main navigation - Advocacy Innovation SSH Fund Speakers Bureau R"
+    },
+    {
+      "url": "https://www.ssih.org/commission-international-simulation-accreditation-cisa",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "Commission for International Simulation Accreditation (CISA) | SSH",
+      "text_sample": "Commission for International Simulation Accreditation (CISA) | SSH Skip to main content Secondary Navigation Search About SSH Fund My SSH Main navigation Education Resources Credentialing Advocacy Membership Main navigation - About Purpose SSH Governance Strategic Plan About Simulation News Team Board of Directors Board Election Open Staff SSH Awards &amp; Recognition Opportunities Contact Us Relationships Corporate Roundtable Strategic Partnerships Affiliated Organizations Main navigation - Adv"
+    },
+    {
+      "url": "https://www.ssih.org/corporate-roundtable",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "Corporate Roundtable | SSH",
+      "text_sample": "Corporate Roundtable | SSH Skip to main content Secondary Navigation Search About SSH Fund My SSH Main navigation Education Resources Credentialing Advocacy Membership Main navigation - About Purpose SSH Governance Strategic Plan About Simulation News Team Board of Directors Board Election Open Staff SSH Awards &amp; Recognition Opportunities Contact Us Relationships Corporate Roundtable Strategic Partnerships Affiliated Organizations Main navigation - Advocacy Innovation SSH Fund Speakers Burea"
+    },
+    {
+      "url": "https://www.ssih.org/defining-excellence-healthcare-simulation-programs-2nd-edition",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "Defining Excellence in Healthcare Simulation Programs, 2nd Edition | SSH",
+      "text_sample": "Defining Excellence in Healthcare Simulation Programs, 2nd Edition | SSH Skip to main content Secondary Navigation Search About SSH Fund My SSH Main navigation Education Resources Credentialing Advocacy Membership Main navigation - About Purpose SSH Governance Strategic Plan About Simulation News Team Board of Directors Board Election Open Staff SSH Awards &amp; Recognition Opportunities Contact Us Relationships Corporate Roundtable Strategic Partnerships Affiliated Organizations Main navigation"
+    },
+    {
+      "url": "https://www.ssih.org/healthcare-simulation-advocacy-tracker",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "Healthcare Simulation Advocacy Tracker | SSH",
+      "text_sample": "Healthcare Simulation Advocacy Tracker | SSH Skip to main content Secondary Navigation Search About SSH Fund My SSH Main navigation Education Resources Credentialing Advocacy Membership Main navigation - About Purpose SSH Governance Strategic Plan About Simulation News Team Board of Directors Board Election Open Staff SSH Awards &amp; Recognition Opportunities Contact Us Relationships Corporate Roundtable Strategic Partnerships Affiliated Organizations Main navigation - Advocacy Innovation SSH F"
+    },
+    {
+      "url": "https://www.ssih.org/healthcare-simulation-dictionary",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "Healthcare Simulation Dictionary | SSH",
+      "text_sample": "Healthcare Simulation Dictionary | SSH Skip to main content Secondary Navigation Search About SSH Fund My SSH Main navigation Education Resources Credentialing Advocacy Membership Main navigation - About Purpose SSH Governance Strategic Plan About Simulation News Team Board of Directors Board Election Open Staff SSH Awards &amp; Recognition Opportunities Contact Us Relationships Corporate Roundtable Strategic Partnerships Affiliated Organizations Main navigation - Advocacy Innovation SSH Fund Sp"
+    },
+    {
+      "url": "https://www.ssih.org/healthcare-simulation-safety",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "Healthcare Simulation Safety | SSH",
+      "text_sample": "Healthcare Simulation Safety | SSH Skip to main content Secondary Navigation Search About SSH Fund My SSH Main navigation Education Resources Credentialing Advocacy Membership Main navigation - About Purpose SSH Governance Strategic Plan About Simulation News Team Board of Directors Board Election Open Staff SSH Awards &amp; Recognition Opportunities Contact Us Relationships Corporate Roundtable Strategic Partnerships Affiliated Organizations Main navigation - Advocacy Innovation SSH Fund Speake"
+    },
+    {
+      "url": "https://www.ssih.org/healthcare-simulation-week-2026",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "Healthcare Simulation Week 2026 | SSH",
+      "text_sample": "Healthcare Simulation Week 2026 | SSH Skip to main content Secondary Navigation Search About SSH Fund My SSH Main navigation Education Resources Credentialing Advocacy Membership Main navigation - About Purpose SSH Governance Strategic Plan About Simulation News Team Board of Directors Board Election Open Staff SSH Awards &amp; Recognition Opportunities Contact Us Relationships Corporate Roundtable Strategic Partnerships Affiliated Organizations Main navigation - Advocacy Innovation SSH Fund Spe"
+    },
+    {
+      "url": "https://www.ssih.org/healthcare-simulationist-code-ethics",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "Healthcare Simulationist Code of Ethics | SSH",
+      "text_sample": "Healthcare Simulationist Code of Ethics | SSH Skip to main content Secondary Navigation Search About SSH Fund My SSH Main navigation Education Resources Credentialing Advocacy Membership Main navigation - About Purpose SSH Governance Strategic Plan About Simulation News Team Board of Directors Board Election Open Staff SSH Awards &amp; Recognition Opportunities Contact Us Relationships Corporate Roundtable Strategic Partnerships Affiliated Organizations Main navigation - Advocacy Innovation SSH "
+    },
+    {
+      "url": "https://www.ssih.org/international-simulation-data-registry-isdr-20",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "International Simulation Data Registry (ISDR 2.0) | SSH",
+      "text_sample": "International Simulation Data Registry (ISDR 2.0) | SSH Skip to main content Secondary Navigation Search About SSH Fund My SSH Main navigation Education Resources Credentialing Advocacy Membership Main navigation - About Purpose SSH Governance Strategic Plan About Simulation News Team Board of Directors Board Election Open Staff SSH Awards &amp; Recognition Opportunities Contact Us Relationships Corporate Roundtable Strategic Partnerships Affiliated Organizations Main navigation - Advocacy Innov"
+    },
+    {
+      "url": "https://www.who.int/teams/health-product-policy-and-standards/assistive-and-medical-technology/medical-devices",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "Health products policy and standards",
+      "text_sample": "Health products policy and standards Skip to main content Global Regions WHO Regional websites Africa Americas South-East Asia Europe Eastern Mediterranean Western Pacific When autocomplete results are available use up and down arrows to review and enter to select. Select language Select language English Home Health Topics All topics A B C D E F G H I J K L M N O P Q R S T U V W X Y Z Resources Fact sheets Facts in pictures Multimedia Podcasts Publications Questions and answers Tools and toolkit"
+    },
+    {
+      "url": "https://www.who.int/ResourcePackages/WHO/assets/dist/styles/grid.min.css?v=14.0.7729.19775",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "",
+      "text_sample": "/*! * Bootstrap Grid v4.1.3 (https://getbootstrap.com/) * Copyright 2011-2018 The Bootstrap Authors * Copyright 2011-2018 Twitter, Inc. * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE) */ @-ms-viewport { width: device-width; } html { box-sizing: border-box; -ms-overflow-style: scrollbar; } *, *:before, *:after { box-sizing: inherit; } /** * settings/variables * * Containing all variables used. Assigning variables is done via tokens * */ .container { width: 100%; paddi"
+    },
+    {
+      "url": "https://www.who.int/ResourcePackages/WHO/assets/dist/styles/main.min.css?v=14.0.7729.19775",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "",
+      "text_sample": "@charset \"UTF-8\"; /** * vendor/select2 * * Containing all slick slyder styles * */ /** * settings/variables * * Containing all variables used. Assigning variables is done via tokens * */ @import url(\"https://fonts.googleapis.com/css2?family=Source+Sans+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,900;1,200;1,400;1,500;1,600&display=swap\"); @import url(https://fonts.googleapis.com/css?family=Noto+Sans+JP); @import url(https://fonts.googleapis.com/css?family=Noto+Serif+JP); @import url(https://fo"
+    },
+    {
+      "url": "https://www.who.int/ResourcePackages/WHO/assets/dist/styles/origin.min.css?v=14.0.7729.19775",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "",
+      "text_sample": "@charset \"UTF-8\"; :root { --l-l2-background: #e1e4ec; --l-l2-accentFillRest: #006cbe; --l-l2-accentFillHover: #0078d4; --l-l2-accentFillActive: #005ca3; --l-l2-accentFillSelected: #00477d; --l-l2-accentForegroundCut: #ffffff; --l-l2-neutralFocusInnerAccent: #d4e8f8; --l-l2-neutralFocus: #64789c; --l-l2-neutralFillRest: #f6f7f9; --l-l2-neutralFillHover: #ffffff; --l-l2-neutralFillActive: #f0f2f5; --l-l2-neutralFillSelected: #f6f7f9; --l-l2-neutralForegroundRest: #00153c; --l-l2-neutralFillStealth"
+    },
+    {
+      "url": "https://www.who.int/ResourcePackages/WHO/assets/dist/styles/print.min.css?v=14.0.7729.19775",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "",
+      "text_sample": "@page { margin: 2cm 1cm; } @media print { .sf-body { font-family: Garamond, Helvetica, sans-serif; font-size: 12pt; line-height: 1.25em; } .sf-body h1 { margin: 0.5cm 0 !important; font-size: 36pt !important; line-height: 1.25em !important; } .sf-body h2 { margin: 0.5cm 0 !important; font-size: 24pt !important; line-height: 1.25em !important; } .sf-body h3 { font-size: 18pt !important; line-height: 1.25em !important; } .sf-body h4 { font-size: 14pt !important; line-height: 1.25em !important; } ."
+    },
+    {
+      "url": "https://www.who.int/mega-menu/about-us/who-funding/investment-case",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "Invest in WHO",
+      "text_sample": "Invest in WHO Skip to main content Global Regions WHO Regional websites Africa Americas South-East Asia Europe Eastern Mediterranean Western Pacific When autocomplete results are available use up and down arrows to review and enter to select. Select language Select language English \u0627\u0644\u0639\u0631\u0628\u064a\u0629 \u4e2d\u6587 Fran&#231;ais \u0420\u0443\u0441\u0441\u043a\u0438\u0439 Espa&#241;ol Home Health Topics All topics A B C D E F G H I J K L M N O P Q R S T U V W X Y Z Resources Fact sheets Facts in pictures Multimedia Podcasts Publications Questions and an"
+    },
+    {
+      "url": "https://www.who.int/mega-menu/health-topics/resources",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "Resources",
+      "text_sample": "Resources Skip to main content Global Regions WHO Regional websites Africa Americas South-East Asia Europe Eastern Mediterranean Western Pacific When autocomplete results are available use up and down arrows to review and enter to select. Select language Select language English Home Health Topics All topics A B C D E F G H I J K L M N O P Q R S T U V W X Y Z Resources Fact sheets Facts in pictures Multimedia Podcasts Publications Questions and answers Tools and toolkits Popular Dengue Endometrio"
+    },
+    {
+      "url": "https://www.who.int/mega-menu/health-topics/resources/fact-sheets",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "Fact sheets",
+      "text_sample": "Fact sheets Skip to main content Global Regions WHO Regional websites Africa Americas South-East Asia Europe Eastern Mediterranean Western Pacific When autocomplete results are available use up and down arrows to review and enter to select. Select language Select language English \u0627\u0644\u0639\u0631\u0628\u064a\u0629 \u4e2d\u6587 Fran&#231;ais \u0420\u0443\u0441\u0441\u043a\u0438\u0439 Espa&#241;ol Home Health Topics All topics A B C D E F G H I J K L M N O P Q R S T U V W X Y Z Resources Fact sheets Facts in pictures Multimedia Podcasts Publications Questions and answ"
+    },
+    {
+      "url": "https://www.who.int/mega-menu/health-topics/resources/facts-in-pictures",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "Facts in pictures",
+      "text_sample": "Facts in pictures Skip to main content Global Regions WHO Regional websites Africa Americas South-East Asia Europe Eastern Mediterranean Western Pacific When autocomplete results are available use up and down arrows to review and enter to select. Select language Select language English \u0627\u0644\u0639\u0631\u0628\u064a\u0629 \u4e2d\u6587 Fran&#231;ais \u0420\u0443\u0441\u0441\u043a\u0438\u0439 Espa&#241;ol Home Health Topics All topics A B C D E F G H I J K L M N O P Q R S T U V W X Y Z Resources Fact sheets Facts in pictures Multimedia Podcasts Publications Questions an"
+    },
+    {
+      "url": "https://www.who.int/mega-menu/health-topics/resources/multimedia",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "Multimedia",
+      "text_sample": "Multimedia Skip to main content Global Regions WHO Regional websites Africa Americas South-East Asia Europe Eastern Mediterranean Western Pacific When autocomplete results are available use up and down arrows to review and enter to select. Select language Select language English \u0627\u0644\u0639\u0631\u0628\u064a\u0629 \u4e2d\u6587 Fran&#231;ais \u0420\u0443\u0441\u0441\u043a\u0438\u0439 Espa&#241;ol Portugu&#234;s Home Health Topics All topics A B C D E F G H I J K L M N O P Q R S T U V W X Y Z Resources Fact sheets Facts in pictures Multimedia Podcasts Publications Ques"
+    },
+    {
+      "url": "https://www.who.int/mega-menu/health-topics/resources/podcasts",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "Podcasts",
+      "text_sample": "Podcasts Skip to main content Global Regions WHO Regional websites Africa Americas South-East Asia Europe Eastern Mediterranean Western Pacific When autocomplete results are available use up and down arrows to review and enter to select. Select language Select language English Home Health Topics All topics A B C D E F G H I J K L M N O P Q R S T U V W X Y Z Resources Fact sheets Facts in pictures Multimedia Podcasts Publications Questions and answers Tools and toolkits Popular Dengue Endometrios"
+    },
+    {
+      "url": "https://www.who.int/mega-menu/health-topics/resources/publications",
+      "ok": true,
+      "status": 200,
+      "error": "",
+      "title": "Publications",
+      "text_sample": "Publications Skip to main content Global Regions WHO Regional websites Africa Americas South-East Asia Europe Eastern Mediterranean Western Pacific When autocomplete results are available use up and down arrows to review and enter to select. Select language Select language English \u0627\u0644\u0639\u0631\u0628\u064a\u0629 \u4e2d\u6587 Fran&#231;ais \u0420\u0443\u0441\u0441\u043a\u0438\u0439 Espa&#241;ol Home Health Topics All topics A B C D E F G H I J K L M N O P Q R S T U V W X Y Z Resources Fact sheets Facts in pictures Multimedia Podcasts Publications Questions and ans"
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+response_uri,codebook_uri,codebook_label,slot_priority,old_label,new_label,basis_comment
+pmsr:/ROP1738095646552695,pmsr:/CBK1738096258564815,Chest Inflator Responses,1,ROP1738095646552695,Chest Deflated,"The portion representing the Chest, in the mannequin, appears to be deflated."
+pmsr:/ROP1738095538691005,pmsr:/CBK1738096258564815,Chest Inflator Responses,2,ROP1738095538691005,Chest Inflated,The chest portion of the mannequin appears to be inflated
+pmsr:/ROP1740092924252535,pmsr:/CBK1740091832821965,IV Access Locations,1,ROP1740092924252535,Median Antecubital/Cephalic/Basilic Veins,"Neonatal Cubital fossa Median antecubital, cephalic and basilic veins - Median antecubital, cephalic and basilic veins are easy to hit and tend to last quite well if splinted properly.  These veins are the preferred sites for insertion of percutaneous central venous catheters.  These should be avoided unless absolutely necessary in any infant likely to need long term IV therapy. The median nerve and brachial artery are both in the same anatomical vicinity and therefore vulnerable to damage."
+pmsr:/ROP1738148696123634,pmsr:/CBK1738148623334734,PASS and FAIL,1,ROP1738148696123634,Pass,Process complete successfully
+pmsr:/ROP1738148709128504,pmsr:/CBK1738148623334734,PASS and FAIL,2,ROP1738148709128504,Fail,Process failed
+pmsr:/ROP1738240077172043,pmsr:/CBK1738239681967443,Pulse Bulb Response,1,ROP1738240077172043,Pressure Applied,Pressao Aplicada
+pmsr:/ROP1738240106626233,pmsr:/CBK1738239681967443,Pulse Bulb Response,2,ROP1738240106626233,Pressure Not Applied,Pressao Nao Aplicada
+pmsr:/ROP1738099044174655,pmsr:/CBK1738098997597015,Pulse Detection,1,ROP1738099044174655,Detected,Pulse has been detected
+pmsr:/ROP1738099077224615,pmsr:/CBK1738098997597015,Pulse Detection,2,ROP1738099077224615,Not Detected,Pulse has not been detected
+pmsr:/ROP1738095892998425,pmsr:/CBK1738096048734595,Stomach Inflator Responses,1,ROP1738095892998425,Stoma Deflated,"The portion representing the Stoma, in the mannequin, appears to be deflated."
+pmsr:/ROP1738095777366775,pmsr:/CBK1738096048734595,Stomach Inflator Responses,2,ROP1738095777366775,Stoma Inflated,"The portion representing the Stoma, in the mannequin, appears to be inflated."
