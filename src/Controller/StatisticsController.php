@@ -1072,63 +1072,104 @@ class StatisticsController extends ControllerBase {
       ? array_values($projectData->contributorUris)
       : [];
 
-    foreach ($contributorUris as $contributorUri) {
-      $payload = $this->getInstrumentPrefilterPayloadForOrganization($api, (string) $contributorUri);
-      $instruments = $this->extractPrefilterInstrumentRows($payload);
-      if (empty($instruments)) {
-        throw new \RuntimeException('Prefilter returned no instruments for contributor ' . (string) $contributorUri);
-      }
-
-      foreach ($instruments as $instrument) {
-        if (!is_array($instrument)) {
-          continue;
-        }
-
-        $modelUri = trim((string) ($instrument['uri'] ?? $instrument['hasURI'] ?? ''));
-        if ($modelUri === '') {
-          continue;
-        }
-
-        if (!isset($rows[$modelUri])) {
-          $rows[$modelUri] = [
-            'uri' => $modelUri,
-            'label' => (string) ($instrument['label'] ?? $this->extractUriLocalName($modelUri)),
-            'componentInstances' => 0,
-            'detectors' => 0,
-            'actuators' => 0,
-            '_componentUris' => [],
-          ];
-        }
-
-        $components = isset($instrument['components']) && is_array($instrument['components'])
-          ? $instrument['components']
-          : [];
-
-        foreach ($components as $component) {
-          if (!is_array($component)) {
-            continue;
-          }
-
-          $componentUri = trim((string) ($component['uri'] ?? $component['hasURI'] ?? ''));
-          if ($componentUri === '' || isset($rows[$modelUri]['_componentUris'][$componentUri])) {
-            continue;
-          }
-
-          $rows[$modelUri]['_componentUris'][$componentUri] = true;
-          $rows[$modelUri]['componentInstances']++;
-
-          $role = strtolower(trim((string) ($component['componentRole'] ?? '')));
-          if ($role === '') {
-            throw new \RuntimeException('Prefilter returned component without componentRole for model ' . $modelUri);
-          }
-          if ($role === 'detector') {
-            $rows[$modelUri]['detectors']++;
-          }
-          elseif ($role === 'actuator') {
-            $rows[$modelUri]['actuators']++;
+    // Fallback scope: when project contributor links are missing, reuse cached member orgs.
+    if (empty($contributorUris)) {
+      $membersData = $this->getStatisticsDataValue(self::STATS_MEMBERS_DATA_KEY);
+      if (is_array($membersData) && isset($membersData['members']) && is_array($membersData['members'])) {
+        foreach ($membersData['members'] as $member) {
+          if (is_array($member) && !empty($member['uri'])) {
+            $contributorUris[] = (string) $member['uri'];
           }
         }
       }
+    }
+
+    $contributorUris = array_values(array_unique(array_filter(array_map('strval', $contributorUris))));
+
+    $collectFromOrganizations = function (array $organizationUris) use ($api, &$rows): void {
+      foreach ($organizationUris as $contributorUri) {
+        try {
+          $payload = $this->getInstrumentPrefilterPayloadForOrganization($api, (string) $contributorUri);
+          $instruments = $this->extractPrefilterInstrumentRows($payload);
+        }
+        catch (\Exception $e) {
+          \Drupal::logger('pmsr')->warning('Simulation models prefilter failed for contributor @uri: @error', [
+            '@uri' => (string) $contributorUri,
+            '@error' => $e->getMessage(),
+          ]);
+          continue;
+        }
+
+        if (empty($instruments)) {
+          // Some contributors may legitimately have no model/component data.
+          continue;
+        }
+
+        foreach ($instruments as $instrument) {
+          if (!is_array($instrument)) {
+            continue;
+          }
+
+          $modelUri = trim((string) ($instrument['uri'] ?? $instrument['hasURI'] ?? ''));
+          if ($modelUri === '') {
+            continue;
+          }
+
+          if (!isset($rows[$modelUri])) {
+            $rows[$modelUri] = [
+              'uri' => $modelUri,
+              'label' => (string) ($instrument['label'] ?? $this->extractUriLocalName($modelUri)),
+              'componentInstances' => 0,
+              'detectors' => 0,
+              'actuators' => 0,
+              '_componentUris' => [],
+            ];
+          }
+
+          $components = isset($instrument['components']) && is_array($instrument['components'])
+            ? $instrument['components']
+            : [];
+
+          foreach ($components as $component) {
+            if (!is_array($component)) {
+              continue;
+            }
+
+            $componentUri = trim((string) ($component['uri'] ?? $component['hasURI'] ?? ''));
+            if ($componentUri === '' || isset($rows[$modelUri]['_componentUris'][$componentUri])) {
+              continue;
+            }
+
+            $rows[$modelUri]['_componentUris'][$componentUri] = true;
+            $rows[$modelUri]['componentInstances']++;
+
+            $role = strtolower(trim((string) ($component['componentRole'] ?? '')));
+            if ($role === '') {
+              // Keep the instance count even when role metadata is missing.
+              continue;
+            }
+            if ($role === 'detector') {
+              $rows[$modelUri]['detectors']++;
+            }
+            elseif ($role === 'actuator') {
+              $rows[$modelUri]['actuators']++;
+            }
+          }
+        }
+      }
+    };
+
+    $collectFromOrganizations($contributorUris);
+
+    if (empty($rows)) {
+      $ownerUris = $this->collectInstrumentInstanceOwnerUris($api);
+      $fallbackUris = [];
+      foreach ($ownerUris as $ownerUri) {
+        if (!in_array($ownerUri, $contributorUris, TRUE)) {
+          $fallbackUris[] = $ownerUri;
+        }
+      }
+      $collectFromOrganizations($fallbackUris);
     }
 
     foreach ($rows as $modelUri => $row) {
@@ -1141,6 +1182,42 @@ class StatisticsController extends ControllerBase {
     });
 
     return $rows;
+  }
+
+  private function collectInstrumentInstanceOwnerUris($api): array {
+    $owners = [];
+    $pageSize = 200;
+    $offset = 0;
+
+    try {
+      while (TRUE) {
+        $response = $api->listByKeyword('instrumentinstance', '_', $pageSize, $offset);
+        $batch = $api->parseObjectResponse($response, 'listByKeyword');
+        if (!is_array($batch) || empty($batch)) {
+          break;
+        }
+
+        foreach ($batch as $instrumentInstance) {
+          if (!is_object($instrumentInstance) || empty($instrumentInstance->hasOwnerUri)) {
+            continue;
+          }
+          $ownerUri = trim((string) $instrumentInstance->hasOwnerUri);
+          if ($ownerUri !== '') {
+            $owners[$ownerUri] = true;
+          }
+        }
+
+        if (count($batch) < $pageSize) {
+          break;
+        }
+        $offset += $pageSize;
+      }
+    }
+    catch (\Exception $e) {
+      \Drupal::logger('pmsr')->warning('Failed to collect instrument instance owners: ' . $e->getMessage());
+    }
+
+    return array_keys($owners);
   }
 
   /**
@@ -2653,10 +2730,11 @@ $output .= '</div>'; // End single row with all 5 cards
       && isset($storedSimulationModels['rows'])
       && is_array($storedSimulationModels['rows'])) {
       $simulationModels = $storedSimulationModels['rows'];
-      $hasFreshSimulationModelsCache = TRUE;
+      // Empty rows are considered stale to allow automatic self-healing rebuild.
+      $hasFreshSimulationModelsCache = !empty($simulationModels);
     }
 
-    if (!$hasFreshSimulationModelsCache && !$deferLiveFetch) {
+    if (!$hasFreshSimulationModelsCache) {
       try {
         $simulationModels = $this->buildSimulationModelsStatistics($api);
         $this->setStatisticsDataValue(self::STATS_SIMULATION_MODELS_DATA_KEY, [

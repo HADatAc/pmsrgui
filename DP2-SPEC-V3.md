@@ -106,17 +106,20 @@ Base row mapping behavior:
 Automatic fields injected:
 - `hasco:hasDataFile` for every DP2 row.
 - `vstoi:hasStatus`: from row column when present; otherwise fallback to runtime status parameter.
-- `a` is defaulted by element type when missing.
+- `a`/`rdf:type` is defaulted by element type when missing (depending on sheet profile).
 - `hasco:hascoType` and `vstoi:hasSIRManagerEmail` are injected by element type.
 - Deployments also receive `hasco:canUpdate`.
 
-Element type defaults for `a`/`hasco:hascoType`:
-- deployment -> `vstoi:Deployment`
-- platform -> `vstoi:Platform`
-- platforminstance -> `vstoi:PlatformInstance`
-- fieldofview -> `vstoi:FieldOfView`
-- instrumentinstance -> `vstoi:InstrumentInstance`
-- componentinstance -> `vstoi:ComponentInstance`
+Element type defaults (current approach):
+1. Instance sheets (`PlatformInstances`, `InstrumentInstances`, `ComponentInstances`)
+- `hasco:hascoType` defaults to the corresponding HASCO class:
+	- `PlatformInstances` -> `hasco:PlatformInstance`
+	- `InstrumentInstances` -> `hasco:InstrumentInstance`
+	- `ComponentInstances` -> `hasco:ComponentInstance`
+2. Deployment sheets
+- `Deployments` are typed as `vstoi:Deployment` (row `a` column in the current workbook profile).
+- `ComponentDeployments` are typed as `vstoi:ComponentDeployment` (`rdf:type` in the current workbook profile).
+3. Other DP2 entity sheets keep their corresponding VSTOI type defaults when type is not explicitly provided.
 
 Implication:
 - Some workbook fields are advisory because ingestion auto-fills when absent.
@@ -202,6 +205,14 @@ DP2-PMSR-V3 header profile by sheet:
 2. Present in `InstrumentInstances`.
 3. Present in `ComponentInstances`.
 4. Not a standard column in `Deployments` or `ComponentDeployments` headers.
+5. Current default values for these columns are:
+- `PlatformInstances.hasco:hascoType` -> `hasco:PlatformInstance`
+- `InstrumentInstances.hasco:hascoType` -> `hasco:InstrumentInstance`
+- `ComponentInstances.hasco:hascoType` -> `hasco:ComponentInstance`
+
+Deployment typing in V3:
+1. `Deployments` are typed as `vstoi:Deployment`.
+2. `ComponentDeployments` are typed as `vstoi:ComponentDeployment`.
 
 Observed population highlights:
 - Deployments, ComponentDeployments, InstrumentInstances, and ComponentInstances are populated.
@@ -279,6 +290,12 @@ Layer C: transactional completion checks
 5. Do not rely on tab order for correctness; rely on keys, headers, and references.
 6. `ComponentDeployments` rows must have their own `hasURI` and should include `rdf:type` = `vstoi:ComponentDeployment`.
 7. Include `hasco:hascoType` columns in `PlatformInstances`, `InstrumentInstances`, and `ComponentInstances`.
+8. Use these defaults unless there is an explicit override:
+- `PlatformInstances.hasco:hascoType` = `hasco:PlatformInstance`
+- `InstrumentInstances.hasco:hascoType` = `hasco:InstrumentInstance`
+- `ComponentInstances.hasco:hascoType` = `hasco:ComponentInstance`
+- `Deployments` typed as `vstoi:Deployment`
+- `ComponentDeployments` typed as `vstoi:ComponentDeployment`
 
 ## 10. Compatibility Statement
 A DP2 workbook is considered compatible with this specification when:

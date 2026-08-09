@@ -28,6 +28,21 @@
       .replace(/'/g, '&#39;');
   }
 
+  function fetchWithTimeout(url, options, timeoutMs) {
+    const controller = new AbortController();
+    const timerId = setTimeout(function () {
+      controller.abort();
+    }, timeoutMs);
+
+    const requestOptions = Object.assign({}, options || {}, {
+      signal: controller.signal
+    });
+
+    return fetch(url, requestOptions).finally(function () {
+      clearTimeout(timerId);
+    });
+  }
+
   function renderINSLiveProgressShell(resultsDiv) {
     let cards = '';
     INS_STEP_TITLES.forEach(function (title, idx) {
@@ -342,15 +357,26 @@
             // Use the Drupal AJAX endpoint for ontologies/INS/Geography, backend endpoint for others
             const actualEndpoint = isDrupalIngestion ? endpoint : endpoint;
             
-            fetch(actualEndpoint, {
+            fetchWithTimeout(actualEndpoint, {
               method: "POST",
               credentials: "same-origin",
               headers: {
                 "Content-Type": "application/json"
               },
               body: requestBody
+            }, 15000)
+            .then(response => {
+              return response.text().then(text => {
+                let data = null;
+                try {
+                  data = JSON.parse(text);
+                } catch (e) {
+                  const snippet = (text || '').trim().slice(0, 220);
+                  throw new Error('HTTP ' + response.status + ' from ingestion endpoint. ' + (snippet || 'Non-JSON response body.'));
+                }
+                return data;
+              });
             })
-            .then(response => response.json())
             .then(data => {
               document.getElementById("ingestion-status").style.display = "none";
               
@@ -362,16 +388,24 @@
               
               // Handle Drupal-based ingestion response (ontologies and INS - both have progress array)
               if (isDrupalIngestion) {
-                if (data.success) {
+                const progressList = Array.isArray(data.progress) ? data.progress : [];
+                const errorsList = Array.isArray(data.errors) ? data.errors : [];
+                const hasProgressIssues = progressList.some(function(step) {
+                  const txt = String(step || '');
+                  return txt.indexOf('✗') !== -1 || txt.indexOf('⚠') !== -1 || txt.indexOf('[ERROR]') !== -1;
+                });
+                const strictSuccess = data.success === true && errorsList.length === 0 && !hasProgressIssues;
+
+                if (strictSuccess) {
                   let progressHTML = '<div class="alert alert-success alert-dismissable fade show" role="alert">' +
                     '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
                     '<span aria-hidden="true">&times;</span></button>' +
                     '<h4>✓ Ingestion Completed Successfully</h4>' +
                     '<p>' + (data.message || "All ontologies ingested successfully.") + '</p>';
                   
-                  if (data.progress && data.progress.length > 0) {
+                  if (progressList.length > 0) {
                     progressHTML += '<div class="mt-3"><strong>Ingestion Progress:</strong><ul class="list-unstyled mt-2">';
-                    data.progress.forEach(function(step) {
+                    progressList.forEach(function(step) {
                       progressHTML += '<li>' + step + '</li>';
                     });
                     progressHTML += '</ul></div>';
@@ -393,17 +427,17 @@
                     '<h4>✗ Ingestion Failed</h4>' +
                     '<p>' + (data.message || "An error occurred during ingestion.") + '</p>';
                   
-                  if (data.errors && data.errors.length > 0) {
+                  if (errorsList.length > 0) {
                     errorHTML += '<div class="mt-3"><strong>Errors:</strong><ul>';
-                    data.errors.forEach(function(error) {
+                    errorsList.forEach(function(error) {
                       errorHTML += '<li>' + error + '</li>';
                     });
                     errorHTML += '</ul></div>';
                   }
                   
-                  if (data.progress && data.progress.length > 0) {
+                  if (progressList.length > 0) {
                     errorHTML += '<div class="mt-3"><strong>Progress before error:</strong><ul class="list-unstyled mt-2">';
-                    data.progress.forEach(function(step) {
+                    progressList.forEach(function(step) {
                       errorHTML += '<li>' + step + '</li>';
                     });
                     errorHTML += '</ul></div>';
@@ -466,12 +500,15 @@
               
               const resultsDiv = document.getElementById("ingestion-results");
               resultsDiv.style.display = "block";
+              const message = error && error.name === 'AbortError'
+                ? 'Request timed out after 15 seconds. hascoapi is likely down or unreachable at localhost:9001.'
+                : ('Failed to connect to the ingestion service: ' + error.message);
               resultsDiv.innerHTML = 
                 '<div class="alert alert-danger alert-dismissable fade show" role="alert">' +
                 '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
                 '<span aria-hidden="true">&times;</span></button>' +
                 '<h4>✗ Error</h4>' +
-                '<p>Failed to connect to the ingestion service: ' + error.message + '</p>' +
+                '<p>' + message + '</p>' +
                 '</div>';
               
               // Add manual close handler for dynamically created alert

@@ -95,560 +95,185 @@ class IngestionKgrPeopleController extends ControllerBase {
   public function processPeopleIngestion(Request $request) {
     PmsrSetupTracker::markStageStarted('ingest_kgr_people', 'KGR people ingestion started');
 
-    // Increase execution time limit for long-running ingestion (5 minutes)
-    set_time_limit(300);
-    
+    @ini_set('max_execution_time', '30');
+    @set_time_limit(30);
+
     $progress = [];
     $errors = [];
-    
-    // SECURITY: Validate CSRF token to prevent programmatic calls
-    $requestData = json_decode($request->getContent(), true);
-    $provided_token = isset($requestData['token']) ? $requestData['token'] : null;
-    
-    // Validate CSRF token
-    if (!$provided_token || !\Drupal::csrfToken()->validate($provided_token, 'kgr_people_ingestion')) {
-      \Drupal::logger('pmsr')->error('KGR People ingestion blocked: Invalid or missing CSRF token');
-      PmsrSetupTracker::markStageResult('ingest_kgr_people', false, 'Security error: invalid or missing CSRF token.');
+    $successCount = 0;
+
+    $requestData = json_decode($request->getContent(), TRUE);
+    $providedToken = is_array($requestData) ? ($requestData['token'] ?? NULL) : NULL;
+    if (!$providedToken || !\Drupal::csrfToken()->validate($providedToken, 'kgr_people_ingestion')) {
+      PmsrSetupTracker::markStageResult('ingest_kgr_people', FALSE, 'Security error: invalid or missing CSRF token.');
       return new JsonResponse([
-        'success' => false,
-        'message' => '🔒 Security Error: This endpoint can only be called from the GUI interface.',
+        'success' => FALSE,
+        'message' => 'Security error: this endpoint can only be called from the GUI interface.',
         'errors' => ['Invalid or missing CSRF token. Please use the GUI to start ingestion.'],
       ]);
     }
-    
-    // Log start of ingestion
-    \Drupal::logger('pmsr')->info('KGR People ingestion started (CSRF token validated)');
-    
-    $progress[] = "Starting KGR People Ingestion Process...";
-    $progress[] = "";
-    
-    // Define KGR file to ingest
-    $kgrFile = 'KGR-PEOPLE.xlsx';
-    
-    $module_path = \Drupal::service('extension.list.module')->getPath('pmsr');
-    $mts_dir = DRUPAL_ROOT . '/' . $module_path . '/mts';
-    
-    $progress[] = "=== Ingesting People Data ===";
-    $progress[] = "";
-    
-    // Initialize counters
-    $kgr_success_count = 0;
-    $kgr_error_count = 0;
-    
-    $api = \Drupal::service('rep.api_connector');
-    
-    // Process the KGR file
-    $progress[] = "[Step 1/3] Processing $kgrFile...";
-    $progress[] = "";
-    
-    $filename = $kgrFile;
-    $kgr_label = str_replace('.xlsx', '', $filename);
-    $filePath = $mts_dir . '/' . $filename;
-    
-    if (!file_exists($filePath)) {
-      $errors[] = "File not found: $filename at $filePath";
-      $progress[] = "  ✗ File not found: $filePath";
-      $kgr_error_count++;
 
-      PmsrSetupTracker::markStageResult('ingest_kgr_people', false, 'Required KGR people file not found: ' . $filename);
-      
+    $modulePath = \Drupal::service('extension.list.module')->getPath('pmsr');
+    $mtsDir = DRUPAL_ROOT . '/' . $modulePath . '/mts';
+    $api = \Drupal::service('rep.api_connector');
+
+    $apiUrl = (string) $api->getApiUrl();
+    if (!$this->isLocalHascoApiAt9001($apiUrl)) {
+      $message = 'Hard stop: hascoapi must be configured at localhost:9001. Current api_url=' . $apiUrl;
+      PmsrSetupTracker::markStageResult('ingest_kgr_people', FALSE, $message);
       return new JsonResponse([
-        'success' => false,
-        'message' => 'Required KGR file not found',
+        'success' => FALSE,
+        'message' => $message,
+        'errors' => [$message],
+        'progress' => ['Aborted before ingestion: hascoapi is not configured at localhost:9001.'],
+      ]);
+    }
+
+    $probe = $this->probeHascoApiFast($apiUrl);
+    if (!$probe['ok']) {
+      $message = 'Hard stop: hascoapi at localhost:9001 is unreachable. ' . $probe['message'];
+      PmsrSetupTracker::markStageResult('ingest_kgr_people', FALSE, $message);
+      return new JsonResponse([
+        'success' => FALSE,
+        'message' => $message,
+        'errors' => [$message],
+        'progress' => ['Aborted before ingestion: hascoapi did not respond quickly at localhost:9001.'],
+      ]);
+    }
+
+    $templates = [
+      ['concept' => 'kgr', 'filename' => 'KGR-PEOPLE.xlsx', 'typeUri' => 'http://hadatac.org/ont/hasco/KGR', 'label' => 'KGR-PEOPLE'],
+      ['concept' => 'dp2', 'filename' => 'DP2-PMSR-V3.xlsx', 'typeUri' => 'http://hadatac.org/ont/hasco/DP2', 'label' => 'DP2-PMSR-V3'],
+      ['concept' => 'dp2', 'filename' => 'DP2-PIAGET-V3.xlsx', 'typeUri' => 'http://hadatac.org/ont/hasco/DP2', 'label' => 'DP2-PIAGET-V3'],
+    ];
+
+    $failNow = function (string $message, string $progressLine = '') use (&$progress, &$errors, $templates, $successCount) {
+      if ($progressLine !== '') {
+        $progress[] = $progressLine;
+      }
+      $errors[] = $message;
+      PmsrSetupTracker::markStageResult('ingest_kgr_people', FALSE, $message);
+      return new JsonResponse([
+        'success' => FALSE,
+        'message' => $message,
         'progress' => $progress,
         'errors' => $errors,
+        'stats' => [
+          'submitted' => $successCount,
+          'failed' => count($errors),
+          'total' => count($templates),
+        ],
       ]);
-    }
-    
-    $filesize = filesize($filePath);
-    $progress[] = "  ✓ Found $filename (" . round($filesize / 1024, 2) . " KB)";
-    
-    try {
-      // STEP 0: Delete existing DataFile and KGR entity if they exist
-      $progress[] = "";
-      $progress[] = "[Step 2/3] Checking for existing $kgr_label...";
-      
+    };
+
+    $progress[] = 'Starting KGR/DP2 ingestion sequence.';
+
+    foreach ($templates as $idx => $tpl) {
+      $concept = (string) $tpl['concept'];
+      $filename = (string) $tpl['filename'];
+      $typeUri = (string) $tpl['typeUri'];
+      $label = (string) $tpl['label'];
+      $filePath = $mtsDir . '/' . $filename;
+      $step = $idx + 1;
+
+      $progress[] = '[Step ' . $step . '/3] Processing ' . $filename;
+
+      if (!file_exists($filePath)) {
+        return $failNow('File not found: ' . $filename . ' at ' . $filePath, '  - ERROR: file not found');
+      }
+
       try {
-        // Search for existing KGR with matching label (filename without extension)
-        // Use listByKeyword to find KGRs matching this filename
-        $existing_kgr_response = $api->listByKeyword('kgr', $kgr_label, 100, 0);
-        $existing_kgr_data = json_decode($existing_kgr_response);
-        
-        if ($existing_kgr_data && isset($existing_kgr_data->body) && is_array($existing_kgr_data->body) && count($existing_kgr_data->body) > 0) {
-          foreach ($existing_kgr_data->body as $existing_kgr) {
-            // Check if label matches exactly to avoid false positives
-            if (isset($existing_kgr->uri) && isset($existing_kgr->label) && $existing_kgr->label === $kgr_label) {
-              $progress[] = "  → Found existing KGR: " . $existing_kgr->uri;
-              \Drupal::logger('pmsr')->info("KGR: Found existing KGR to delete: " . $existing_kgr->uri);
-              
-              // Get the DataFile URI
-              $existing_datafile_uri = isset($existing_kgr->hasDataFileUri) ? $existing_kgr->hasDataFileUri : null;
-              
-              // Delete the associated DataFile FIRST (this should delete the named graph with all RDF data)
-              if ($existing_datafile_uri) {
-                $progress[] = "  → Deleting DataFile and its RDF data: " . $existing_datafile_uri;
-                $delete_df_result = $api->datafileDel($existing_datafile_uri);
-                $delete_df_response = json_decode($delete_df_result);
-                if ($delete_df_response && isset($delete_df_response->isSuccessful) && $delete_df_response->isSuccessful) {
-                  $progress[] = "    ✓ Deleted DataFile and all ingested RDF triples";
-                  \Drupal::logger('pmsr')->info("KGR: Deleted DataFile and RDF data: " . $existing_datafile_uri);
-                } else {
-                  $error_msg = isset($delete_df_response->message) ? $delete_df_response->message : 'DataFile may already be deleted or named graph no longer exists';
-                  $progress[] = "    ⚠ Could not delete DataFile: " . $error_msg . " (non-critical - will proceed with ingestion)";
-                  \Drupal::logger('pmsr')->info("KGR: DataFile delete skipped: " . $error_msg . " for URI: " . $existing_datafile_uri);
-                }
-              }
-              
-              // Then delete the KGR entity metadata
-              $delete_kgr_result = $api->elementDel('kgr', $existing_kgr->uri);
-              $delete_kgr_response = json_decode($delete_kgr_result);
-              if ($delete_kgr_response && isset($delete_kgr_response->isSuccessful) && $delete_kgr_response->isSuccessful) {
-                $progress[] = "    ✓ Deleted KGR metadata entity";
-                \Drupal::logger('pmsr')->info("KGR: Deleted KGR entity: " . $existing_kgr->uri);
-              } else {
-                $error_msg = isset($delete_kgr_response->message) ? $delete_kgr_response->message : 'Unknown error';
-                $progress[] = "    ⚠ Could not delete KGR entity: " . $error_msg;
-              }
-            }
-          }
-        } else {
-          $progress[] = "  ✓ No existing KGR found (fresh ingestion)";
-        }
-      } catch (\Exception $e) {
-        $progress[] = "  ⚠ Error checking for existing KGR: " . $e->getMessage();
-        \Drupal::logger('pmsr')->warning("KGR: Error checking for existing KGR: " . $e->getMessage());
-        // Continue with ingestion even if deletion check fails
-      }
-      
-      // Create temporary location for file
-      $progress[] = "";
-      $progress[] = "[Step 3/3] Uploading and ingesting $filename...";
-      
-      $destination = 'public://kgr/' . $filename;
-      $directory = dirname($destination);
-      \Drupal::service('file_system')->prepareDirectory($directory, \Drupal\Core\File\FileSystemInterface::CREATE_DIRECTORY);
-      
-      $file_content = file_get_contents($filePath);
-      file_put_contents(\Drupal::service('file_system')->realpath($destination), $file_content);
-      
-      // Create Drupal managed file with correct filename
-      $file_entity = \Drupal\file\Entity\File::create([
-        'uri' => $destination,
-        'status' => 1,
-        'filename' => $filename,
-      ]);
-      $file_entity->setPermanent();
-      $file_entity->save();
-      \Drupal::logger('pmsr')->info("KGR: Created Drupal file entity for $filename (ID: " . $file_entity->id() . ")");
-      
-      // Generate URIs for DataFile and KGR
-      $newDataFileUri = \Drupal\rep\Utils::uriGen('datafile');
-      $newKGRUri = str_replace("DFL", \Drupal\rep\Utils::elementPrefix('kgr'), $newDataFileUri);
-      \Drupal::logger('pmsr')->info("KGR: Generated URIs - DFL: $newDataFileUri, KGR: $newKGRUri");
-      
-      $useremail = \Drupal::currentUser()->getEmail();
-      
-      // Create DataFile
-      $datafileJSON = json_encode([
-        "uri" => $newDataFileUri,
-        "typeUri" => \Drupal\rep\Vocabulary\HASCO::DATAFILE,
-        "hascoTypeUri" => \Drupal\rep\Vocabulary\HASCO::DATAFILE,
-        "label" => $kgr_label,
-        "filename" => $filename,
-        "fileStatus" => \Drupal\rep\Constant::FILE_STATUS_UNPROCESSED,
-        // Persist the Drupal file entity id in KG DataFile.id.
-        "id" => $file_entity->id(),
-        "hasSIRManagerEmail" => $useremail,
-      ]);
-      
-      $msg1 = $api->parseObjectResponse($api->datafileAdd($datafileJSON), 'datafileAdd');
-      if ($msg1 == NULL) {
-        $errors[] = "Failed to create DataFile for $filename";
-        $progress[] = "  ✗ DataFile creation failed";
-        \Drupal::logger('pmsr')->error("KGR: DataFile creation failed for $filename");
-        $kgr_error_count++;
-      } else {
-        \Drupal::logger('pmsr')->info("KGR: DataFile created successfully for $filename");
-        
-        // Create KGR entity
-        $kgrJSON = json_encode([
-          "uri" => $newKGRUri,
-          "typeUri" => "http://hadatac.org/ont/hasco/KGR",
-          "hascoTypeUri" => "http://hadatac.org/ont/hasco/KGR",
-          "label" => $kgr_label,
-          "hasDataFileUri" => $newDataFileUri,
-          "hasSIRManagerEmail" => $useremail,
+        $destination = 'public://' . $concept . '/' . $filename;
+        $directory = dirname($destination);
+        \Drupal::service('file_system')->prepareDirectory($directory, \Drupal\Core\File\FileSystemInterface::CREATE_DIRECTORY);
+
+        $fileContent = file_get_contents($filePath);
+        file_put_contents(\Drupal::service('file_system')->realpath($destination), $fileContent);
+
+        $fileEntity = \Drupal\file\Entity\File::create([
+          'uri' => $destination,
+          'status' => 1,
+          'filename' => $filename,
         ]);
-        
-        $msg2 = $api->parseObjectResponse($api->elementAdd('kgr', $kgrJSON), 'elementAdd');
+        $fileEntity->setPermanent();
+        $fileEntity->save();
+
+        $newDataFileUri = \Drupal\rep\Utils::uriGen('datafile');
+        if (!is_string($newDataFileUri) || trim($newDataFileUri) === '') {
+          return $failNow('Failed to generate DataFile URI for ' . $filename, '  - ERROR: uri generation failed');
+        }
+        $newDataFileUri = trim($newDataFileUri);
+        $newTemplateUri = str_replace('DFL', \Drupal\rep\Utils::elementPrefix($concept), $newDataFileUri);
+        $useremail = (string) \Drupal::currentUser()->getEmail();
+
+        $datafileJSON = json_encode([
+          'uri' => $newDataFileUri,
+          'typeUri' => \Drupal\rep\Vocabulary\HASCO::DATAFILE,
+          'hascoTypeUri' => \Drupal\rep\Vocabulary\HASCO::DATAFILE,
+          'label' => $label,
+          'filename' => $filename,
+          'fileStatus' => \Drupal\rep\Constant::FILE_STATUS_UNPROCESSED,
+          'id' => $fileEntity->id(),
+          'hasSIRManagerEmail' => $useremail,
+        ]);
+
+        $msg1 = $api->parseObjectResponse($api->datafileAdd($datafileJSON), 'datafileAdd');
+        if ($msg1 == NULL) {
+          $detail = trim((string) $api->getErrorMessage());
+          return $failNow('Failed to create DataFile for ' . $filename . ($detail !== '' ? ': ' . $detail : ''), '  - ERROR: DataFile creation failed');
+        }
+
+        $elementJSON = json_encode([
+          'uri' => $newTemplateUri,
+          'typeUri' => $typeUri,
+          'hascoTypeUri' => $typeUri,
+          'label' => $label,
+          'hasDataFileUri' => $newDataFileUri,
+          'hasSIRManagerEmail' => $useremail,
+        ]);
+
+        $msg2 = $api->parseObjectResponse($api->elementAdd($concept, $elementJSON), 'elementAdd');
         if ($msg2 == NULL) {
-          $errors[] = "Failed to create KGR entity for $filename";
-          $progress[] = "  ✗ KGR entity creation failed";
-          \Drupal::logger('pmsr')->error("KGR: KGR entity creation failed for $filename");
-          $kgr_error_count++;
-        } else {
-          \Drupal::logger('pmsr')->info("KGR: KGR entity created successfully for $filename");
-          
-          // Upload file content
-          $upload_result = $api->uploadFile($newKGRUri, $file_entity->id());
-          if ($upload_result === false || $upload_result === NULL) {
-            $errors[] = "Failed to upload file content for $filename";
-            $progress[] = "  ✗ File upload failed";
-            \Drupal::logger('pmsr')->error("KGR: File upload failed for $filename");
-            $kgr_error_count++;
-          } else {
-            \Drupal::logger('pmsr')->info("KGR: File uploaded successfully for $filename");
-            
-            // Trigger ingestion
-            $template = new \stdClass();
-            $template->uri = $newKGRUri;
-            $template->hasDataFileUri = $newDataFileUri;
-            $template->hasDataFile = new \stdClass();
-            $template->hasDataFile->id = $file_entity->id();
-            $template->hasDataFile->filename = $filename;
-            
-            $ingest_result = $api->uploadTemplate('kgr', $template, '_');
-            
-            if ($ingest_result === NULL || $ingest_result === FALSE || $ingest_result === '') {
-              $errors[] = "Ingestion failed for $filename: No response from API";
-              $progress[] = "  ✗ Ingestion trigger failed: No response";
-              $kgr_error_count++;
-            } else {
-              $template_data = json_decode($ingest_result);
-              
-              if (!$template_data) {
-                $errors[] = "Ingestion failed for $filename: Invalid JSON response";
-                $progress[] = "  ✗ Ingestion trigger failed: Invalid response";
-                $progress[] = "    → Raw response: " . substr($ingest_result, 0, 200);
-                $kgr_error_count++;
-              } else if (!isset($template_data->isSuccessful) || !$template_data->isSuccessful) {
-                $error_msg = isset($template_data->message) ? $template_data->message : 'No error message provided';
-                $errors[] = "Ingestion failed for $filename: $error_msg";
-                $progress[] = "  ✗ Ingestion trigger failed: $error_msg";
-                \Drupal::logger('pmsr')->error("KGR: Ingestion trigger failed for $filename: $error_msg");
-                if (isset($template_data->body)) {
-                  $body_preview = substr(json_encode($template_data->body), 0, 200);
-                  $progress[] = "    → Response body: " . $body_preview;
-                  \Drupal::logger('pmsr')->error("KGR: Response body: $body_preview");
-                }
-                $kgr_error_count++;
-              } else {
-                $progress[] = "  ✓ $filename ingested successfully";
-                $progress[] = "    → Persons, memberships, and emails loaded into knowledge graph";
-                \Drupal::logger('pmsr')->info("KGR: Successfully ingested $filename");
-                
-                // Retrieve ingestion log to show verification results
-                $dataFile = $api->parseObjectResponse($api->getUri($newDataFileUri), 'getUri');
-                if ($dataFile && isset($dataFile->log)) {
-                  // Parse log to find verification messages
-                  $log_lines = explode('<br>', $dataFile->log);
-                  foreach ($log_lines as $log_line) {
-                    // Look for PersonGenerator verification messages
-                    if (strpos($log_line, '[PersonGenerator] Ingestion verification:') !== false ||
-                        strpos($log_line, '[SUCCESS] PersonGenerator:') !== false ||
-                        strpos($log_line, '[WARNING] PersonGenerator:') !== false ||
-                        strpos($log_line, '[INFO] PersonGenerator:') !== false) {
-                      // Remove timestamp prefix (format: YYYY-MM-DD HH:MM:SS)
-                      $cleaned_line = preg_replace('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} \[LOG\] /', '', $log_line);
-                      $progress[] = "    → " . trim($cleaned_line);
-                    }
-                  }
-                }
-                
-                $kgr_success_count++;
-              }
-            }
-          }
+          $detail = trim((string) $api->getErrorMessage());
+          return $failNow('Failed to create ' . strtoupper($concept) . ' entity for ' . $filename . ($detail !== '' ? ': ' . $detail : ''), '  - ERROR: metadata entity creation failed');
         }
+
+        $uploadResult = $api->uploadFile($newTemplateUri, $fileEntity->id());
+        if ($uploadResult === FALSE || $uploadResult === NULL) {
+          $detail = trim((string) $api->getErrorMessage());
+          return $failNow('Failed to upload file content for ' . $filename . ($detail !== '' ? ': ' . $detail : ''), '  - ERROR: file upload failed');
+        }
+
+        $template = new \stdClass();
+        $template->uri = $newTemplateUri;
+        $template->hasDataFileUri = $newDataFileUri;
+        $template->hasDataFile = new \stdClass();
+        $template->hasDataFile->id = $fileEntity->id();
+        $template->hasDataFile->filename = $filename;
+
+        $ingestResult = $api->uploadTemplate($concept, $template, '_');
+        if ($ingestResult === NULL || $ingestResult === FALSE || $ingestResult === '') {
+          return $failNow('Ingestion failed for ' . $filename . ': no response from API.', '  - ERROR: ingestion trigger returned no response');
+        }
+
+        $ingestObj = json_decode($ingestResult);
+        if (!is_object($ingestObj)) {
+          return $failNow('Ingestion failed for ' . $filename . ': invalid JSON response.', '  - ERROR: ingestion trigger returned invalid JSON');
+        }
+
+        if (!isset($ingestObj->isSuccessful) || !$ingestObj->isSuccessful) {
+          $msg = isset($ingestObj->message) ? (string) $ingestObj->message : 'unknown API error';
+          return $failNow('Ingestion failed for ' . $filename . ': ' . $msg, '  - ERROR: ingestion trigger failed');
+        }
+
+        $successCount++;
+        $progress[] = '  - OK: submitted to hascoapi';
       }
-      
-      // Keep local Drupal file entities for MT data files so FileId stays available.
-      
-    } catch (\Exception $e) {
-      $error_detail = $e->getMessage() . " (File: " . $e->getFile() . " Line: " . $e->getLine() . ")";
-      $errors[] = "Exception processing $filename: " . $error_detail;
-      $progress[] = "  ✗ Exception: " . $e->getMessage();
-      $progress[] = "    → Details: " . $e->getFile() . " line " . $e->getLine();
-      \Drupal::logger('pmsr')->error("KGR: Exception processing $filename: $error_detail");
-      \Drupal::logger('pmsr')->error("KGR: Stack trace: " . $e->getTraceAsString());
-      $kgr_error_count++;
-    }
-    
-    // ========================================================================
-    // PART 2: DP2 FILES INGESTION (after KGR-PEOPLE.xlsx)
-    // ========================================================================
-    
-    $progress[] = "";
-    $progress[] = "=== Ingesting DP2 Data ===";
-    $progress[] = "";
-
-    $dp2Files = self::DP2_FILES;
-    $dp2_success_count = 0;
-    $dp2_error_count = 0;
-    
-    // Only proceed with DP2 if KGR succeeded
-    if ($kgr_success_count > 0) {
-      foreach ($dp2Files as $dp2File) {
-        $progress[] = "[Step 1/3] Processing $dp2File...";
-        $progress[] = "";
-
-        $filename = $dp2File;
-        $dp2_label = str_replace('.xlsx', '', $filename);
-        $filePath = $mts_dir . '/' . $filename;
-
-        if (!file_exists($filePath)) {
-          $errors[] = "File not found: $filename at $filePath";
-          $progress[] = "  ✗ File not found: $filePath";
-          $dp2_error_count++;
-          continue;
-        }
-
-        $filesize = filesize($filePath);
-        $progress[] = "  ✓ Found $filename (" . round($filesize / 1024, 2) . " KB)";
-
-        // Step 1.5: Fail fast on local DP2 preflight validation errors.
-        $progress[] = "";
-        $progress[] = "[Step 1.5/3] Running DP2 preflight verification for $filename...";
-        $preflight = $this->runDp2Preflight($filePath, $mts_dir, $dp2_label);
-        foreach ($preflight['progress'] as $line) {
-          $progress[] = "  " . $line;
-        }
-        if (!$preflight['success']) {
-          $errors[] = "DP2 preflight failed for $filename: " . $preflight['message'];
-          \Drupal::logger('pmsr')->error("DP2 preflight failed for $filename: " . $preflight['message']);
-          $dp2_error_count++;
-          $progress[] = "";
-          continue;
-        }
-
-        try {
-          // STEP 0: Delete existing DataFile and DP2 entity if they exist
-          $progress[] = "";
-          $progress[] = "[Step 2/3] Checking for existing $dp2_label...";
-
-          try {
-            $existing_dp2_response = $api->listByKeyword('dp2', $dp2_label, 100, 0);
-            $existing_dp2_data = json_decode($existing_dp2_response);
-
-            $existing_candidates = [];
-            if ($existing_dp2_data && isset($existing_dp2_data->body) && is_array($existing_dp2_data->body)) {
-              foreach ($existing_dp2_data->body as $cand) {
-                if (is_object($cand) && !empty($cand->uri)) {
-                  $existing_candidates[(string) $cand->uri] = $cand;
-                }
-              }
-            }
-
-            if (!empty($existing_candidates)) {
-              foreach ($existing_candidates as $existing_dp2) {
-                $existing_label = isset($existing_dp2->label) ? (string) $existing_dp2->label : '';
-                $same_exact_label = ($existing_label === $dp2_label);
-                if (isset($existing_dp2->uri) && $same_exact_label) {
-                  $progress[] = "  → Found existing DP2: " . $existing_dp2->uri;
-                  \Drupal::logger('pmsr')->info("DP2: Found existing DP2 to delete: " . $existing_dp2->uri);
-
-                  // Get the DataFile URI
-                  $existing_datafile_uri = isset($existing_dp2->hasDataFileUri) ? $existing_dp2->hasDataFileUri : null;
-
-                  // Delete the associated DataFile FIRST
-                  if ($existing_datafile_uri) {
-                    $progress[] = "  → Deleting DataFile and its RDF data: " . $existing_datafile_uri;
-                    $delete_df_result = $api->datafileDel($existing_datafile_uri);
-                    $delete_df_response = json_decode($delete_df_result);
-                    if ($delete_df_response && isset($delete_df_response->isSuccessful) && $delete_df_response->isSuccessful) {
-                      $progress[] = "    ✓ Deleted DataFile and all ingested RDF triples";
-                      \Drupal::logger('pmsr')->info("DP2: Deleted DataFile and RDF data: " . $existing_datafile_uri);
-                    } else {
-                      $error_msg = isset($delete_df_response->message) ? $delete_df_response->message : 'DataFile may already be deleted or named graph no longer exists';
-                      $progress[] = "    ✗ Could not delete DataFile: " . $error_msg;
-                      \Drupal::logger('pmsr')->error("DP2: DataFile delete failed: " . $error_msg . " for URI: " . $existing_datafile_uri);
-                      throw new \RuntimeException("Cannot safely re-ingest " . $dp2_label . ": previous DataFile graph deletion failed for " . $existing_datafile_uri . " (" . $error_msg . ")");
-                    }
-                  }
-
-                  // Then delete the DP2 entity metadata
-                  $delete_dp2_result = $api->elementDel('dp2', $existing_dp2->uri);
-                  $delete_dp2_response = json_decode($delete_dp2_result);
-                  if ($delete_dp2_response && isset($delete_dp2_response->isSuccessful) && $delete_dp2_response->isSuccessful) {
-                    $progress[] = "    ✓ Deleted DP2 metadata entity";
-                    \Drupal::logger('pmsr')->info("DP2: Deleted DP2 entity: " . $existing_dp2->uri);
-                  } else {
-                    $error_msg = isset($delete_dp2_response->message) ? $delete_dp2_response->message : 'Unknown error';
-                    $progress[] = "    ⚠ Could not delete DP2 entity: " . $error_msg;
-                  }
-                }
-              }
-            } else {
-              $progress[] = "  ✓ No existing DP2 found (fresh ingestion)";
-            }
-          } catch (\Exception $e) {
-            $progress[] = "  ⚠ Error checking for existing DP2: " . $e->getMessage();
-            \Drupal::logger('pmsr')->warning("DP2: Error checking for existing DP2: " . $e->getMessage());
-          }
-
-          // Create temporary location for file
-          $progress[] = "";
-          $progress[] = "[Step 3/3] Uploading and ingesting $filename...";
-
-          $destination = 'public://dp2/' . $filename;
-          $directory = dirname($destination);
-          \Drupal::service('file_system')->prepareDirectory($directory, \Drupal\Core\File\FileSystemInterface::CREATE_DIRECTORY);
-
-          $file_content = file_get_contents($filePath);
-          file_put_contents(\Drupal::service('file_system')->realpath($destination), $file_content);
-
-          // Create Drupal managed file
-          $file_entity = \Drupal\file\Entity\File::create([
-            'uri' => $destination,
-            'status' => 1,
-            'filename' => $filename,
-          ]);
-          $file_entity->setPermanent();
-          $file_entity->save();
-          \Drupal::logger('pmsr')->info("DP2: Created Drupal file entity for $filename (ID: " . $file_entity->id() . ")");
-
-          // Generate URIs for DataFile and DP2
-          $newDataFileUri = \Drupal\rep\Utils::uriGen('datafile');
-          $newDP2Uri = str_replace("DFL", \Drupal\rep\Utils::elementPrefix('dp2'), $newDataFileUri);
-          \Drupal::logger('pmsr')->info("DP2: Generated URIs - DFL: $newDataFileUri, DP2: $newDP2Uri");
-
-          $useremail = \Drupal::currentUser()->getEmail();
-
-          // Create DataFile
-          $datafileJSON = json_encode([
-            "uri" => $newDataFileUri,
-            "typeUri" => \Drupal\rep\Vocabulary\HASCO::DATAFILE,
-            "hascoTypeUri" => \Drupal\rep\Vocabulary\HASCO::DATAFILE,
-            "label" => $dp2_label,
-            "filename" => $filename,
-            "fileStatus" => \Drupal\rep\Constant::FILE_STATUS_UNPROCESSED,
-            // Persist the Drupal file entity id in KG DataFile.id.
-            "id" => $file_entity->id(),
-            "hasSIRManagerEmail" => $useremail,
-          ]);
-
-          $msg1 = $api->parseObjectResponse($api->datafileAdd($datafileJSON), 'datafileAdd');
-          if ($msg1 == NULL) {
-            $errors[] = "Failed to create DataFile for $filename";
-            $progress[] = "  ✗ DataFile creation failed";
-            \Drupal::logger('pmsr')->error("DP2: DataFile creation failed for $filename");
-            $dp2_error_count++;
-          } else {
-            \Drupal::logger('pmsr')->info("DP2: DataFile created successfully for $filename");
-
-            // Create DP2 entity
-            $dp2JSON = json_encode([
-              "uri" => $newDP2Uri,
-              "typeUri" => "http://hadatac.org/ont/hasco/DP2",
-              "hascoTypeUri" => "http://hadatac.org/ont/hasco/DP2",
-              "label" => $dp2_label,
-              "hasDataFileUri" => $newDataFileUri,
-              "hasSIRManagerEmail" => $useremail,
-            ]);
-
-            $msg2 = $api->parseObjectResponse($api->elementAdd('dp2', $dp2JSON), 'elementAdd');
-            if ($msg2 == NULL) {
-              $errors[] = "Failed to create DP2 entity for $filename";
-              $progress[] = "  ✗ DP2 entity creation failed";
-              \Drupal::logger('pmsr')->error("DP2: DP2 entity creation failed for $filename");
-              $dp2_error_count++;
-            } else {
-              \Drupal::logger('pmsr')->info("DP2: DP2 entity created successfully for $filename");
-
-              // Upload file content
-              $upload_result = $api->uploadFile($newDP2Uri, $file_entity->id());
-              if ($upload_result === false || $upload_result === NULL) {
-                $errors[] = "Failed to upload file content for $filename";
-                $progress[] = "  ✗ File upload failed";
-                \Drupal::logger('pmsr')->error("DP2: File upload failed for $filename");
-                $dp2_error_count++;
-              } else {
-                \Drupal::logger('pmsr')->info("DP2: File uploaded successfully for $filename");
-
-                // Trigger ingestion using 'dp2' type
-                $template = new \stdClass();
-                $template->uri = $newDP2Uri;
-                $template->hasDataFileUri = $newDataFileUri;
-                $template->hasDataFile = new \stdClass();
-                $template->hasDataFile->id = $file_entity->id();
-                $template->hasDataFile->filename = $filename;
-
-                $ingest_result = $api->uploadTemplate('dp2', $template, '_');
-
-                if ($ingest_result === NULL || $ingest_result === FALSE || $ingest_result === '') {
-                  $errors[] = "Ingestion failed for $filename: No response from API";
-                  $progress[] = "  ✗ Ingestion trigger failed: No response";
-                  $dp2_error_count++;
-                } else {
-                  $template_data = json_decode($ingest_result);
-
-                  if (!$template_data) {
-                    $errors[] = "Ingestion failed for $filename: Invalid JSON response";
-                    $progress[] = "  ✗ Ingestion trigger failed: Invalid response";
-                    $progress[] = "    → Raw response: " . substr($ingest_result, 0, 200);
-                    $dp2_error_count++;
-                  } else if (!isset($template_data->isSuccessful) || !$template_data->isSuccessful) {
-                    $error_msg = isset($template_data->message) ? $template_data->message : 'No error message provided';
-                    $errors[] = "Ingestion failed for $filename: $error_msg";
-                    $progress[] = "  ✗ Ingestion trigger failed: $error_msg";
-                    \Drupal::logger('pmsr')->error("DP2: Ingestion trigger failed for $filename: $error_msg");
-                    if (isset($template_data->body)) {
-                      $body_preview = substr(json_encode($template_data->body), 0, 200);
-                      $progress[] = "    → Response body: " . $body_preview;
-                      \Drupal::logger('pmsr')->error("DP2: Response body: $body_preview");
-                    }
-                    $dp2_error_count++;
-                  } else {
-                    $progress[] = "  ✓ $filename ingested successfully";
-                    $progress[] = "    → Instrument instances, platforms, deployments, and component deployments loaded";
-                    \Drupal::logger('pmsr')->info("DP2: Successfully ingested $filename");
-                    $dp2_success_count++;
-                  }
-                }
-              }
-            }
-          }
-
-          // Keep local Drupal file entities for MT data files so FileId stays available.
-
-        } catch (\Exception $e) {
-          $error_detail = $e->getMessage() . " (File: " . $e->getFile() . " Line: " . $e->getLine() . ")";
-          $errors[] = "Exception processing $filename: " . $error_detail;
-          $progress[] = "  ✗ Exception: " . $e->getMessage();
-          $progress[] = "    → Details: " . $e->getFile() . " line " . $e->getLine();
-          \Drupal::logger('pmsr')->error("DP2: Exception processing $filename: $error_detail");
-          \Drupal::logger('pmsr')->error("DP2: Stack trace: " . $e->getTraceAsString());
-          $dp2_error_count++;
-        }
-
-        $progress[] = "";
+      catch (\Throwable $e) {
+        return $failNow('Exception processing ' . $filename . ': ' . $e->getMessage(), '  - ERROR: exception during processing');
       }
-    } else {
-      $progress[] = "⚠ Skipping DP2 ingestion because KGR-PEOPLE.xlsx failed";
     }
-    
-    $progress[] = "";
-    $progress[] = "=== People Ingestion Complete ===";
-    $progress[] = "";
-    
-    if ($kgr_success_count > 0) {
-      $progress[] = "✓ KGR-PEOPLE.xlsx ingested successfully";
-      $progress[] = "✓ Person profiles, organization memberships, and emails loaded";
-    }
-    
-    if ($dp2_success_count > 0) {
-      $progress[] = "✓ DP2 files ingested successfully";
-      $progress[] = "✓ Instrument instances, platforms, deployments, and component deployments loaded";
-    }
-    
-    if ($kgr_error_count > 0 || $dp2_error_count > 0) {
-      $progress[] = "⚠ Ingestion completed with some errors (see above)";
-    }
-    
-    // Final log
-    \Drupal::logger('pmsr')->info("People ingestion completed - KGR Success: $kgr_success_count, KGR Errors: $kgr_error_count, DP2 Success: $dp2_success_count, DP2 Errors: $dp2_error_count");
-    
-    // Invalidate cached people/project/member statistics and related lists.
+
     \Drupal\Core\Cache\Cache::invalidateTags([
       'kgr_people',
       'dp2_pmsr',
@@ -658,69 +283,24 @@ class IngestionKgrPeopleController extends ControllerBase {
       'pmsr_statistics:projects',
       'pmsr_statistics:organizations',
     ]);
-    \Drupal::logger('pmsr')->info("Cleared cached data tagged with kgr_people, dp2_pmsr, and statistics tags");
-    $progress[] = "✓ Cleared cached data to reflect new information";
-    
-    $total_errors = $kgr_error_count + $dp2_error_count;
-    $success = $total_errors == 0;
-    $message = $success ? 'People and DP2 ingestion completed successfully' : 'Ingestion completed with some errors';
+    $progress[] = 'Cache invalidation completed.';
 
-    $progress[] = '[final] Running statistics minimum baseline check...';
-    PmsrSetupTracker::recordTestResult('ingest_kgr_people', 'statistics-minimum-baseline', 'running', 'Executing test_statistics_baseline.sh verify');
-
-    try {
-      $modulePath = \Drupal::service('extension.list.module')->getPath('pmsr');
-      $testsDir = DRUPAL_ROOT . '/' . $modulePath . '/tests';
-      $baselineFile = $testsDir . '/baselines/kgr_people_statistics_minimum_baseline.json';
-      $drupalBase = \Drupal::request()->getSchemeAndHttpHost();
-
-      $process = new Process([
-        'bash',
-        './test_statistics_baseline.sh',
-        'verify',
-        $baselineFile,
-      ], $testsDir, [
-        'PMSR_TEST_DRUPAL_BASE' => $drupalBase,
-      ], NULL, 180);
-      $process->run();
-
-      $combinedOutput = trim($process->getOutput() . "\n" . $process->getErrorOutput());
-      $summary = $combinedOutput === '' ? 'No output from statistics baseline check.' : substr($combinedOutput, -500);
-
-      if ($process->isSuccessful()) {
-        PmsrSetupTracker::recordTestResult('ingest_kgr_people', 'statistics-minimum-baseline', 'pass', $summary);
-        $progress[] = '  ✓ Statistics minimum baseline check passed.';
-      }
-      else {
-        $exitCode = $process->getExitCode();
-        PmsrSetupTracker::recordTestResult('ingest_kgr_people', 'statistics-minimum-baseline', 'fail', 'Exit code ' . $exitCode . '. ' . $summary);
-        $progress[] = '  ✗ Statistics minimum baseline check failed (exit code ' . $exitCode . ').';
-        $errors[] = 'Statistics minimum baseline check failed after KGR people ingestion.';
-        $success = false;
-        $message = 'Ingestion completed, but statistics minimum baseline check failed';
-      }
-    }
-    catch (\Throwable $e) {
-      PmsrSetupTracker::recordTestResult('ingest_kgr_people', 'statistics-minimum-baseline', 'fail', 'Exception: ' . $e->getMessage());
-      $progress[] = '  ✗ Statistics minimum baseline check could not be executed.';
-      $errors[] = 'Statistics minimum baseline check execution error: ' . $e->getMessage();
-      $success = false;
-      $message = 'Ingestion completed, but statistics minimum baseline check could not be executed';
-    }
+    $success = empty($errors);
+    $message = $success
+      ? 'KGR and DP2 ingestion requests submitted successfully.'
+      : 'Ingestion completed with some errors.';
 
     PmsrSetupTracker::markStageResult('ingest_kgr_people', $success, $message);
-    
+
     return new JsonResponse([
       'success' => $success,
       'message' => $message,
       'progress' => $progress,
       'errors' => $errors,
       'stats' => [
-        'kgr_success' => $kgr_success_count,
-        'kgr_failed' => $kgr_error_count,
-        'dp2_success' => $dp2_success_count,
-        'dp2_failed' => $dp2_error_count,
-        'total_errors' => count($errors),
+        'submitted' => $successCount,
+        'failed' => count($errors),
+        'total' => count($templates),
       ],
     ]);
   }
@@ -997,6 +577,239 @@ class IngestionKgrPeopleController extends ControllerBase {
       'message' => 'DP2 preflight passed',
       'progress' => $progress,
     ];
+  }
+
+  /**
+   * Validate post-ingestion DataFile state to avoid false success reporting.
+   */
+  private function validateDataFileIngestionOutcome($api, string $dataFileUri): array {
+    if (trim($dataFileUri) === '') {
+      return [
+        'success' => FALSE,
+        'message' => 'Missing DataFile URI after ingestion trigger.',
+      ];
+    }
+
+    try {
+      // Keep verification bounded to avoid PHP request hard timeouts in environments
+      // that enforce max_execution_time=30 regardless of set_time_limit().
+      $maxAttempts = 5; // Up to ~5 seconds of polling between checks.
+      $sleepMicros = 1000000;
+      $lastStatus = 'UNKNOWN';
+      $lastErrorHint = '';
+
+      for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
+        $raw = $api->getUri($dataFileUri);
+        $dataFile = $api->parseObjectResponse($raw, 'getUri');
+
+        if (!is_object($dataFile)) {
+          $lastStatus = 'UNAVAILABLE';
+          if ($attempt < $maxAttempts) {
+            usleep($sleepMicros);
+            continue;
+          }
+
+          return [
+            'success' => FALSE,
+            'message' => 'Could not retrieve DataFile state from repository after waiting for ingestion completion.',
+          ];
+        }
+
+        $status = strtoupper(trim((string) ($dataFile->fileStatus ?? '')));
+        $log = (string) ($dataFile->log ?? '');
+        $logUpper = strtoupper($log);
+        $lastStatus = ($status === '' ? 'EMPTY' : $status);
+
+        if (strpos($logUpper, '[ERROR]') !== FALSE) {
+          return [
+            'success' => FALSE,
+            'message' => 'DataFile log contains ingestion errors.',
+          ];
+        }
+
+        if ($status === 'ERROR' || $status === 'FAILED') {
+          return [
+            'success' => FALSE,
+            'message' => 'DataFile status is ' . $status . '.',
+          ];
+        }
+
+        if ($status === 'PROCESSED' || $status === 'PROCESSED_STD') {
+          return [
+            'success' => TRUE,
+            'message' => 'DataFile ingestion status is ' . $status . '.',
+          ];
+        }
+
+        if ($status === '' || $status === 'UNPROCESSED' || $status === 'WORKING' || $status === 'WORKING_STD' || $status === 'PROCESSING' || $status === 'QUEUED') {
+          if ($attempt < $maxAttempts) {
+            usleep($sleepMicros);
+            continue;
+          }
+          $lastErrorHint = 'Timed out in quick verification window waiting for DataFile to reach PROCESSED state.';
+          break;
+        }
+
+        // Unknown status: keep waiting until timeout in case backend transitions.
+        if ($attempt < $maxAttempts) {
+          usleep($sleepMicros);
+          continue;
+        }
+      }
+
+      $message = 'DataFile status did not reach a completed successful state (last status: ' . $lastStatus . ').';
+      if ($lastErrorHint !== '') {
+        $message .= ' ' . $lastErrorHint;
+      }
+
+      return [
+        'success' => FALSE,
+        'message' => $message,
+      ];
+    }
+    catch (\Throwable $e) {
+      return [
+        'success' => FALSE,
+        'message' => 'Exception while validating DataFile outcome: ' . $e->getMessage(),
+      ];
+    }
+  }
+
+  /**
+   * Extract a concise API error detail from raw connector responses.
+   */
+  private function extractApiErrorDetail($rawResponse, string $fallback): string {
+    if ($rawResponse === NULL || $rawResponse === FALSE) {
+      return $fallback;
+    }
+
+    if (is_object($rawResponse) && !method_exists($rawResponse, '__toString')) {
+      $msg = '';
+      if (isset($rawResponse->message) && is_string($rawResponse->message) && trim($rawResponse->message) !== '') {
+        $msg = trim($rawResponse->message);
+      }
+      elseif (isset($rawResponse->body) && is_string($rawResponse->body) && trim($rawResponse->body) !== '') {
+        $msg = trim($rawResponse->body);
+      }
+      if ($msg !== '') {
+        return $msg;
+      }
+      $json = json_encode($rawResponse);
+      if (is_string($json) && trim($json) !== '') {
+        return substr($json, 0, 280);
+      }
+      return $fallback;
+    }
+
+    if (is_string($rawResponse)) {
+      $trimmed = trim($rawResponse);
+      if ($trimmed === '') {
+        return $fallback;
+      }
+
+      $decoded = json_decode($trimmed);
+      if (is_object($decoded)) {
+        if (isset($decoded->message) && is_string($decoded->message) && trim($decoded->message) !== '') {
+          return trim($decoded->message);
+        }
+        if (isset($decoded->body)) {
+          if (is_string($decoded->body) && trim($decoded->body) !== '') {
+            return trim($decoded->body);
+          }
+          $bodyJson = json_encode($decoded->body);
+          if (is_string($bodyJson) && trim($bodyJson) !== '') {
+            return substr($bodyJson, 0, 280);
+          }
+        }
+      }
+
+      return substr($trimmed, 0, 280);
+    }
+
+    return $fallback;
+  }
+
+  /**
+   * Quick readiness check for HASCOAPI before starting ingestion operations.
+   */
+  private function checkHascoApiReadiness($api): array {
+    try {
+      $repoRaw = $api->repoInfo();
+      $repoObj = $api->parseObjectResponse($repoRaw, 'repoInfo');
+
+      if ($repoObj !== NULL) {
+        return [
+          'ok' => TRUE,
+          'message' => 'HASCOAPI responded to repoInfo.',
+        ];
+      }
+
+      $detail = trim((string) $api->getErrorMessage());
+      if ($detail === '') {
+        $detail = 'HASCOAPI did not return a valid response to repoInfo.';
+      }
+
+      return [
+        'ok' => FALSE,
+        'message' => 'HASCOAPI readiness check failed: ' . $detail,
+      ];
+    }
+    catch (\Throwable $e) {
+      return [
+        'ok' => FALSE,
+        'message' => 'HASCOAPI readiness check exception: ' . $e->getMessage(),
+      ];
+    }
+  }
+
+  /**
+   * Require local hascoapi endpoint on port 9001.
+   */
+  private function isLocalHascoApiAt9001(string $apiUrl): bool {
+    $url = trim($apiUrl);
+    if ($url === '') {
+      return FALSE;
+    }
+
+    $parts = @parse_url($url);
+    if (!is_array($parts)) {
+      return FALSE;
+    }
+
+    $host = strtolower((string) ($parts['host'] ?? ''));
+    $port = (int) ($parts['port'] ?? 80);
+
+    if ($host !== 'localhost' && $host !== '127.0.0.1') {
+      return FALSE;
+    }
+
+    return $port === 9001;
+  }
+
+  /**
+   * Fast liveness probe to avoid long hangs when HASCOAPI is down.
+   */
+  private function probeHascoApiFast(string $apiUrl): array {
+    $pingUrl = rtrim($apiUrl, '/') . '/hascoapi/api/ping';
+
+    try {
+      $client = new \GuzzleHttp\Client([
+        'timeout' => 2,
+        'connect_timeout' => 1,
+        'http_errors' => FALSE,
+      ]);
+
+      $res = $client->get($pingUrl);
+      $status = (int) $res->getStatusCode();
+      if ($status >= 200 && $status < 500) {
+        return ['ok' => TRUE, 'message' => ''];
+      }
+
+      return ['ok' => FALSE, 'message' => 'Ping returned HTTP ' . $status . ' at ' . $pingUrl];
+    }
+    catch (\Throwable $e) {
+      return ['ok' => FALSE, 'message' => $e->getMessage() . ' (' . $pingUrl . ')'];
+    }
   }
 
   /**
