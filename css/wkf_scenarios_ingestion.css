@@ -1,0 +1,76 @@
+.wkf-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 12px;
+}
+
+.wkf-card {
+  border: 1px solid #d0d7de;
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: #f8fafc;
+}
+
+.wkf-card-title {
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+
+.wkf-card-status {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  border-radius: 999px;
+  padding: 2px 8px;
+  margin-bottom: 6px;
+  border: 1px solid transparent;
+}
+
+.wkf-card-detail {
+  font-size: 12px;
+}
+
+.wkf-card-pending {
+  border-color: #d0d7de;
+  background: #f6f8fa;
+}
+
+.wkf-card-pending .wkf-card-status {
+  color: #57606a;
+  border-color: #d0d7de;
+  background: #f6f8fa;
+}
+
+.wkf-card-working {
+  border-color: #1f6feb;
+  background: #f0f6ff;
+}
+
+.wkf-card-working .wkf-card-status {
+  color: #1f6feb;
+  border-color: #1f6feb;
+  background: #ddf4ff;
+}
+
+.wkf-card-processed {
+  border-color: #2da44e;
+  background: #dafbe1;
+}
+
+.wkf-card-processed .wkf-card-status {
+  color: #1a7f37;
+  border-color: #2da44e;
+  background: #dafbe1;
+}
+
+.wkf-card-warning {
+  border-color: #bf8700;
+  background: #fff8c5;
+}
+
+.wkf-card-warning .wkf-card-status {
+  color: #9a6700;
+  border-color: #bf8700;
+  background: #fff1b8;
+}

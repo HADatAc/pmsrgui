@@ -183,9 +183,24 @@ class IngestionKgrPeopleController extends ControllerBase {
       }
 
       try {
+        $cleanup = $this->cleanupExistingMetadataTemplatesForFile($api, $concept, $label, $filename, $progress);
+        if (!$cleanup['ok']) {
+          $detail = trim((string) ($cleanup['message'] ?? ''));
+          return $failNow('Failed to clean previous metadata template(s) for ' . $filename . ($detail !== '' ? ': ' . $detail : ''), '  - ERROR: rerun cleanup failed');
+        }
+
         $destination = 'public://' . $concept . '/' . $filename;
         $directory = dirname($destination);
         \Drupal::service('file_system')->prepareDirectory($directory, \Drupal\Core\File\FileSystemInterface::CREATE_DIRECTORY);
+
+        // Remove stale managed-file records for this exact destination URI.
+        $this->deleteManagedFileEntitiesByUri($destination);
+
+        // Ensure filesystem copy is a fresh write.
+        $destinationPath = \Drupal::service('file_system')->realpath($destination);
+        if (is_string($destinationPath) && $destinationPath !== '' && file_exists($destinationPath)) {
+          @unlink($destinationPath);
+        }
 
         $fileContent = file_get_contents($filePath);
         file_put_contents(\Drupal::service('file_system')->realpath($destination), $fileContent);
@@ -217,10 +232,13 @@ class IngestionKgrPeopleController extends ControllerBase {
           'hasSIRManagerEmail' => $useremail,
         ]);
 
-        $msg1 = $api->parseObjectResponse($api->datafileAdd($datafileJSON), 'datafileAdd');
-        if ($msg1 == NULL) {
-          $detail = trim((string) $api->getErrorMessage());
+        $dataFileCreate = $this->datafileAddWithTransientRetry($api, $datafileJSON, 3);
+        if (!$dataFileCreate['ok']) {
+          $detail = trim((string) ($dataFileCreate['detail'] ?? ''));
           return $failNow('Failed to create DataFile for ' . $filename . ($detail !== '' ? ': ' . $detail : ''), '  - ERROR: DataFile creation failed');
+        }
+        if ((int) ($dataFileCreate['attempts'] ?? 1) > 1) {
+          $progress[] = '  - Retry recovered DataFile creation after transient triplestore outage.';
         }
 
         $elementJSON = json_encode([
@@ -483,6 +501,186 @@ class IngestionKgrPeopleController extends ControllerBase {
   }
 
   /**
+   * Remove existing MTs for the same logical file before re-ingestion.
+   */
+  private function cleanupExistingMetadataTemplatesForFile($api, string $concept, string $label, string $filename, array &$progress): array {
+    try {
+      $response = $api->listByKeyword($concept, $label, 500, 0);
+      $decoded = json_decode((string) $response);
+
+      $matches = [];
+      if (is_object($decoded) && !empty($decoded->isSuccessful) && !empty($decoded->body) && is_array($decoded->body)) {
+        foreach ($decoded->body as $candidate) {
+          if (!is_object($candidate)) {
+            continue;
+          }
+
+          $uri = trim((string) ($candidate->uri ?? ''));
+          if ($uri === '') {
+            continue;
+          }
+
+          $candidateLabel = trim((string) ($candidate->label ?? ''));
+          $candidateFilename = '';
+          $candidateDataFileUri = trim((string) ($candidate->hasDataFileUri ?? ''));
+          if (isset($candidate->hasDataFile) && is_object($candidate->hasDataFile)) {
+            $candidateFilename = trim((string) ($candidate->hasDataFile->filename ?? ''));
+            if ($candidateDataFileUri === '') {
+              $candidateDataFileUri = trim((string) ($candidate->hasDataFile->uri ?? ''));
+            }
+          }
+
+          if ($candidateLabel === $label || $candidateFilename === $filename) {
+            $matches[$uri] = [
+              'uri' => $uri,
+              'dataFileUri' => $candidateDataFileUri,
+            ];
+          }
+        }
+      }
+
+      if (empty($matches)) {
+        $progress[] = '  - No previous ' . strtoupper($concept) . ' metadata template found for ' . $filename;
+        return ['ok' => TRUE, 'message' => ''];
+      }
+
+      $progress[] = '  - Found ' . count($matches) . ' previous metadata template(s) for ' . $filename . '; un-ingesting before re-run';
+      foreach ($matches as $entry) {
+        $uri = trim((string) ($entry['uri'] ?? ''));
+        $dataFileUri = trim((string) ($entry['dataFileUri'] ?? ''));
+        if ($uri === '') {
+          continue;
+        }
+
+        $delRaw = $api->uningestMT($uri);
+        $del = json_decode((string) $delRaw);
+        $isSuccessful = (is_object($del) && isset($del->isSuccessful) && $del->isSuccessful);
+        if (!$isSuccessful) {
+          $detail = $this->extractApiErrorDetail($delRaw, 'Unknown uningestMT failure');
+          if ($this->isBenignUningestFailure($detail)) {
+            $progress[] = '    - MT already absent/previously removed (continuing): ' . $uri;
+            continue;
+          }
+
+          if ($this->isMissingDataFileDuringUningestFailure($detail)) {
+            $forceDelete = $this->forceDeleteMetadataTemplate($api, $concept, $uri, $dataFileUri, $progress);
+            if ($forceDelete['ok']) {
+              continue;
+            }
+
+            $fallbackDetail = trim((string) ($forceDelete['message'] ?? ''));
+            if ($fallbackDetail !== '') {
+              $detail .= ' | Fallback delete failed: ' . $fallbackDetail;
+            }
+          }
+
+          return ['ok' => FALSE, 'message' => $detail];
+        }
+        $progress[] = '    - Un-ingested previous MT: ' . $uri;
+      }
+
+      return ['ok' => TRUE, 'message' => ''];
+    }
+    catch (\Throwable $e) {
+      return ['ok' => FALSE, 'message' => $e->getMessage()];
+    }
+  }
+
+  /**
+   * Classify benign un-ingest failures where the MT was already removed.
+   */
+  private function isBenignUningestFailure(string $detail): bool {
+    $d = strtolower(trim($detail));
+    if ($d === '') {
+      return FALSE;
+    }
+
+    return (
+      strpos($d, 'not found') !== FALSE
+      || strpos($d, 'does not exist') !== FALSE
+      || strpos($d, 'already deleted') !== FALSE
+      || strpos($d, 'already removed') !== FALSE
+      || strpos($d, 'no object') !== FALSE
+      || strpos($d, 'returned no object') !== FALSE
+    );
+  }
+
+  /**
+   * Detect uningest failures caused by broken/missing DataFile links.
+   */
+  private function isMissingDataFileDuringUningestFailure(string $detail): bool {
+    $d = strtolower(trim($detail));
+    if ($d === '') {
+      return FALSE;
+    }
+
+    return (
+      strpos($d, 'unable to retrieve') !== FALSE
+      && strpos($d, 'datafile') !== FALSE
+    );
+  }
+
+  /**
+   * Fallback cleanup when uningestMT cannot resolve linked DataFile.
+   */
+  private function forceDeleteMetadataTemplate($api, string $concept, string $mtUri, string $dataFileUri, array &$progress): array {
+    try {
+      if ($dataFileUri !== '') {
+        try {
+          $dfRaw = $api->datafileDel($dataFileUri);
+          $df = json_decode((string) $dfRaw);
+          if (is_object($df) && !empty($df->isSuccessful)) {
+            $progress[] = '    - Fallback: deleted orphan DataFile ' . $dataFileUri;
+          }
+        }
+        catch (\Throwable $ignored) {
+          // Continue with MT delete even if DataFile delete fails.
+        }
+      }
+
+      $elRaw = $api->elementDel($concept, $mtUri);
+      $el = json_decode((string) $elRaw);
+      if (is_object($el) && !empty($el->isSuccessful)) {
+        $progress[] = '    - Fallback: force-deleted metadata template ' . $mtUri;
+        return ['ok' => TRUE, 'message' => ''];
+      }
+
+      $message = $this->extractApiErrorDetail($elRaw, 'Unknown elementDel failure');
+      return ['ok' => FALSE, 'message' => $message];
+    }
+    catch (\Throwable $e) {
+      return ['ok' => FALSE, 'message' => $e->getMessage()];
+    }
+  }
+
+  /**
+   * Delete stale Drupal managed-file entities for a known destination URI.
+   */
+  private function deleteManagedFileEntitiesByUri(string $uri): void {
+    $uri = trim($uri);
+    if ($uri === '') {
+      return;
+    }
+
+    try {
+      $storage = \Drupal::entityTypeManager()->getStorage('file');
+      $files = $storage->loadByProperties(['uri' => $uri]);
+      if (empty($files)) {
+        return;
+      }
+
+      foreach ($files as $file) {
+        if (is_object($file) && method_exists($file, 'delete')) {
+          $file->delete();
+        }
+      }
+    }
+    catch (\Throwable $ignored) {
+      // Best-effort cleanup; ingestion can continue because the file path is rewritten.
+    }
+  }
+
+  /**
    * Normalize an email-like value for matching.
    */
   private function normalizeEmail(string $value): string {
@@ -727,6 +925,59 @@ class IngestionKgrPeopleController extends ControllerBase {
     }
 
     return $fallback;
+  }
+
+  /**
+   * Retry datafileAdd for transient triplestore outages.
+   */
+  private function datafileAddWithTransientRetry($api, string $datafileJSON, int $maxAttempts = 3): array {
+    $attempt = 0;
+    $lastDetail = '';
+
+    while ($attempt < $maxAttempts) {
+      $attempt++;
+
+      $msg = $api->parseObjectResponse($api->datafileAdd($datafileJSON), 'datafileAdd');
+      if ($msg !== NULL) {
+        return [
+          'ok' => TRUE,
+          'attempts' => $attempt,
+          'detail' => '',
+        ];
+      }
+
+      $lastDetail = trim((string) $api->getErrorMessage());
+      $isTransient = $this->isTransientTriplestoreFailure($lastDetail);
+      if (!$isTransient || $attempt >= $maxAttempts) {
+        break;
+      }
+
+      // Small bounded backoff for transient backend outages.
+      usleep(300000 * $attempt);
+    }
+
+    return [
+      'ok' => FALSE,
+      'attempts' => $attempt,
+      'detail' => $lastDetail,
+    ];
+  }
+
+  /**
+   * Detect transient triplestore outages reported by hascoapi.
+   */
+  private function isTransientTriplestoreFailure(string $detail): bool {
+    $d = strtolower(trim($detail));
+    if ($d === '') {
+      return FALSE;
+    }
+
+    return (
+      strpos($d, 'triplestore_unavailable') !== FALSE
+      || strpos($d, 'triplestore is unavailable') !== FALSE
+      || strpos($d, 'status code: 503') !== FALSE
+      || strpos($d, '"status":503') !== FALSE
+    );
   }
 
   /**

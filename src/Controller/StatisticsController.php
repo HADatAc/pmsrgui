@@ -36,6 +36,11 @@ class StatisticsController extends ControllerBase {
   private const STATS_MEMBERS_DATA_KEY = 'members_data';
   private const STATS_SIMULATION_MODELS_DATA_KEY = 'simulation_models_data';
   private const STATS_SIMULATION_MODELS_CACHE_VERSION = 2;
+  private const STATS_MEMBER_MAX_ATTEMPTS = 3;
+  private const STATS_MEMBERS_REPAIR_STATE_KEY = 'pmsr.statistics.members_repair_state';
+  private const STATS_MEMBERS_FULL_REPAIR_STATE_KEY = 'pmsr.statistics.members_full_repair_state';
+  private const STATS_CONTRIBUTOR_URIS_STATE_KEY = 'pmsr.statistics.contributor_uris';
+  private const STATS_JOB_MAX_STAGE_FAILURES = 12;
 
   /**
    * Returns all cache tags used by statistics data.
@@ -89,6 +94,40 @@ class StatisticsController extends ControllerBase {
 
   private function clearStatisticsDataStore(): void {
     \Drupal::state()->set(self::STATS_DATA_STATE_KEY, []);
+  }
+
+  /**
+   * Build a stable contributor URI list that does not shrink on transient reads.
+   */
+  private function getStableContributorUris(array $freshUris, array $fallbackUris = []): array {
+    $persisted = \Drupal::state()->get(self::STATS_CONTRIBUTOR_URIS_STATE_KEY, []);
+    if (!is_array($persisted)) {
+      $persisted = [];
+    }
+
+    $normalize = static function (array $uris): array {
+      $normalized = [];
+      foreach ($uris as $uri) {
+        $uri = trim((string) $uri);
+        if ($uri !== '') {
+          $normalized[$uri] = TRUE;
+        }
+      }
+      return array_keys($normalized);
+    };
+
+    $freshUris = $normalize($freshUris);
+    $fallbackUris = $normalize($fallbackUris);
+    $persisted = $normalize($persisted);
+
+    // Never shrink based on a transiently incomplete upstream response.
+    $stable = array_values(array_unique(array_merge($persisted, $fallbackUris, $freshUris)));
+
+    if ($stable !== $persisted) {
+      \Drupal::state()->set(self::STATS_CONTRIBUTOR_URIS_STATE_KEY, $stable);
+    }
+
+    return $stable;
   }
 
   /**
@@ -292,6 +331,218 @@ class StatisticsController extends ControllerBase {
   }
 
   /**
+   * Trigger one targeted members refresh attempt asynchronously.
+   */
+  private function triggerMembersStatisticsRepairWorker(string $contributorUri): void {
+    $contributorUri = trim($contributorUri);
+    if ($contributorUri === '') {
+      return;
+    }
+
+    $host = \Drupal::request()->getSchemeAndHttpHost();
+    $url = $host . '/pmsr/api/statistics/refresh/members?contributor_uri=' . rawurlencode($contributorUri);
+
+    $parts = parse_url($url);
+    if (!is_array($parts) || empty($parts['host'])) {
+      return;
+    }
+
+    $scheme = $parts['scheme'] ?? 'http';
+    $hostName = $parts['host'];
+    $path = $parts['path'] ?? '/';
+    $query = isset($parts['query']) ? ('?' . $parts['query']) : '';
+    $target = $path . $query;
+    $port = isset($parts['port']) ? (int) $parts['port'] : (($scheme === 'https') ? 443 : 80);
+    $transport = ($scheme === 'https') ? 'ssl://' : '';
+
+    $socket = @fsockopen($transport . $hostName, $port, $errno, $errstr, 0.2);
+    if (!$socket) {
+      return;
+    }
+
+    stream_set_blocking($socket, FALSE);
+    $request = "POST {$target} HTTP/1.1\r\n"
+      . "Host: {$hostName}\r\n"
+      . "Connection: Close\r\n"
+      . "Content-Length: 0\r\n"
+      . "\r\n";
+
+    fwrite($socket, $request);
+    fclose($socket);
+  }
+
+  /**
+   * Trigger a members-only full recompute asynchronously.
+   */
+  private function triggerMembersStatisticsFullRepairWorker(): void {
+    $host = \Drupal::request()->getSchemeAndHttpHost();
+    $url = $host . '/pmsr/api/statistics/refresh/members';
+
+    $parts = parse_url($url);
+    if (!is_array($parts) || empty($parts['host'])) {
+      return;
+    }
+
+    $scheme = $parts['scheme'] ?? 'http';
+    $hostName = $parts['host'];
+    $path = $parts['path'] ?? '/';
+    $query = isset($parts['query']) ? ('?' . $parts['query']) : '';
+    $target = $path . $query;
+    $port = isset($parts['port']) ? (int) $parts['port'] : (($scheme === 'https') ? 443 : 80);
+    $transport = ($scheme === 'https') ? 'ssl://' : '';
+
+    $socket = @fsockopen($transport . $hostName, $port, $errno, $errstr, 0.2);
+    if (!$socket) {
+      return;
+    }
+
+    stream_set_blocking($socket, FALSE);
+    $request = "POST {$target} HTTP/1.1\r\n"
+      . "Host: {$hostName}\r\n"
+      . "Connection: Close\r\n"
+      . "Content-Length: 0\r\n"
+      . "\r\n";
+
+    fwrite($socket, $request);
+    fclose($socket);
+  }
+
+  /**
+   * Return TRUE when a row is likely incomplete and should be repaired.
+   */
+  private function isMemberRowLikelyIncomplete(array $row): bool {
+    if (!empty($row['_incomplete'])) {
+      return TRUE;
+    }
+
+    foreach ([
+      'registeredUsersCount',
+      'peopleCount',
+      'simulatorCount',
+      'registeredComponentsCount',
+      'platformCount',
+      'registeredScenariosCount',
+      'registeredProcessesCount',
+      'registeredTasksSubtasksCount',
+    ] as $key) {
+      if (!array_key_exists($key, $row)) {
+        return TRUE;
+      }
+    }
+
+    $sum = 0;
+    $sum += (int) ($row['registeredUsersCount'] ?? 0);
+    $sum += (int) ($row['peopleCount'] ?? 0);
+    $sum += (int) ($row['simulatorCount'] ?? 0);
+    $sum += (int) ($row['registeredComponentsCount'] ?? 0);
+    $sum += (int) ($row['platformCount'] ?? 0);
+    $sum += (int) ($row['registeredScenariosCount'] ?? 0);
+    $sum += (int) ($row['registeredProcessesCount'] ?? 0);
+    $sum += (int) ($row['registeredTasksSubtasksCount'] ?? 0);
+
+    return $sum === 0;
+  }
+
+  /**
+   * Trigger members-only full repair when many rows are incomplete.
+   */
+  private function maybeTriggerMembersFullRepair(int $incompleteCount, int $totalCount): bool {
+    if ($totalCount <= 0 || $incompleteCount <= 0) {
+      return FALSE;
+    }
+
+    $threshold = max(3, (int) ceil($totalCount * 0.4));
+    if ($incompleteCount < $threshold) {
+      return FALSE;
+    }
+
+    $state = \Drupal::state()->get(self::STATS_MEMBERS_FULL_REPAIR_STATE_KEY, []);
+    if (!is_array($state)) {
+      $state = [];
+    }
+
+    $lastAt = (int) ($state['last_attempt_at'] ?? 0);
+    $now = time();
+    // Avoid looping. At most one full members repair every 5 minutes.
+    if ($lastAt > 0 && ($now - $lastAt) < 300) {
+      return FALSE;
+    }
+
+    \Drupal::state()->set(self::STATS_MEMBERS_FULL_REPAIR_STATE_KEY, [
+      'last_attempt_at' => $now,
+      'incomplete_count' => $incompleteCount,
+      'total_count' => $totalCount,
+    ]);
+
+    $this->triggerMembersStatisticsFullRepairWorker();
+    return TRUE;
+  }
+
+  /**
+   * Schedule partial members repair for incomplete rows with cooldown/backoff.
+   */
+  private function scheduleIncompleteMembersRepair(array $members): bool {
+    $incompleteUris = [];
+    foreach ($members as $row) {
+      if (!is_array($row) || empty($row['uri']) || !$this->isMemberRowLikelyIncomplete($row)) {
+        continue;
+      }
+      $uri = trim((string) $row['uri']);
+      if ($uri !== '') {
+        $incompleteUris[$uri] = TRUE;
+      }
+    }
+
+    if (empty($incompleteUris)) {
+      \Drupal::state()->delete(self::STATS_MEMBERS_REPAIR_STATE_KEY);
+      return FALSE;
+    }
+
+    $repairState = \Drupal::state()->get(self::STATS_MEMBERS_REPAIR_STATE_KEY, []);
+    if (!is_array($repairState)) {
+      $repairState = [];
+    }
+
+    foreach (array_keys($repairState) as $uri) {
+      if (!isset($incompleteUris[$uri])) {
+        unset($repairState[$uri]);
+      }
+    }
+
+    $now = time();
+    $candidate = '';
+    foreach (array_keys($incompleteUris) as $uri) {
+      $meta = $repairState[$uri] ?? [];
+      $attempts = (int) ($meta['attempts'] ?? 0);
+      $lastAttemptAt = (int) ($meta['last_attempt_at'] ?? 0);
+
+      // Exponential backoff capped at 5 minutes to avoid hammering flaky org rows.
+      $cooldown = min(300, max(10, 10 * (2 ** min(5, $attempts))));
+      if ($lastAttemptAt > 0 && ($now - $lastAttemptAt) < $cooldown) {
+        continue;
+      }
+
+      $candidate = $uri;
+      break;
+    }
+
+    if ($candidate === '') {
+      \Drupal::state()->set(self::STATS_MEMBERS_REPAIR_STATE_KEY, $repairState);
+      return FALSE;
+    }
+
+    $candidateMeta = $repairState[$candidate] ?? [];
+    $repairState[$candidate] = [
+      'attempts' => (int) ($candidateMeta['attempts'] ?? 0) + 1,
+      'last_attempt_at' => $now,
+    ];
+    \Drupal::state()->set(self::STATS_MEMBERS_REPAIR_STATE_KEY, $repairState);
+    $this->triggerMembersStatisticsRepairWorker($candidate);
+
+    return TRUE;
+  }
+
+  /**
    * Invalidate current statistics cache before warming it again.
    */
   private function resetStatisticsCachesBeforeWarmup(): void {
@@ -418,7 +669,19 @@ class StatisticsController extends ControllerBase {
 
             case 'members_init':
               $projectData = $this->fetchUriObjectWithRetry($api, self::STATS_PROJECT_URI, 4);
-              $job['members']['contributor_uris'] = (isset($projectData->contributorUris) && is_array($projectData->contributorUris)) ? array_values($projectData->contributorUris) : [];
+              $freshContributorUris = (isset($projectData->contributorUris) && is_array($projectData->contributorUris)) ? array_values($projectData->contributorUris) : [];
+
+              $cachedMembers = $this->getStatisticsDataValue(self::STATS_MEMBERS_DATA_KEY);
+              $fallbackContributorUris = [];
+              if (is_array($cachedMembers) && isset($cachedMembers['members']) && is_array($cachedMembers['members'])) {
+                foreach ($cachedMembers['members'] as $row) {
+                  if (is_array($row) && !empty($row['uri'])) {
+                    $fallbackContributorUris[] = (string) $row['uri'];
+                  }
+                }
+              }
+
+              $job['members']['contributor_uris'] = $this->getStableContributorUris($freshContributorUris, $fallbackContributorUris);
               $job['members']['index'] = 0;
               $job['members']['rows'] = [];
               $job['members']['totals'] = [
@@ -471,10 +734,21 @@ class StatisticsController extends ControllerBase {
                 $this->saveStatisticsCacheJob($job);
               }
               catch (\Exception $e) {
+                $maxAttempts = self::STATS_MEMBER_MAX_ATTEMPTS;
+                if ($attemptNum < $maxAttempts) {
+                  $job['last_error'] = $e->getMessage();
+                  $job['last_message'] = 'Retrying contributor ' . ($index + 1) . '/' . count($contributors) . ' (attempt ' . $attemptNum . '/' . $maxAttempts . ')';
+                  $this->saveStatisticsCacheJob($job);
+                  break;
+                }
+
+                // Keep table width/count deterministic even when one contributor fails repeatedly.
+                $fallbackRow = $this->buildFallbackMemberStatisticsRow($contributorUri, $e->getMessage());
+                $job['members']['rows'][] = $fallbackRow;
                 $job['members']['index'] = $index + 1;
                 $job['attempts'] = (int) ($job['attempts'] ?? 0) + 1;
                 $job['last_error'] = $e->getMessage();
-                $job['last_message'] = 'Contributor skipped ' . ($index + 1) . '/' . count($contributors);
+                $job['last_message'] = 'Contributor fallback row recorded ' . ($index + 1) . '/' . count($contributors);
                 $this->saveStatisticsCacheJob($job);
               }
 
@@ -503,6 +777,11 @@ class StatisticsController extends ControllerBase {
           $job['attempts'] = (int) ($job['attempts'] ?? 0) + 1;
           $job['last_error'] = $e->getMessage();
           $job['last_message'] = 'Stage failed: ' . ($job['stage'] ?? 'unknown');
+          if ($job['attempts'] >= self::STATS_JOB_MAX_STAGE_FAILURES) {
+            $job['status'] = 'failed';
+            $job['completed_at'] = time();
+            $job['last_message'] = 'Statistics cache warmup stopped after repeated stage failures';
+          }
           $this->saveStatisticsCacheJob($job);
           break;
         }
@@ -562,22 +841,50 @@ class StatisticsController extends ControllerBase {
     // Fast path: single grouped payload from hascoapi (all platform instances).
     $groupedByOrg = $this->getPlatformInstancesGroupedByOrganization($api);
     if (!empty($groupedByOrg)) {
+      $normalizedGrouped = [];
+      foreach ($groupedByOrg as $groupOrgUri => $platformMap) {
+        $groupKey = $this->normalizeUriForMatch((string) $groupOrgUri);
+        if ($groupKey === '') {
+          continue;
+        }
+        if (!isset($normalizedGrouped[$groupKey])) {
+          $normalizedGrouped[$groupKey] = [];
+        }
+        foreach ((array) $platformMap as $platformUri => $_present) {
+          $platformUri = trim((string) $platformUri);
+          if ($platformUri !== '') {
+            $normalizedGrouped[$groupKey][$platformUri] = TRUE;
+          }
+        }
+      }
+
       $platformUris = [];
       foreach ($orgHierarchyUris as $hierarchyOrgUri) {
-        if (empty($hierarchyOrgUri) || !isset($groupedByOrg[$hierarchyOrgUri])) {
+        $hierarchyKey = $this->normalizeUriForMatch((string) $hierarchyOrgUri);
+        if ($hierarchyKey === '' || !isset($normalizedGrouped[$hierarchyKey])) {
           continue;
         }
 
-        foreach ($groupedByOrg[$hierarchyOrgUri] as $platformUri => $_present) {
+        foreach ($normalizedGrouped[$hierarchyKey] as $platformUri => $_present) {
           if (!empty($platformUri)) {
             $platformUris[$platformUri] = true;
           }
         }
       }
-      return count($platformUris);
+      $count = count($platformUris);
+      if ($count > 0) {
+        return $count;
+      }
     }
 
-    return 0;
+    $fallback = $this->getPrefilterDerivedCountsForOrganization($api, $orgUri);
+    $platformCount = (int) ($fallback['platforms'] ?? 0);
+    if ($platformCount > 0) {
+      return $platformCount;
+    }
+
+    $deploymentDerived = $this->getDeploymentDerivedCountsForOrganization($api, $orgUri);
+    return (int) ($deploymentDerived['platforms'] ?? 0);
   }
 
   /**
@@ -700,11 +1007,384 @@ class StatisticsController extends ControllerBase {
     // instrument instances -> deployments -> component deployments -> component instances.
     $endpoint = '/hascoapi/api/componentinstance/count?organizationUri=' . rawurlencode($orgUri);
     $count = $this->runHascoCountEndpoint($api, $endpoint);
-    if ($count !== NULL) {
+    if ($count !== NULL && $count > 0) {
       return $count;
     }
 
-    return 0;
+    $fallback = $this->getPrefilterDerivedCountsForOrganization($api, $orgUri);
+    $componentCount = (int) ($fallback['components'] ?? 0);
+    if ($componentCount > 0) {
+      return $componentCount;
+    }
+
+    $deploymentDerived = $this->getDeploymentDerivedCountsForOrganization($api, $orgUri);
+    return (int) ($deploymentDerived['components'] ?? 0);
+  }
+
+  /**
+   * Normalize URIs for stable key comparisons.
+   */
+  private function normalizeUriForMatch(string $uri): string {
+    $uri = trim($uri);
+    if ($uri === '') {
+      return '';
+    }
+    return strtolower(rtrim($uri, '/'));
+  }
+
+  /**
+   * Derive platform/component counts from instrument prefilter payload.
+   */
+  private function getPrefilterDerivedCountsForOrganization($api, string $orgUri): array {
+    static $cache = [];
+
+    $orgUri = trim($orgUri);
+    if ($orgUri === '') {
+      return ['platforms' => 0, 'components' => 0];
+    }
+
+    if (isset($cache[$orgUri])) {
+      return $cache[$orgUri];
+    }
+
+    $platformUris = [];
+    $componentUris = [];
+
+    $payload = $this->getInstrumentPrefilterPayloadForOrganization($api, $orgUri);
+    $rows = $this->extractPrefilterInstrumentRows($payload);
+    foreach ($rows as $instrument) {
+      if (!is_array($instrument)) {
+        continue;
+      }
+
+      $platforms = isset($instrument['platforms']) && is_array($instrument['platforms']) ? $instrument['platforms'] : [];
+      foreach ($platforms as $platform) {
+        if (is_array($platform) && !empty($platform['uri'])) {
+          $platformUris[(string) $platform['uri']] = TRUE;
+        }
+      }
+
+      $components = isset($instrument['components']) && is_array($instrument['components']) ? $instrument['components'] : [];
+      foreach ($components as $component) {
+        if (is_array($component) && !empty($component['uri'])) {
+          $componentUris[(string) $component['uri']] = TRUE;
+        }
+      }
+    }
+
+    $cache[$orgUri] = [
+      'platforms' => count($platformUris),
+      'components' => count($componentUris),
+    ];
+
+    return $cache[$orgUri];
+  }
+
+  /**
+   * Derive platform/component counts from platform/deployment payloads.
+   */
+  private function getDeploymentDerivedCountsForOrganization($api, string $orgUri): array {
+    static $cache = [];
+
+    $orgUri = trim($orgUri);
+    if ($orgUri === '') {
+      return ['platforms' => 0, 'components' => 0];
+    }
+    if (isset($cache[$orgUri])) {
+      return $cache[$orgUri];
+    }
+
+    $visited = [];
+    $hierarchy = $this->getOrganizationHierarchyUris($api, $orgUri, $visited);
+    if (empty($hierarchy)) {
+      $hierarchy = [$orgUri];
+    }
+
+    $hierarchyKeys = [];
+    foreach ($hierarchy as $hUri) {
+      $key = $this->normalizeUriForMatch((string) $hUri);
+      if ($key !== '') {
+        $hierarchyKeys[$key] = TRUE;
+      }
+    }
+
+    $index = $this->getDeploymentCountsIndex($api);
+    $platformByOrg = $index['platform_by_org'] ?? [];
+    $componentsByPlatform = $index['components_by_platform'] ?? [];
+
+    $platformUris = [];
+    $platformKeys = [];
+    foreach (array_keys($hierarchyKeys) as $orgKey) {
+      if (empty($platformByOrg[$orgKey]) || !is_array($platformByOrg[$orgKey])) {
+        continue;
+      }
+      foreach ($platformByOrg[$orgKey] as $platformUri => $_present) {
+        $platformUri = trim((string) $platformUri);
+        if ($platformUri === '') {
+          continue;
+        }
+        $platformUris[$platformUri] = TRUE;
+        $platformKey = $this->normalizeUriForMatch($platformUri);
+        if ($platformKey !== '') {
+          $platformKeys[$platformKey] = TRUE;
+        }
+      }
+    }
+
+    $componentUris = [];
+    foreach (array_keys($platformKeys) as $pKey) {
+      if (empty($componentsByPlatform[$pKey]) || !is_array($componentsByPlatform[$pKey])) {
+        continue;
+      }
+      foreach ($componentsByPlatform[$pKey] as $componentUri => $_present) {
+        $componentUri = trim((string) $componentUri);
+        if ($componentUri !== '') {
+          $componentUris[$componentUri] = TRUE;
+        }
+      }
+    }
+
+    $cache[$orgUri] = [
+      'platforms' => count($platformUris),
+      'components' => count($componentUris),
+    ];
+
+    return $cache[$orgUri];
+  }
+
+  /**
+   * Build request-scoped deployment indexes for fast org aggregates.
+   */
+  private function getDeploymentCountsIndex($api): array {
+    static $index = NULL;
+    if ($index !== NULL) {
+      return $index;
+    }
+
+    $index = [
+      'platform_by_org' => [],
+      'components_by_platform' => [],
+    ];
+
+    $pageSize = 200;
+    $offset = 0;
+
+    try {
+      while (TRUE) {
+        $response = $api->listByKeyword('platforminstance', '_', $pageSize, $offset);
+        $batch = $api->parseObjectResponse($response, 'listByKeyword');
+        if (!is_array($batch) || empty($batch)) {
+          break;
+        }
+
+        foreach ($batch as $platform) {
+          if (!is_object($platform) || empty($platform->uri)) {
+            continue;
+          }
+          $partOf = '';
+          if (!empty($platform->partOf)) {
+            $partOf = (string) $platform->partOf;
+          }
+          elseif (!empty($platform->partOfUri)) {
+            $partOf = (string) $platform->partOfUri;
+          }
+
+          $orgKey = $this->normalizeUriForMatch($partOf);
+          $platformUri = trim((string) $platform->uri);
+          if ($orgKey === '' || $platformUri === '') {
+            continue;
+          }
+          if (!isset($index['platform_by_org'][$orgKey])) {
+            $index['platform_by_org'][$orgKey] = [];
+          }
+          $index['platform_by_org'][$orgKey][$platformUri] = TRUE;
+        }
+
+        if (count($batch) < $pageSize) {
+          break;
+        }
+        $offset += $pageSize;
+      }
+    }
+    catch (\Exception $e) {
+      \Drupal::logger('pmsr')->warning('Failed building platform-by-org index: @error', ['@error' => $e->getMessage()]);
+    }
+
+    $offset = 0;
+    try {
+      while (TRUE) {
+        $response = $api->listByKeyword('deployment', '_', $pageSize, $offset);
+        $batch = $api->parseObjectResponse($response, 'listByKeyword');
+        if (!is_array($batch) || empty($batch)) {
+          break;
+        }
+
+        foreach ($batch as $deployment) {
+          if (!is_object($deployment)) {
+            continue;
+          }
+
+          $platformInstanceUri = '';
+          if (!empty($deployment->platformInstance) && is_object($deployment->platformInstance) && !empty($deployment->platformInstance->uri)) {
+            $platformInstanceUri = (string) $deployment->platformInstance->uri;
+          }
+          elseif (!empty($deployment->platformInstanceUri)) {
+            $platformInstanceUri = (string) $deployment->platformInstanceUri;
+          }
+
+          $pKey = $this->normalizeUriForMatch($platformInstanceUri);
+          if ($pKey === '') {
+            continue;
+          }
+          if (!isset($index['components_by_platform'][$pKey])) {
+            $index['components_by_platform'][$pKey] = [];
+          }
+
+          if (!empty($deployment->componentInstance) && is_array($deployment->componentInstance)) {
+            foreach ($deployment->componentInstance as $componentObj) {
+              if (is_object($componentObj) && !empty($componentObj->uri)) {
+                $index['components_by_platform'][$pKey][(string) $componentObj->uri] = TRUE;
+              }
+            }
+          }
+          elseif (!empty($deployment->componentInstanceUri) && is_array($deployment->componentInstanceUri)) {
+            foreach ($deployment->componentInstanceUri as $componentUri) {
+              $componentUri = trim((string) $componentUri);
+              if ($componentUri !== '') {
+                $index['components_by_platform'][$pKey][$componentUri] = TRUE;
+              }
+            }
+          }
+        }
+
+        if (count($batch) < $pageSize) {
+          break;
+        }
+        $offset += $pageSize;
+      }
+    }
+    catch (\Exception $e) {
+      \Drupal::logger('pmsr')->warning('Failed building components-by-platform index: @error', ['@error' => $e->getMessage()]);
+    }
+
+    return $index;
+  }
+
+  /**
+   * Build request-scoped map of direct registered-user counts by affiliation org.
+   */
+  private function getRegisteredUsersDirectCountByOrg($api): array {
+    static $map = NULL;
+    if ($map !== NULL) {
+      return $map;
+    }
+
+    $map = [];
+    $pageSize = 200;
+    $offset = 0;
+
+    try {
+      while (TRUE) {
+        $response = $api->listByKeyword('person', '_', $pageSize, $offset);
+        $batch = $api->parseObjectResponse($response, 'listByKeyword');
+        if (!is_array($batch) || empty($batch)) {
+          break;
+        }
+
+        foreach ($batch as $person) {
+          if (!is_object($person)) {
+            continue;
+          }
+
+          $affiliationUri = '';
+          if (!empty($person->hasAffiliationUri)) {
+            $affiliationUri = (string) $person->hasAffiliationUri;
+          }
+          elseif (!empty($person->hasAffiliation) && is_object($person->hasAffiliation) && !empty($person->hasAffiliation->uri)) {
+            $affiliationUri = (string) $person->hasAffiliation->uri;
+          }
+
+          $orgKey = $this->normalizeUriForMatch($affiliationUri);
+          if ($orgKey === '') {
+            continue;
+          }
+
+          if (
+            !empty($person->userID)
+            || !empty($person->userId)
+            || !empty($person->userid)
+            || (!empty($person->userEmail) && !empty($person->userName))
+          ) {
+            $map[$orgKey] = (int) ($map[$orgKey] ?? 0) + 1;
+          }
+        }
+
+        if (count($batch) < $pageSize) {
+          break;
+        }
+        $offset += $pageSize;
+      }
+    }
+    catch (\Exception $e) {
+      \Drupal::logger('pmsr')->warning('Failed to build registered-users by org map: @error', ['@error' => $e->getMessage()]);
+    }
+
+    return $map;
+  }
+
+  /**
+   * Build request-scoped map of direct people counts by affiliation org.
+   */
+  private function getPeopleDirectCountByOrg($api): array {
+    static $map = NULL;
+    if ($map !== NULL) {
+      return $map;
+    }
+
+    $map = [];
+    $pageSize = 200;
+    $offset = 0;
+
+    try {
+      while (TRUE) {
+        $response = $api->listByKeyword('person', '_', $pageSize, $offset);
+        $batch = $api->parseObjectResponse($response, 'listByKeyword');
+        if (!is_array($batch) || empty($batch)) {
+          break;
+        }
+
+        foreach ($batch as $person) {
+          if (!is_object($person)) {
+            continue;
+          }
+
+          $affiliationUri = '';
+          if (!empty($person->hasAffiliationUri)) {
+            $affiliationUri = (string) $person->hasAffiliationUri;
+          }
+          elseif (!empty($person->hasAffiliation) && is_object($person->hasAffiliation) && !empty($person->hasAffiliation->uri)) {
+            $affiliationUri = (string) $person->hasAffiliation->uri;
+          }
+
+          $orgKey = $this->normalizeUriForMatch($affiliationUri);
+          if ($orgKey === '') {
+            continue;
+          }
+
+          $map[$orgKey] = (int) ($map[$orgKey] ?? 0) + 1;
+        }
+
+        if (count($batch) < $pageSize) {
+          break;
+        }
+        $offset += $pageSize;
+      }
+    }
+    catch (\Exception $e) {
+      \Drupal::logger('pmsr')->warning('Failed to build people-by-org map: @error', ['@error' => $e->getMessage()]);
+    }
+
+    return $map;
   }
 
   /**
@@ -781,15 +1461,38 @@ class StatisticsController extends ControllerBase {
 
     $payload = [];
     try {
-      $endpoint = '/hascoapi/api/instrument/prefilter?organizationUri=' . rawurlencode($orgUri);
-      $requestOptions = $api->getHeader();
-      if (!is_array($requestOptions)) {
-        $requestOptions = [];
+      $response = '';
+
+      // Prefer workflow prefilter because it includes platforms/components
+      // computed from organization-scoped deployments.
+      $host = \Drupal::request()->getSchemeAndHttpHost();
+      if (is_string($host) && $host !== '') {
+        $workflowUrl = $host . '/workflow/api/instrument/prefilter?organizationUri=' . rawurlencode($orgUri);
+        try {
+          $http = \Drupal::httpClient();
+          $workflowResp = $http->request('GET', $workflowUrl, [
+            'timeout' => 25,
+            'connect_timeout' => 5,
+          ]);
+          $response = (string) $workflowResp->getBody();
+        }
+        catch (\Throwable $ignored) {
+          $response = '';
+        }
       }
-      // This endpoint can be heavy for large organizations (e.g., UCP).
-      $requestOptions['timeout'] = max((int) ($requestOptions['timeout'] ?? 0), 25);
-      $requestOptions['connect_timeout'] = max((int) ($requestOptions['connect_timeout'] ?? 0), 5);
-      $response = $api->perform_http_request('GET', $api->getApiUrl() . $endpoint, $requestOptions);
+
+      // Fallback to HASCO prefilter when workflow endpoint is unavailable.
+      if (trim((string) $response) === '') {
+        $endpoint = '/hascoapi/api/instrument/prefilter?organizationUri=' . rawurlencode($orgUri);
+        $requestOptions = $api->getHeader();
+        if (!is_array($requestOptions)) {
+          $requestOptions = [];
+        }
+        $requestOptions['timeout'] = max((int) ($requestOptions['timeout'] ?? 0), 25);
+        $requestOptions['connect_timeout'] = max((int) ($requestOptions['connect_timeout'] ?? 0), 5);
+        $response = $api->perform_http_request('GET', $api->getApiUrl() . $endpoint, $requestOptions);
+      }
+
       $decoded = NULL;
 
       if (is_string($response) && trim($response) !== '') {
@@ -844,6 +1547,9 @@ class StatisticsController extends ControllerBase {
     }
 
     $rows = $root['instruments'] ?? [];
+    if (!is_array($rows) && isset($root['payload']) && is_array($root['payload'])) {
+      $rows = $root['payload']['instruments'] ?? [];
+    }
     return is_array($rows) ? $rows : [];
   }
 
@@ -1287,7 +1993,32 @@ class StatisticsController extends ControllerBase {
       \Drupal::logger('pmsr')->warning('Failed to fetch sub-organizations for ' . $orgUri . ': ' . $e->getMessage());
     }
     
-    return $totalCount;
+    if ($totalCount > 0) {
+      return $totalCount;
+    }
+
+    // Fallback: derive by person affiliation map for this org hierarchy.
+    $visited = [];
+    $hierarchy = $this->getOrganizationHierarchyUris($api, $orgUri, $visited);
+    if (empty($hierarchy)) {
+      $hierarchy = [(string) $orgUri];
+    }
+
+    $hierarchyKeys = [];
+    foreach ($hierarchy as $candidateUri) {
+      $k = $this->normalizeUriForMatch((string) $candidateUri);
+      if ($k !== '') {
+        $hierarchyKeys[$k] = TRUE;
+      }
+    }
+
+    $fallbackCount = 0;
+    $directMap = $this->getPeopleDirectCountByOrg($api);
+    foreach (array_keys($hierarchyKeys) as $orgKey) {
+      $fallbackCount += (int) ($directMap[$orgKey] ?? 0);
+    }
+
+    return $fallbackCount;
   }
 
   /**
@@ -1317,8 +2048,16 @@ class StatisticsController extends ControllerBase {
               $personResponse = $api->getUri($person->uri);
               $personData = $api->parseObjectResponse($personResponse, 'getUri');
               
-              // Check if this person has userID (registered PMSR user)
-              if (is_object($personData) && !empty($personData->userID)) {
+              // Accept known user-link variants used across historical records.
+              if (
+                is_object($personData)
+                && (
+                  !empty($personData->userID)
+                  || !empty($personData->userId)
+                  || !empty($personData->userid)
+                  || (!empty($personData->userEmail) && !empty($personData->userName))
+                )
+              ) {
                 $registeredCount++;
               }
             } catch (\Exception $e) {
@@ -1350,7 +2089,31 @@ class StatisticsController extends ControllerBase {
       \Drupal::logger('pmsr')->warning('Failed to fetch registered users for ' . $orgUri . ': ' . $e->getMessage());
     }
     
-    return $registeredCount;
+    if ($registeredCount > 0) {
+      return $registeredCount;
+    }
+
+    // Fallback: derive by person affiliation and user-link fields.
+    $visited = [];
+    $hierarchy = $this->getOrganizationHierarchyUris($api, $orgUri, $visited);
+    if (empty($hierarchy)) {
+      $hierarchy = [(string) $orgUri];
+    }
+    $hierarchySet = [];
+    foreach ($hierarchy as $hUri) {
+      $k = $this->normalizeUriForMatch((string) $hUri);
+      if ($k !== '') {
+        $hierarchySet[$k] = TRUE;
+      }
+    }
+
+    $fallbackCount = 0;
+    $directMap = $this->getRegisteredUsersDirectCountByOrg($api);
+    foreach (array_keys($hierarchySet) as $orgKey) {
+      $fallbackCount += (int) ($directMap[$orgKey] ?? 0);
+    }
+
+    return $fallbackCount;
   }
 
   /**
@@ -1373,6 +2136,34 @@ class StatisticsController extends ControllerBase {
           if (is_object($subOrg) && !empty($subOrg->uri)) {
             $uris = array_merge($uris, $this->getOrganizationHierarchyUris($api, $subOrg->uri, $visited));
           }
+        }
+      }
+
+      // Include parent organizations as well (some data uses upward linking only).
+      $orgObj = $this->fetchUriObjectWithRetry($api, (string) $orgUri, 2);
+      $parentCandidates = [];
+      foreach (['parentOrganizationUri', 'hasParentOrganizationUri', 'partOfUri'] as $field) {
+        if (is_object($orgObj) && !empty($orgObj->{$field})) {
+          $parentCandidates[] = (string) $orgObj->{$field};
+        }
+      }
+      foreach (['parentOrganization', 'hasParentOrganization', 'partOf', 'isPartOf'] as $field) {
+        if (!is_object($orgObj) || empty($orgObj->{$field})) {
+          continue;
+        }
+        $candidate = $orgObj->{$field};
+        if (is_object($candidate) && !empty($candidate->uri)) {
+          $parentCandidates[] = (string) $candidate->uri;
+        }
+        elseif (is_string($candidate)) {
+          $parentCandidates[] = $candidate;
+        }
+      }
+
+      foreach ($parentCandidates as $parentUri) {
+        $parentUri = trim((string) $parentUri);
+        if ($parentUri !== '') {
+          $uris = array_merge($uris, $this->getOrganizationHierarchyUris($api, $parentUri, $visited));
         }
       }
     } catch (\Exception $e) {
@@ -1789,6 +2580,89 @@ class StatisticsController extends ControllerBase {
   }
 
   /**
+   * Collect scenario and process stats by organization hierarchy affiliation.
+   */
+  private function collectScenarioAndProcessStatsByOrganization($api, string $orgUri): array {
+    $scenarioUris = [];
+    $processUris = [];
+    $visited = [];
+    $orgHierarchyUris = $this->getOrganizationHierarchyUris($api, $orgUri, $visited);
+    if (empty($orgHierarchyUris)) {
+      $orgHierarchyUris = [$orgUri];
+    }
+
+    $orgKeys = [];
+    foreach ($orgHierarchyUris as $candidateUri) {
+      $k = $this->normalizeUriForMatch((string) $candidateUri);
+      if ($k !== '') {
+        $orgKeys[$k] = TRUE;
+      }
+    }
+
+    $pageSize = 100;
+    $offset = 0;
+    while (TRUE) {
+      try {
+        $endpoint = '/hascoapi/api/processbasedstudy/elements/' . $pageSize . '/' . $offset;
+        $response = $api->perform_http_request('GET', $api->getApiUrl() . $endpoint, $api->getHeader());
+        $items = $api->parseObjectResponse($response, 'getProcessBasedStudiesWithPage');
+        if (!is_array($items) || empty($items)) {
+          break;
+        }
+
+        foreach ($items as $item) {
+          if (!is_object($item) || empty($item->uri)) {
+            continue;
+          }
+
+          $candidateOrgs = [];
+          if (!empty($item->hasInstitutionUri)) {
+            $candidateOrgs[] = (string) $item->hasInstitutionUri;
+          }
+          if (!empty($item->institutionUri)) {
+            $candidateOrgs[] = (string) $item->institutionUri;
+          }
+          if (!empty($item->institution) && is_object($item->institution) && !empty($item->institution->uri)) {
+            $candidateOrgs[] = (string) $item->institution->uri;
+          }
+
+          $matchesOrg = FALSE;
+          foreach ($candidateOrgs as $candidateOrgUri) {
+            $k = $this->normalizeUriForMatch($candidateOrgUri);
+            if ($k !== '' && isset($orgKeys[$k])) {
+              $matchesOrg = TRUE;
+              break;
+            }
+          }
+
+          if (!$matchesOrg) {
+            continue;
+          }
+
+          $scenarioUris[(string) $item->uri] = TRUE;
+          foreach ($this->extractProcessUrisFromScenarioObject($item) as $processUri) {
+            $processUris[(string) $processUri] = TRUE;
+          }
+        }
+
+        if (count($items) < $pageSize) {
+          break;
+        }
+        $offset += $pageSize;
+      }
+      catch (\Exception $e) {
+        \Drupal::logger('pmsr')->warning('Failed to collect scenario/process stats by organization: ' . $e->getMessage());
+        break;
+      }
+    }
+
+    return [
+      'scenario_uris' => array_keys($scenarioUris),
+      'process_uris' => array_keys($processUris),
+    ];
+  }
+
+  /**
    * Count unique tasks/subtasks for a set of processes.
    */
   private function countTasksByProcessUris($api, array $processUris) {
@@ -1839,36 +2713,123 @@ class StatisticsController extends ControllerBase {
   }
 
   /**
+   * Build a deterministic zeroed row when one contributor cannot be computed.
+   */
+  private function buildFallbackMemberStatisticsRow(string $contributorUri, string $errorMessage): array {
+    $fallbackLabel = $this->labelFromUri($contributorUri);
+    $repModulePath = \Drupal::service('extension.list.module')->getPath('rep');
+    $placeholderImage = base_path() . $repModulePath . '/images/organization_placeholder.png';
+
+    return [
+      'uri' => $contributorUri,
+      'label' => $fallbackLabel,
+      'shortName' => $fallbackLabel,
+      'fullName' => $fallbackLabel,
+      'image' => $placeholderImage,
+      'peopleCount' => 0,
+      'registeredUsersCount' => 0,
+      'platformCount' => 0,
+      'simulatorCount' => 0,
+      'registeredComponentsCount' => 0,
+      'registeredScenariosCount' => 0,
+      'registeredProcessesCount' => 0,
+      'registeredTasksSubtasksCount' => 0,
+      '_incomplete' => TRUE,
+      '_error' => $errorMessage,
+    ];
+  }
+
+  /**
    * Build one member row for statistics cache.
    */
   private function buildMemberStatisticsRow($api, string $contributorUri): array {
-    $orgData = $this->fetchUriObjectWithRetry($api, $contributorUri, 3);
+    $orgData = NULL;
+    $metricErrors = [];
+    try {
+      $orgData = $this->fetchUriObjectWithRetry($api, $contributorUri, 3);
+    }
+    catch (\Exception $e) {
+      $metricErrors[] = 'organization metadata: ' . $e->getMessage();
+    }
 
     $repModulePath = 
       \Drupal::service('extension.list.module')->getPath('rep');
     $placeholderImage = base_path() . $repModulePath . '/images/organization_placeholder.png';
     $imageUrl = $placeholderImage;
-    if ($orgData && !empty($orgData->hasImageUri)) {
+    if (is_object($orgData) && !empty($orgData->hasImageUri)) {
       $imageUrl = Utils::getAPIImage($contributorUri, $orgData->hasImageUri, $placeholderImage);
     }
 
-    $peopleCount = $this->getTotalPeopleCount($api, $contributorUri);
-    $registeredUsersCount = $this->getRegisteredUsersCount($api, $contributorUri);
-    $platformCount = $this->getPlatformCountByOrganization($api, $contributorUri);
-    $simulatorCount = $this->getSimulatorCountByOrganization($api, $contributorUri);
-    $registeredComponentsCount = $this->getComponentCountByOrganization($api, $contributorUri);
-    $managerEmails = $this->getOrganizationManagerEmails($api, $contributorUri);
-    $scenarioStats = $this->collectScenarioAndProcessStatsByManagerEmails($api, $managerEmails);
+    $peopleCount = 0;
+    try {
+      $peopleCount = $this->getTotalPeopleCount($api, $contributorUri);
+    }
+    catch (\Exception $e) {
+      $metricErrors[] = 'people count: ' . $e->getMessage();
+    }
+
+    $registeredUsersCount = 0;
+    try {
+      $registeredUsersCount = $this->getRegisteredUsersCount($api, $contributorUri);
+    }
+    catch (\Exception $e) {
+      $metricErrors[] = 'registered users: ' . $e->getMessage();
+    }
+
+    $platformCount = 0;
+    try {
+      $platformCount = $this->getPlatformCountByOrganization($api, $contributorUri);
+    }
+    catch (\Exception $e) {
+      $metricErrors[] = 'platforms: ' . $e->getMessage();
+    }
+
+    $simulatorCount = 0;
+    try {
+      $simulatorCount = $this->getSimulatorCountByOrganization($api, $contributorUri);
+    }
+    catch (\Exception $e) {
+      $metricErrors[] = 'simulators: ' . $e->getMessage();
+    }
+
+    $registeredComponentsCount = 0;
+    try {
+      $registeredComponentsCount = $this->getComponentCountByOrganization($api, $contributorUri);
+    }
+    catch (\Exception $e) {
+      $metricErrors[] = 'components: ' . $e->getMessage();
+    }
+
+    $scenarioStats = ['scenario_uris' => [], 'process_uris' => []];
+    try {
+      $managerEmails = $this->getOrganizationManagerEmails($api, $contributorUri);
+      $scenarioStats = $this->collectScenarioAndProcessStatsByManagerEmails($api, $managerEmails);
+      if (empty($scenarioStats['scenario_uris']) && empty($scenarioStats['process_uris'])) {
+        $scenarioStats = $this->collectScenarioAndProcessStatsByOrganization($api, $contributorUri);
+      }
+    }
+    catch (\Exception $e) {
+      $metricErrors[] = 'scenario/process lookup: ' . $e->getMessage();
+    }
+
     $studyUris = $scenarioStats['scenario_uris'] ?? [];
     $processUris = $scenarioStats['process_uris'] ?? [];
-    $tasksAndSubtasksCount = $this->countTasksByProcessUris($api, $processUris);
+
+    $tasksAndSubtasksCount = 0;
+    try {
+      $tasksAndSubtasksCount = $this->countTasksByProcessUris($api, $processUris);
+    }
+    catch (\Exception $e) {
+      $metricErrors[] = 'tasks/subtasks: ' . $e->getMessage();
+    }
+
     $fallbackLabel = $this->labelFromUri($contributorUri);
 
-    return [
+    $row = [
       'uri' => $contributorUri,
-      'label' => $orgData->label ?? $fallbackLabel,
-      'shortName' => $orgData->hasShortName ?? $orgData->label ?? $fallbackLabel,
-      'fullName' => $orgData->name ?? $orgData->label ?? $fallbackLabel,
+      'label' => (is_object($orgData) ? ($orgData->label ?? NULL) : NULL) ?? $fallbackLabel,
+      'shortName' => (is_object($orgData) ? ($orgData->hasShortName ?? $orgData->label ?? NULL) : NULL) ?? $fallbackLabel,
+      'fullName' => (is_object($orgData) ? ($orgData->name ?? $orgData->label ?? NULL) : NULL) ?? $fallbackLabel,
       'image' => $imageUrl,
       'peopleCount' => $peopleCount,
       'registeredUsersCount' => $registeredUsersCount,
@@ -1879,6 +2840,13 @@ class StatisticsController extends ControllerBase {
       'registeredProcessesCount' => count($processUris),
       'registeredTasksSubtasksCount' => $tasksAndSubtasksCount,
     ];
+
+    if (!empty($metricErrors)) {
+      $row['_incomplete'] = TRUE;
+      $row['_error'] = implode('; ', $metricErrors);
+    }
+
+    return $row;
   }
 
   /**
@@ -1902,6 +2870,56 @@ class StatisticsController extends ControllerBase {
     }
 
     return $totals;
+  }
+
+  /**
+   * Merge a freshly computed member row with a previous cached row.
+   *
+   * This prevents transient upstream zero responses from wiping already-known
+   * stable values and making the statistics table oscillate.
+   */
+  private function mergeMemberRowWithPrevious(array $freshRow, ?array $previousRow): array {
+    if ($previousRow === NULL) {
+      return $freshRow;
+    }
+
+    $metricKeys = [
+      'registeredUsersCount',
+      'peopleCount',
+      'simulatorCount',
+      'registeredComponentsCount',
+      'platformCount',
+      'registeredScenariosCount',
+      'registeredProcessesCount',
+      'registeredTasksSubtasksCount',
+    ];
+
+    foreach ($metricKeys as $key) {
+      $newVal = (int) ($freshRow[$key] ?? 0);
+      $oldVal = (int) ($previousRow[$key] ?? 0);
+
+      // Keep previous value when a refreshed read regresses downward.
+      // This avoids table oscillation caused by transient backend under-counts.
+      if ($oldVal > 0 && $newVal < $oldVal) {
+        $freshRow[$key] = $oldVal;
+        $freshRow['_incomplete'] = TRUE;
+      }
+    }
+
+    if ((empty($freshRow['label']) || !is_string($freshRow['label'])) && !empty($previousRow['label'])) {
+      $freshRow['label'] = (string) $previousRow['label'];
+    }
+    if ((empty($freshRow['shortName']) || !is_string($freshRow['shortName'])) && !empty($previousRow['shortName'])) {
+      $freshRow['shortName'] = (string) $previousRow['shortName'];
+    }
+    if ((empty($freshRow['fullName']) || !is_string($freshRow['fullName'])) && !empty($previousRow['fullName'])) {
+      $freshRow['fullName'] = (string) $previousRow['fullName'];
+    }
+    if ((empty($freshRow['image']) || !is_string($freshRow['image'])) && !empty($previousRow['image'])) {
+      $freshRow['image'] = (string) $previousRow['image'];
+    }
+
+    return $freshRow;
   }
 
   /**
@@ -1941,20 +2959,35 @@ class StatisticsController extends ControllerBase {
    * Recompute and persist members statistics cache.
    */
   private function recomputeMembersStatisticsCache($api, ?string $contributorUri = NULL, ?string $managerEmail = NULL): array {
-    $projectData = $this->fetchUriObjectWithRetry($api, self::STATS_PROJECT_URI, 4);
-    $contributorUris = (isset($projectData->contributorUris) && is_array($projectData->contributorUris))
-      ? array_values($projectData->contributorUris)
-      : [];
+    $freshContributorUris = [];
+    try {
+      $projectData = $this->fetchUriObjectWithRetry($api, self::STATS_PROJECT_URI, 4);
+      $freshContributorUris = (isset($projectData->contributorUris) && is_array($projectData->contributorUris))
+        ? array_values($projectData->contributorUris)
+        : [];
+    }
+    catch (\Exception $e) {
+      \Drupal::logger('pmsr')->warning('Project contributor lookup failed during members recompute, using cached contributors when available: @error', [
+        '@error' => $e->getMessage(),
+      ]);
+    }
 
     $storedMembersData = $this->getStatisticsDataValue(self::STATS_MEMBERS_DATA_KEY);
     $membersByUri = [];
+    $fallbackContributorUris = [];
     if (is_array($storedMembersData) && isset($storedMembersData['members']) && is_array($storedMembersData['members'])) {
       foreach ($storedMembersData['members'] as $row) {
         if (is_array($row) && !empty($row['uri'])) {
-          $membersByUri[(string) $row['uri']] = $row;
+          $rowUri = (string) $row['uri'];
+          $membersByUri[$rowUri] = $row;
+          $fallbackContributorUris[] = $rowUri;
         }
       }
     }
+
+    $previousMembersByUri = $membersByUri;
+
+    $contributorUris = $this->getStableContributorUris($freshContributorUris, $fallbackContributorUris);
 
     $targetUris = [];
     $normalizedContributorUri = trim((string) ($contributorUri ?? ''));
@@ -1979,10 +3012,12 @@ class StatisticsController extends ControllerBase {
           continue;
         }
         try {
-          $membersByUri[$uri] = $this->buildMemberStatisticsRow($api, $uri);
+          $freshRow = $this->buildMemberStatisticsRow($api, $uri);
+          $membersByUri[$uri] = $this->mergeMemberRowWithPrevious($freshRow, $previousMembersByUri[$uri] ?? NULL);
           $updatedUris[] = $uri;
         }
         catch (\Exception $e) {
+          $membersByUri[$uri] = $this->buildFallbackMemberStatisticsRow($uri, $e->getMessage());
           $errors[] = 'Failed to update member row for ' . $uri . ': ' . $e->getMessage();
         }
       }
@@ -2013,10 +3048,18 @@ class StatisticsController extends ControllerBase {
           continue;
         }
         try {
-          $membersByUri[$uri] = $this->buildMemberStatisticsRow($api, $uri);
+          $freshRow = $this->buildMemberStatisticsRow($api, $uri);
+          $membersByUri[$uri] = $this->mergeMemberRowWithPrevious($freshRow, $previousMembersByUri[$uri] ?? NULL);
           $updatedUris[] = $uri;
         }
         catch (\Exception $e) {
+          if (!isset($membersByUri[$uri]) || !is_array($membersByUri[$uri])) {
+            $membersByUri[$uri] = $this->buildFallbackMemberStatisticsRow($uri, $e->getMessage());
+          }
+          else {
+            $membersByUri[$uri]['_incomplete'] = TRUE;
+            $membersByUri[$uri]['_error'] = $e->getMessage();
+          }
           $errors[] = 'Failed to update member row for ' . $uri . ': ' . $e->getMessage();
         }
       }
@@ -2055,6 +3098,9 @@ class StatisticsController extends ControllerBase {
    * - manager_email: refresh contributors matching this manager email
    */
   public function refreshMembersStatisticsCache() {
+    @ini_set('max_execution_time', '300');
+    @set_time_limit(300);
+
     $job = $this->getStatisticsCacheJob();
     if ($this->isStatisticsCacheJobRunning($job)) {
       return new JsonResponse([
@@ -2380,36 +3426,31 @@ $output .= '</div>'; // End single row with all 5 cards
       $cachedComponentsTotal = (int) ($memberTotals['components'] ?? 0);
       $cachedSimulatorsTotal = (int) ($memberTotals['simulators'] ?? 0);
       if ($cachedComponentsTotal === 0 && $cachedSimulatorsTotal > 0 && !empty($members)) {
-        // Avoid expensive synchronous prefilter fan-out on page load.
-        // Recompute member/component totals via background statistics worker.
+        // Surface data quality issue but do not auto-spawn new jobs from page rendering.
         $membersLoadingDeferred = TRUE;
+      }
 
-        $job = $this->getStatisticsCacheJob();
-        if ($this->isStatisticsCacheJobRunning($job)) {
-          if (!empty($job['job_id'])) {
-            $this->triggerStatisticsCacheWorker((string) $job['job_id']);
+      // Targeted self-healing: repair only incomplete contributor rows.
+      if (!$deferLiveFetch) {
+        $incompleteCount = 0;
+        foreach ($members as $row) {
+          if (is_array($row) && $this->isMemberRowLikelyIncomplete($row)) {
+            $incompleteCount++;
           }
-        } else {
-          $job = $this->createStatisticsCacheJobState();
-          $this->saveStatisticsCacheJob($job);
-          $this->triggerStatisticsCacheWorker((string) $job['job_id']);
+        }
+
+        $scheduledPartial = FALSE;
+        if ($incompleteCount > 0) {
+          $scheduledPartial = $this->scheduleIncompleteMembersRepair($members);
+        }
+
+        if ($scheduledPartial) {
+          $membersLoadingDeferred = TRUE;
         }
       }
     } else {
-      // Avoid expensive synchronous member recomputation on page load.
-      // Delegate first-build and rebuild work to the background statistics job.
+      // No members cache yet. Show deferred state without auto-creating jobs.
       $membersLoadingDeferred = TRUE;
-
-      $job = $this->getStatisticsCacheJob();
-      if ($this->isStatisticsCacheJobRunning($job)) {
-        if (!empty($job['job_id'])) {
-          $this->triggerStatisticsCacheWorker((string) $job['job_id']);
-        }
-      } else {
-        $job = $this->createStatisticsCacheJobState();
-        $this->saveStatisticsCacheJob($job);
-        $this->triggerStatisticsCacheWorker((string) $job['job_id']);
-      }
     }
 
     // Display members table (up to 10 columns + Description column + Total column)

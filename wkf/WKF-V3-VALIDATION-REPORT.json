@@ -1,0 +1,102 @@
+{
+    "spec": "WKF-SPEC-V3",
+    "overallOk": true,
+    "results": [
+        {
+            "file": "wkf/WKF-ADMIN_MEDICACAO.xlsx",
+            "ok": true,
+            "errors": [],
+            "warnings": []
+        },
+        {
+            "file": "wkf/WKF-AVALIACAO_INICIAL.xlsx",
+            "ok": true,
+            "errors": [],
+            "warnings": []
+        },
+        {
+            "file": "wkf/WKF-BARR_COMUNICACAO.xlsx",
+            "ok": true,
+            "errors": [],
+            "warnings": []
+        },
+        {
+            "file": "wkf/WKF-COLHEITA_AMOSTRAS.xlsx",
+            "ok": true,
+            "errors": [],
+            "warnings": []
+        },
+        {
+            "file": "wkf/WKF-CUIDADOS_DISPOSIT.xlsx",
+            "ok": true,
+            "errors": [],
+            "warnings": []
+        },
+        {
+            "file": "wkf/WKF-CUIDADOS_IV_INFUSA.xlsx",
+            "ok": true,
+            "errors": [],
+            "warnings": []
+        },
+        {
+            "file": "wkf/WKF-DETERIORACAO_PRE.xlsx",
+            "ok": true,
+            "errors": [],
+            "warnings": []
+        },
+        {
+            "file": "wkf/WKF-FERIDA_E_PENSO.xlsx",
+            "ok": true,
+            "errors": [],
+            "warnings": []
+        },
+        {
+            "file": "wkf/WKF-GERIATRIA_FRAGIL.xlsx",
+            "ok": true,
+            "errors": [],
+            "warnings": []
+        },
+        {
+            "file": "wkf/WKF-HIGIENE_MOB_QUEDA.xlsx",
+            "ok": true,
+            "errors": [],
+            "warnings": []
+        },
+        {
+            "file": "wkf/WKF-ISOLAMENTO_CTRL.xlsx",
+            "ok": true,
+            "errors": [],
+            "warnings": []
+        },
+        {
+            "file": "wkf/WKF-OXIGENIO_VIA_AEREA.xlsx",
+            "ok": true,
+            "errors": [],
+            "warnings": []
+        },
+        {
+            "file": "wkf/WKF-PEDIATRIA_CLIN.xlsx",
+            "ok": true,
+            "errors": [],
+            "warnings": []
+        },
+        {
+            "file": "wkf/WKF-PRIOR_RECURSOS.xlsx",
+            "ok": true,
+            "errors": [],
+            "warnings": []
+        },
+        {
+            "file": "wkf/WKF-REG_EDUC_COMUNICA.xlsx",
+            "ok": true,
+            "errors": [],
+            "warnings": []
+        },
+        {
+            "file": "wkf/WKF-SINAIS_E_EXAME.xlsx",
+            "ok": true,
+            "errors": [],
+            "warnings": []
+        }
+    ]
+}

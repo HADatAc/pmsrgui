@@ -83,13 +83,23 @@ pmsr.ingest_people:
   requirements:
     _permission: 'access content'
 
+pmsr.ingest_wkf_scenarios:
+  title: 'Ingest WKF Scenarios'
+  description: 'Batch ingest WKF-*.xlsx scenarios from pmsr/wkf'
+  route_name: pmsr.ingest_wkf_scenarios
+  parent: pmsr.pmsr_setup
+  menu_name: main
+  weight: 6
+  requirements:
+    _permission: 'access content'
+
 pmsr.wkf_namespaces:
   title: 'WKF-requested Namespaces'
   description: 'Manage WKF-specific namespaces without mutating main namespace table'
   route_name: pmsr.wkf_namespaces
   parent: pmsr.pmsr_setup
   menu_name: main
-  weight: 6
+  weight: 7
   requirements:
     _permission: 'access content'
 
@@ -99,6 +109,6 @@ pmsr.tests:
   route_name: pmsr.tests
   parent: pmsr.pmsr_setup
   menu_name: main
-  weight: 7
+  weight: 8
   requirements:
     _permission: 'access content'

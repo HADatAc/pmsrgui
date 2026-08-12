@@ -203,6 +203,268 @@
     }
   }
 
+  function normalizeWKFCardClass(status) {
+    const s = String(status || '').toUpperCase();
+    if (s === 'PROCESSED' || s === 'INGESTED') {
+      return 'wkf-card-processed';
+    }
+    if (s === 'WORKING') {
+      return 'wkf-card-working';
+    }
+    if (s === 'PENDING' || s === 'UNINGESTED') {
+      return 'wkf-card-pending';
+    }
+    return 'wkf-card-warning';
+  }
+
+  function renderWKFCards(cards) {
+    const grid = document.getElementById('wkf-cards-grid');
+    if (!grid) {
+      return;
+    }
+
+    const data = Array.isArray(cards) ? cards : [];
+    let html = '';
+    data.forEach(function (card) {
+      const filename = card && card.filename ? card.filename : 'WKF file';
+      const status = String((card && card.status) || 'PENDING').toUpperCase();
+      const detail = card && card.detail ? card.detail : '';
+      const cls = normalizeWKFCardClass(status);
+
+      html +=
+        '<div class="wkf-card ' + cls + '" data-wkf-file="' + escapeHtml(filename) + '">' +
+          '<div class="wkf-card-title"><strong>' + escapeHtml(filename) + '</strong></div>' +
+          '<div class="wkf-card-status">' + escapeHtml(status) + '</div>' +
+          '<div class="wkf-card-detail text-muted small">' + escapeHtml(detail) + '</div>' +
+        '</div>';
+    });
+
+    grid.innerHTML = html;
+  }
+
+  function renderWKFSummary(payload) {
+    const summary = document.getElementById('wkf-ingestion-summary');
+    if (!summary) {
+      return;
+    }
+
+    const cards = Array.isArray(payload.cards) ? payload.cards : [];
+    let processed = 0;
+    cards.forEach(function (card) {
+      const status = String((card && card.status) || '').toUpperCase();
+      if (status === 'PROCESSED' || status === 'INGESTED') {
+        processed += 1;
+      }
+    });
+
+    const total = cards.length;
+    const status = String(payload.status || '').toUpperCase();
+    const msg = payload.message || '';
+    const alertClass = status === 'SUCCESS' ? 'alert-success' : (status === 'FAILED' ? 'alert-warning' : 'alert-info');
+
+    summary.innerHTML =
+      '<div class="alert ' + alertClass + '">' +
+      '<strong>' + escapeHtml(msg) + '</strong><br>' +
+      'Processed: ' + processed + ' / ' + total +
+      '</div>';
+  }
+
+  let wkfPollingTimer = null;
+  let wkfPollingJobId = null;
+
+  function stopWKFPolling() {
+    if (wkfPollingTimer) {
+      clearTimeout(wkfPollingTimer);
+      wkfPollingTimer = null;
+    }
+    wkfPollingJobId = null;
+  }
+
+  function setWKFBusy(isBusy, message) {
+    const statusDiv = document.getElementById('ingestion-status');
+    const statusMessage = document.getElementById('status-message');
+    if (statusDiv) {
+      statusDiv.style.display = isBusy ? 'block' : 'none';
+    }
+    if (statusMessage && message) {
+      statusMessage.textContent = message;
+    }
+
+    if (isBusy) {
+      $('.btn-start-ingestion').prop('disabled', true).addClass('disabled');
+    } else {
+      $('.btn-start-ingestion').prop('disabled', false).removeClass('disabled');
+    }
+  }
+
+  function pollWKFJob(settingsObj, jobId) {
+    const statusEndpoint = settingsObj.statusEndpoint;
+    if (!statusEndpoint || !jobId) {
+      setWKFBusy(false);
+      return;
+    }
+
+    if (wkfPollingJobId && wkfPollingJobId !== jobId) {
+      stopWKFPolling();
+    }
+    wkfPollingJobId = jobId;
+
+    const tick = function () {
+      fetch(statusEndpoint + '/' + encodeURIComponent(jobId), {
+        method: 'GET',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' }
+      })
+      .then(function (res) { return res.json(); })
+      .then(function (statusData) {
+        renderWKFCards(statusData.cards || []);
+        renderWKFSummary(statusData || {});
+
+        const state = String((statusData && statusData.status) || '').toUpperCase();
+        if (state === 'SUCCESS' || state === 'FAILED') {
+          stopWKFPolling();
+          setWKFBusy(false);
+          return;
+        }
+
+        wkfPollingTimer = setTimeout(tick, 2000);
+      })
+      .catch(function () {
+        wkfPollingTimer = setTimeout(tick, 2500);
+      });
+    };
+
+    tick();
+  }
+
+  function requestWKFProcess(settingsObj, jobId) {
+    const processEndpoint = settingsObj.processEndpoint;
+    if (!processEndpoint || !jobId) {
+      return Promise.resolve(null);
+    }
+
+    return fetch(processEndpoint, {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ jobId: jobId })
+    })
+    .then(function (res) { return res.json(); })
+    .then(function (processData) {
+      if (processData) {
+        renderWKFCards(processData.cards || []);
+        renderWKFSummary(processData || {});
+      }
+      return processData;
+    })
+    .catch(function () {
+      return null;
+    });
+  }
+
+  function renderWKFCachedView(settingsObj, message) {
+    const cachedCards = Array.isArray(settingsObj.cachedCards) ? settingsObj.cachedCards : [];
+    renderWKFCards(cachedCards);
+    renderWKFSummary({
+      status: 'RUNNING',
+      message: message || 'Loaded WKF status from cache.',
+      cards: cachedCards
+    });
+    setWKFBusy(false);
+  }
+
+  function resumeWKFScenariosIngestion(settingsObj, jobId, message) {
+    const statusEndpoint = settingsObj.statusEndpoint;
+    if (!statusEndpoint || !jobId) {
+      renderWKFCachedView(settingsObj, 'No active WKF ingestion job. Showing cached WKF state.');
+      return;
+    }
+
+    setWKFBusy(true, message || settingsObj.message || 'Ingesting WKF scenarios...');
+    settingsObj.activeJobId = jobId;
+
+    fetch(statusEndpoint + '/' + encodeURIComponent(jobId), {
+      method: 'GET',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' }
+    })
+    .then(function (res) { return res.json(); })
+    .then(function (statusData) {
+      renderWKFCards(statusData.cards || []);
+      renderWKFSummary(statusData || {});
+
+      const state = String((statusData && statusData.status) || '').toUpperCase();
+      if (state === 'SUCCESS' || state === 'FAILED') {
+        setWKFBusy(false);
+        return;
+      }
+
+      pollWKFJob(settingsObj, jobId);
+      return requestWKFProcess(settingsObj, jobId);
+    })
+    .catch(function (error) {
+      setWKFBusy(false);
+      const summary = document.getElementById('wkf-ingestion-summary');
+      if (summary) {
+        summary.innerHTML = '<div class="alert alert-danger">Could not resume WKF ingestion: ' + escapeHtml(error.message) + '</div>';
+      }
+    });
+  }
+
+  function runWKFScenariosIngestionFlow(btn, settingsObj, fromScratch, organizationUri) {
+    const startEndpoint = settingsObj.startEndpoint;
+    const statusEndpoint = settingsObj.statusEndpoint;
+    const processEndpoint = settingsObj.processEndpoint;
+    const resultsDiv = document.getElementById('ingestion-results');
+
+    if (!startEndpoint || !statusEndpoint || !processEndpoint) {
+      if (resultsDiv) {
+        resultsDiv.style.display = 'block';
+        resultsDiv.innerHTML = '<div class="alert alert-danger">Missing WKF ingestion endpoint configuration.</div>';
+      }
+      return;
+    }
+
+    setWKFBusy(true, settingsObj.message || 'Ingesting WKF scenarios...');
+
+    fetch(startEndpoint, {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        fromScratch: !!fromScratch,
+        organizationUri: String(organizationUri || '').trim()
+      })
+    })
+    .then(function (res) { return res.json(); })
+    .then(function (startData) {
+      if (!startData || !startData.success || !startData.jobId) {
+        throw new Error((startData && startData.message) ? startData.message : 'Could not start WKF scenarios ingestion job.');
+      }
+
+      const jobId = startData.jobId;
+      settingsObj.activeJobId = jobId;
+      settingsObj.selectedOrganizationUri = String((startData && startData.organizationUri) || organizationUri || '');
+      if (Array.isArray(startData.cards)) {
+        renderWKFCards(startData.cards);
+        settingsObj.cachedCards = startData.cards;
+      }
+
+      pollWKFJob(settingsObj, jobId);
+      return requestWKFProcess(settingsObj, jobId);
+    })
+    .catch(function (error) {
+      setWKFBusy(false);
+      if (resultsDiv) {
+        resultsDiv.style.display = 'block';
+      }
+      const summary = document.getElementById('wkf-ingestion-summary');
+      if (summary) {
+        summary.innerHTML = '<div class="alert alert-danger">WKF scenarios ingestion error: ' + escapeHtml(error.message) + '</div>';
+      }
+    });
+  }
+
   /**
    * Start the ingestion process.
    */
@@ -214,11 +476,45 @@
           $(this).data('pmsr-ingestion-processed', true);
           $(this).on('click', function(e) {
             e.preventDefault();
-            
-            const endpoint = drupalSettings.pmsr.ingestion.endpoint;
-            const startEndpoint = drupalSettings.pmsr.ingestion.startEndpoint;
-            const statusEndpoint = drupalSettings.pmsr.ingestion.statusEndpoint;
-            const message = drupalSettings.pmsr.ingestion.message;
+
+            const pmsrSettings = drupalSettings.pmsr || {};
+            const ingestionSettings = pmsrSettings.ingestion || null;
+            const wkfSettings = pmsrSettings.wkfIngestion || null;
+
+            const isWKFScenariosIngestion = window.location.pathname.includes('/pmsr/ingest/wkf-scenarios');
+            if (isWKFScenariosIngestion && wkfSettings) {
+              const organizationSelect = document.getElementById('wkf-deploy-organization');
+              const selectedOrganizationUri = organizationSelect ? String(organizationSelect.value || '').trim() : '';
+              const requireOrganizationSelection = !!wkfSettings.requireOrganizationSelection;
+
+              if (requireOrganizationSelection && !selectedOrganizationUri) {
+                const summary = document.getElementById('wkf-ingestion-summary');
+                if (summary) {
+                  summary.innerHTML = '<div class="alert alert-warning">Please select a deployment organization before starting WKF ingestion.</div>';
+                }
+                return;
+              }
+
+              const fromScratch = window.confirm(
+                'Start from scratch?\n\nOK = uningest cached ingested WKFs first, then ingest all again.\nCancel = keep cache and ingest only non-ingested WKFs.'
+              );
+              runWKFScenariosIngestionFlow(this, wkfSettings, fromScratch, selectedOrganizationUri);
+              return;
+            }
+
+            if (!ingestionSettings) {
+              const fallbackResults = document.getElementById('ingestion-results');
+              if (fallbackResults) {
+                fallbackResults.style.display = 'block';
+                fallbackResults.innerHTML = '<div class="alert alert-danger">Ingestion configuration is missing for this page.</div>';
+              }
+              return;
+            }
+
+            const endpoint = ingestionSettings.endpoint;
+            const startEndpoint = ingestionSettings.startEndpoint;
+            const statusEndpoint = ingestionSettings.statusEndpoint;
+            const message = ingestionSettings.message;
             
             // Check if this is a Drupal-based ingestion (ontology, INS, Geography, or People)
             const isOntologyIngestion = window.location.pathname.includes('/pmsr/ingest/ontologies');
@@ -339,12 +635,12 @@
               const clearExistingImages = document.getElementById('clearExistingImages');
               requestBody = JSON.stringify({
                 clearExistingImages: clearExistingImages ? clearExistingImages.checked : false,
-                token: drupalSettings.pmsr.ingestion.token || null
+                token: ingestionSettings.token || null
               });
             } else if (isPeopleIngestion) {
               // People ingestion needs token but no other parameters
               requestBody = JSON.stringify({
-                token: drupalSettings.pmsr.ingestion.token || null
+                token: ingestionSettings.token || null
               });
             }
             
@@ -524,6 +820,40 @@
           });
         }
       });
+
+      // Attach click handler to Refresh button for WKF scenarios page.
+      $('.btn-refresh-ingestion', context).each(function() {
+        if (!$(this).data('pmsr-wkf-refresh-processed')) {
+          $(this).data('pmsr-wkf-refresh-processed', true);
+          $(this).on('click', function(e) {
+            e.preventDefault();
+            const pmsrSettings = drupalSettings.pmsr || {};
+            const wkfSettings = pmsrSettings.wkfIngestion || null;
+            const isWKFScenariosIngestion = window.location.pathname.includes('/pmsr/ingest/wkf-scenarios');
+            if (!isWKFScenariosIngestion || !wkfSettings) {
+              return;
+            }
+
+            const jobId = wkfSettings.activeJobId || '';
+            if (jobId) {
+              resumeWKFScenariosIngestion(wkfSettings, jobId, 'Refreshing WKF ingestion state...');
+            } else {
+              renderWKFCachedView(wkfSettings, 'Refresh loaded WKF state from cache.');
+            }
+          });
+        }
+      });
+
+      // Auto-resume active WKF ingestion job when the page loads/refreshed.
+      const pmsrSettings = drupalSettings.pmsr || {};
+      const wkfSettings = pmsrSettings.wkfIngestion || null;
+      const isWKFScenariosIngestion = window.location.pathname.includes('/pmsr/ingest/wkf-scenarios');
+      if (isWKFScenariosIngestion && wkfSettings && !wkfSettings._autoResumeDone) {
+        wkfSettings._autoResumeDone = true;
+        if (wkfSettings.activeJobId) {
+          resumeWKFScenariosIngestion(wkfSettings, wkfSettings.activeJobId, wkfSettings.activeMessage || 'Resuming WKF ingestion...');
+        }
+      }
       
       // Attach click handler to Start Uningestion button
       $('.btn-start-uningest', context).each(function() {

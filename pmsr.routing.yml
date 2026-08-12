@@ -246,6 +246,15 @@ pmsr.ingest_people:
     _permission: 'access content'
     _role: 'authenticated'
 
+pmsr.ingest_wkf_scenarios:
+  path: '/pmsr/ingest/wkf-scenarios'
+  defaults:
+    _controller: '\Drupal\pmsr\Controller\IngestionWkfScenariosController::content'
+    _title: 'Ingest WKF Scenarios'
+  requirements:
+    _permission: 'access content'
+    _role: 'authenticated'
+
 pmsr.wkf_namespaces:
   path: '/pmsr/setup/wkf-namespaces'
   defaults:
@@ -266,6 +275,36 @@ pmsr.process_people_ingestion:
   path: '/pmsr/api/ingest/people/process'
   defaults:
     _controller: '\Drupal\pmsr\Controller\IngestionKgrPeopleController::processPeopleIngestion'
+  requirements:
+    _access: 'TRUE'
+  options:
+    no_cache: TRUE
+  methods: [POST]
+
+pmsr.start_wkf_scenarios_ingestion:
+  path: '/pmsr/api/ingest/wkf-scenarios/start'
+  defaults:
+    _controller: '\Drupal\pmsr\Controller\IngestionWkfScenariosController::start'
+  requirements:
+    _access: 'TRUE'
+  options:
+    no_cache: TRUE
+  methods: [POST]
+
+pmsr.status_wkf_scenarios_ingestion:
+  path: '/pmsr/api/ingest/wkf-scenarios/status/{jobId}'
+  defaults:
+    _controller: '\Drupal\pmsr\Controller\IngestionWkfScenariosController::status'
+  requirements:
+    _access: 'TRUE'
+  options:
+    no_cache: TRUE
+  methods: [GET]
+
+pmsr.process_wkf_scenarios_ingestion:
+  path: '/pmsr/api/ingest/wkf-scenarios/process'
+  defaults:
+    _controller: '\Drupal\pmsr\Controller\IngestionWkfScenariosController::process'
   requirements:
     _access: 'TRUE'
   options:

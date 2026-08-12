@@ -33,6 +33,14 @@ ingestion:
   dependencies:
     - core/jquery
     - core/drupal
+
+wkf_scenarios_ingestion:
+  css:
+    theme:
+      css/wkf_scenarios_ingestion.css: {}
+  dependencies:
+    - core/drupal
+    - core/drupalSettings
 statistics:
   css:
     theme:
