@@ -20,6 +20,16 @@
       const statusArea = document.getElementById('status-messages');
 
       const apiUrl = drupalSettings.pmsr.bootstrapApiUrl;
+      let parsedEventCount = 0;
+
+      function showError(message, details) {
+        let html = '<div class="status-message error"><span class="status-icon">❌</span><span class="status-text">Error: ' + message + '</span>';
+        if (details) {
+          html += '<div class="status-details">' + details + '</div>';
+        }
+        html += '</div>';
+        statusArea.innerHTML = html;
+      }
       
       fetch(apiUrl, {
         method: 'POST',
@@ -28,6 +38,28 @@
         }
       })
       .then(response => {
+        if (!response.ok) {
+          if (response.status === 401) {
+            throw new Error('Session expired or not authenticated (401). Please sign in and try again.');
+          }
+          if (response.status === 403) {
+            throw new Error('Access denied (403). You need administrator permission to run this bootstrap.');
+          }
+          if (response.status === 404) {
+            throw new Error('Bootstrap endpoint not found (404). Please open this flow from /pmsr/config/bootstrap.');
+          }
+          throw new Error('Bootstrap request failed with HTTP ' + response.status + '.');
+        }
+
+        const contentType = (response.headers.get('content-type') || '').toLowerCase();
+        if (contentType.includes('text/html')) {
+          throw new Error('Unexpected HTML response from bootstrap endpoint. This usually means access was denied or the route is incorrect.');
+        }
+
+        if (!response.body) {
+          throw new Error('Bootstrap response stream is unavailable.');
+        }
+
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let pending = '';
@@ -37,10 +69,18 @@
             if (pending.trim()) {
               try {
                 const data = JSON.parse(pending.trim());
+                parsedEventCount++;
                 updateProgress(data);
               } catch (e) {
                 console.error('Final parse error:', e, pending);
+                if (pending.trim().startsWith('<')) {
+                  throw new Error('Received HTML instead of progress data. Please start from /pmsr/config/bootstrap with an admin account.');
+                }
               }
+            }
+
+            if (parsedEventCount === 0) {
+              throw new Error('Bootstrap finished without progress events. Please retry from /pmsr/config/bootstrap.');
             }
             return;
           }
@@ -54,9 +94,13 @@
             if (line.trim()) {
               try {
                 const data = JSON.parse(line);
+                parsedEventCount++;
                 updateProgress(data);
               } catch (e) {
                 console.error('Parse error:', e, line);
+                if (line.trim().startsWith('<')) {
+                  throw new Error('Received HTML instead of progress data. Please verify permissions and retry.');
+                }
               }
             }
           });
@@ -68,8 +112,7 @@
       })
       .catch(error => {
         console.error('Bootstrap error:', error);
-        statusArea.innerHTML = 
-          '<div class="status-message error"><span class="status-icon">❌</span><span class="status-text">Error: ' + error.message + '</span></div>';
+        showError(error.message, 'If you are on the remote server, sign in with an administrator account and start from /pmsr/config/bootstrap.');
       });
       
       function updateProgress(data) {

@@ -43,6 +43,15 @@
     });
   }
 
+  function endpointHostLabel(url) {
+    try {
+      return new URL(url, window.location.origin).host;
+    }
+    catch (e) {
+      return window.location.host || 'current host';
+    }
+  }
+
   function renderINSLiveProgressShell(resultsDiv) {
     let cards = '';
     INS_STEP_TITLES.forEach(function (title, idx) {
@@ -349,7 +358,15 @@
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ jobId: jobId })
     })
-    .then(function (res) { return res.json(); })
+    .then(function (res) {
+      return res.json().then(function (payload) {
+        if (!res.ok) {
+          const msg = (payload && payload.message) ? payload.message : ('HTTP ' + res.status + ' while starting WKF processing.');
+          throw new Error(msg);
+        }
+        return payload;
+      });
+    })
     .then(function (processData) {
       if (processData) {
         renderWKFCards(processData.cards || []);
@@ -357,8 +374,8 @@
       }
       return processData;
     })
-    .catch(function () {
-      return null;
+    .catch(function (error) {
+      throw error;
     });
   }
 
@@ -403,6 +420,7 @@
       return requestWKFProcess(settingsObj, jobId);
     })
     .catch(function (error) {
+      stopWKFPolling();
       setWKFBusy(false);
       const summary = document.getElementById('wkf-ingestion-summary');
       if (summary) {
@@ -438,8 +456,23 @@
     })
     .then(function (res) { return res.json(); })
     .then(function (startData) {
-      if (!startData || !startData.success || !startData.jobId) {
+      if (!startData || !startData.jobId) {
         throw new Error((startData && startData.message) ? startData.message : 'Could not start WKF scenarios ingestion job.');
+      }
+
+      // If backend reports a running job conflict, resume it instead of failing.
+      if (!startData.success && startData.jobId) {
+        settingsObj.activeJobId = startData.jobId;
+        if (Array.isArray(startData.cards)) {
+          renderWKFCards(startData.cards);
+          settingsObj.cachedCards = startData.cards;
+        }
+        resumeWKFScenariosIngestion(
+          settingsObj,
+          startData.jobId,
+          (startData && startData.message) ? startData.message : 'Resuming currently running WKF ingestion job...'
+        );
+        return null;
       }
 
       const jobId = startData.jobId;
@@ -454,6 +487,7 @@
       return requestWKFProcess(settingsObj, jobId);
     })
     .catch(function (error) {
+      stopWKFPolling();
       setWKFBusy(false);
       if (resultsDiv) {
         resultsDiv.style.display = 'block';
@@ -650,8 +684,12 @@
             document.getElementById("ingestion-status").style.display = "block";
             document.getElementById("status-message").textContent = message;
             
+            // Use longer timeouts for heavy ingestion flows to reduce false timeout errors.
+            const timeoutMs = isGeographyIngestion ? 900000 : (isPeopleIngestion ? 120000 : 30000);
+
             // Use the Drupal AJAX endpoint for ontologies/INS/Geography, backend endpoint for others
             const actualEndpoint = isDrupalIngestion ? endpoint : endpoint;
+            const endpointHost = endpointHostLabel(actualEndpoint);
             
             fetchWithTimeout(actualEndpoint, {
               method: "POST",
@@ -660,7 +698,7 @@
                 "Content-Type": "application/json"
               },
               body: requestBody
-            }, 15000)
+            }, timeoutMs)
             .then(response => {
               return response.text().then(text => {
                 let data = null;
@@ -686,17 +724,23 @@
               if (isDrupalIngestion) {
                 const progressList = Array.isArray(data.progress) ? data.progress : [];
                 const errorsList = Array.isArray(data.errors) ? data.errors : [];
-                const hasProgressIssues = progressList.some(function(step) {
+                const hasHardProgressErrors = progressList.some(function(step) {
                   const txt = String(step || '');
-                  return txt.indexOf('✗') !== -1 || txt.indexOf('⚠') !== -1 || txt.indexOf('[ERROR]') !== -1;
+                  return txt.indexOf('✗') !== -1 || txt.indexOf('[ERROR]') !== -1;
                 });
-                const strictSuccess = data.success === true && errorsList.length === 0 && !hasProgressIssues;
+                const hasProgressWarnings = progressList.some(function(step) {
+                  const txt = String(step || '');
+                  return txt.indexOf('⚠') !== -1;
+                });
+                const strictSuccess = data.success === true && errorsList.length === 0 && !hasHardProgressErrors;
 
                 if (strictSuccess) {
-                  let progressHTML = '<div class="alert alert-success alert-dismissable fade show" role="alert">' +
+                  const alertClass = hasProgressWarnings ? 'alert-warning' : 'alert-success';
+                  const heading = hasProgressWarnings ? '⚠ Ingestion Completed with Warnings' : '✓ Ingestion Completed Successfully';
+                  let progressHTML = '<div class="alert ' + alertClass + ' alert-dismissable fade show" role="alert">' +
                     '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
                     '<span aria-hidden="true">&times;</span></button>' +
-                    '<h4>✓ Ingestion Completed Successfully</h4>' +
+                    '<h4>' + heading + '</h4>' +
                     '<p>' + (data.message || "All ontologies ingested successfully.") + '</p>';
                   
                   if (progressList.length > 0) {
@@ -797,7 +841,7 @@
               const resultsDiv = document.getElementById("ingestion-results");
               resultsDiv.style.display = "block";
               const message = error && error.name === 'AbortError'
-                ? 'Request timed out after 15 seconds. hascoapi is likely down or unreachable at localhost:9001.'
+                ? ('Request timed out after ' + Math.round(timeoutMs / 1000) + ' seconds. Ingestion service may be slow or unreachable at ' + endpointHost + '.')
                 : ('Failed to connect to the ingestion service: ' + error.message);
               resultsDiv.innerHTML = 
                 '<div class="alert alert-danger alert-dismissable fade show" role="alert">' +

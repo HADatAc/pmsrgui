@@ -75,6 +75,10 @@ ensure_test_result_database() {
 # Check prerequisites
 echo -e "${YELLOW}Checking prerequisites...${NC}"
 
+DRUPAL_BASE_URL="${PMSR_TEST_DRUPAL_BASE:-http://127.0.0.1:8080}"
+HASCOAPI_BASE_URL="${PMSR_TEST_HASCOAPI_BASE:-http://127.0.0.1:9001/hascoapi/api}"
+HASCOAPI_HEALTH_URL="${PMSR_TEST_HASCOAPI_HEALTH_URL:-${HASCOAPI_BASE_URL%/}/repo/table/namespaces}"
+
 http_status() {
     local url="$1"
     curl -s -o /dev/null -w "%{http_code}" --max-time 5 "$url" 2>/dev/null || echo "000"
@@ -95,19 +99,18 @@ fi
 echo -e "${GREEN}✓ PHPUnit found${NC}"
 
 # Check if hascoapi is running (connectivity check, status-code aware)
-HASCOAPI_HEALTH_PATH="/hascoapi/api/repo/table/namespaces"
-if is_reachable_http "http://localhost:9001${HASCOAPI_HEALTH_PATH}" || is_reachable_http "http://127.0.0.1:9001${HASCOAPI_HEALTH_PATH}"; then
-    echo -e "${GREEN}✓ hascoapi reachable${NC}"
+if is_reachable_http "$HASCOAPI_HEALTH_URL"; then
+    echo -e "${GREEN}✓ hascoapi reachable (${HASCOAPI_HEALTH_URL})${NC}"
 else
-    echo -e "${YELLOW}⚠ hascoapi not reachable at localhost:9001 or 127.0.0.1:9001${NC}"
+    echo -e "${YELLOW}⚠ hascoapi not reachable at ${HASCOAPI_HEALTH_URL}${NC}"
     echo -e "${YELLOW}  Some integration tests will be skipped${NC}"
 fi
 
 # Check if Drupal is accessible (connectivity check, status-code aware)
-if is_reachable_http "http://localhost:8080" || is_reachable_http "http://127.0.0.1:8080"; then
-    echo -e "${GREEN}✓ Drupal reachable${NC}"
+if is_reachable_http "$DRUPAL_BASE_URL"; then
+    echo -e "${GREEN}✓ Drupal reachable (${DRUPAL_BASE_URL})${NC}"
 else
-    echo -e "${YELLOW}⚠ Drupal not reachable at localhost:8080 or 127.0.0.1:8080${NC}"
+    echo -e "${YELLOW}⚠ Drupal not reachable at ${DRUPAL_BASE_URL}${NC}"
     echo -e "${YELLOW}  Functional tests will fail${NC}"
 fi
 
@@ -327,6 +330,8 @@ case "$TEST_TYPE" in
         echo "  --verbose   - Show detailed test output"
         echo ""
         echo "Environment overrides:"
+        echo "  PMSR_TEST_HASCOAPI_BASE, PMSR_TEST_HASCOAPI_HEALTH_URL"
+        echo "  PMSR_TEST_DRUPAL_BASE"
         echo "  DRUPAL_DB_HOST, DRUPAL_DB_PORT, DRUPAL_DB_USER, DRUPAL_DB_PASS"
         echo "  TEST_RESULT_DB_NAME"
         echo ""

@@ -118,26 +118,26 @@ class IngestionKgrPeopleController extends ControllerBase {
     $api = \Drupal::service('rep.api_connector');
 
     $apiUrl = (string) $api->getApiUrl();
-    if (!$this->isLocalHascoApiAt9001($apiUrl)) {
-      $message = 'Hard stop: hascoapi must be configured at localhost:9001. Current api_url=' . $apiUrl;
+    if (!$this->hasConfiguredApiUrl($apiUrl)) {
+      $message = 'Hard stop: REP API Base URL is not configured. Current api_url=' . $apiUrl;
       PmsrSetupTracker::markStageResult('ingest_kgr_people', FALSE, $message);
       return new JsonResponse([
         'success' => FALSE,
         'message' => $message,
         'errors' => [$message],
-        'progress' => ['Aborted before ingestion: hascoapi is not configured at localhost:9001.'],
+        'progress' => ['Aborted before ingestion: REP API Base URL is not configured.'],
       ]);
     }
 
     $probe = $this->probeHascoApiFast($apiUrl);
     if (!$probe['ok']) {
-      $message = 'Hard stop: hascoapi at localhost:9001 is unreachable. ' . $probe['message'];
+      $message = 'Hard stop: hascoapi at configured REP API Base URL is unreachable. ' . $probe['message'];
       PmsrSetupTracker::markStageResult('ingest_kgr_people', FALSE, $message);
       return new JsonResponse([
         'success' => FALSE,
         'message' => $message,
         'errors' => [$message],
-        'progress' => ['Aborted before ingestion: hascoapi did not respond quickly at localhost:9001.'],
+        'progress' => ['Aborted before ingestion: hascoapi did not respond quickly at configured REP API Base URL.'],
       ]);
     }
 
@@ -1014,9 +1014,9 @@ class IngestionKgrPeopleController extends ControllerBase {
   }
 
   /**
-   * Require local hascoapi endpoint on port 9001.
+   * Check if a REP API base URL is configured.
    */
-  private function isLocalHascoApiAt9001(string $apiUrl): bool {
+  private function hasConfiguredApiUrl(string $apiUrl): bool {
     $url = trim($apiUrl);
     if ($url === '') {
       return FALSE;
@@ -1028,13 +1028,7 @@ class IngestionKgrPeopleController extends ControllerBase {
     }
 
     $host = strtolower((string) ($parts['host'] ?? ''));
-    $port = (int) ($parts['port'] ?? 80);
-
-    if ($host !== 'localhost' && $host !== '127.0.0.1') {
-      return FALSE;
-    }
-
-    return $port === 9001;
+    return $host !== '';
   }
 
   /**

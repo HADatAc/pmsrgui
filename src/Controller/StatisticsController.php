@@ -41,6 +41,7 @@ class StatisticsController extends ControllerBase {
   private const STATS_MEMBERS_FULL_REPAIR_STATE_KEY = 'pmsr.statistics.members_full_repair_state';
   private const STATS_CONTRIBUTOR_URIS_STATE_KEY = 'pmsr.statistics.contributor_uris';
   private const STATS_JOB_MAX_STAGE_FAILURES = 12;
+  private const STATS_UA_ORG_URI = 'https://pmsr.net/ont/ORG174547834502849898';
 
   /**
    * Returns all cache tags used by statistics data.
@@ -105,11 +106,15 @@ class StatisticsController extends ControllerBase {
       $persisted = [];
     }
 
-    $normalize = static function (array $uris): array {
+    $isOrganizationUri = static function (string $uri): bool {
+      return strpos($uri, '/ont/ORG') !== FALSE;
+    };
+
+    $normalize = static function (array $uris) use ($isOrganizationUri): array {
       $normalized = [];
       foreach ($uris as $uri) {
         $uri = trim((string) $uri);
-        if ($uri !== '') {
+        if ($uri !== '' && $isOrganizationUri($uri)) {
           $normalized[$uri] = TRUE;
         }
       }
@@ -2825,11 +2830,17 @@ class StatisticsController extends ControllerBase {
 
     $fallbackLabel = $this->labelFromUri($contributorUri);
 
+    $label = (is_object($orgData) ? ($orgData->label ?? NULL) : NULL) ?? $fallbackLabel;
+    $shortName = (is_object($orgData) ? ($orgData->hasShortName ?? $orgData->label ?? NULL) : NULL) ?? $fallbackLabel;
+    $fullName = (is_object($orgData) ? ($orgData->name ?? $orgData->label ?? NULL) : NULL) ?? $fallbackLabel;
+
+    $imageUrl = $this->resolveOrganizationLogoOverride($contributorUri, (string) $shortName, (string) $fullName, (string) $imageUrl);
+
     $row = [
       'uri' => $contributorUri,
-      'label' => (is_object($orgData) ? ($orgData->label ?? NULL) : NULL) ?? $fallbackLabel,
-      'shortName' => (is_object($orgData) ? ($orgData->hasShortName ?? $orgData->label ?? NULL) : NULL) ?? $fallbackLabel,
-      'fullName' => (is_object($orgData) ? ($orgData->name ?? $orgData->label ?? NULL) : NULL) ?? $fallbackLabel,
+      'label' => $label,
+      'shortName' => $shortName,
+      'fullName' => $fullName,
       'image' => $imageUrl,
       'peopleCount' => $peopleCount,
       'registeredUsersCount' => $registeredUsersCount,
@@ -2847,6 +2858,29 @@ class StatisticsController extends ControllerBase {
     }
 
     return $row;
+  }
+
+  /**
+   * Returns a deterministic organization logo for known special cases.
+   */
+  private function resolveOrganizationLogoOverride(string $contributorUri, string $shortName, string $fullName, string $defaultImage): string {
+    $isUa = ($contributorUri === self::STATS_UA_ORG_URI)
+      || (strtoupper(trim($shortName)) === 'UA')
+      || (stripos($fullName, 'Universidade de Aveiro') !== FALSE);
+
+    if (!$isUa) {
+      return $defaultImage;
+    }
+
+    $modulePath = \Drupal::service('extension.list.module')->getPath('pmsr');
+    $uaLogoRelativePath = $modulePath . '/images/organizations/UA.png';
+    $uaLogoAbsolutePath = DRUPAL_ROOT . '/' . $uaLogoRelativePath;
+
+    if (file_exists($uaLogoAbsolutePath)) {
+      return base_path() . $uaLogoRelativePath;
+    }
+
+    return $defaultImage;
   }
 
   /**

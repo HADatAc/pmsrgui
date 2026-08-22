@@ -73,6 +73,24 @@ pmsr.bootstrap_execute_localhost:
     no_cache: TRUE
   methods: [POST]
 
+pmsr.bootstrap_cloud_page:
+  path: '/pmsr/bootstrap/cloud/page'
+  defaults:
+    _controller: '\Drupal\pmsr\Controller\BootstrapController::bootstrapCloudPage'
+    _title: 'Bootstrap Cloud'
+  requirements:
+    _permission: 'administer site configuration'
+
+pmsr.bootstrap_execute_cloud:
+  path: '/pmsr/api/bootstrap/cloud/execute'
+  defaults:
+    _controller: '\Drupal\pmsr\Controller\BootstrapController::executeCloudBootstrap'
+  requirements:
+    _permission: 'administer site configuration'
+  options:
+    no_cache: TRUE
+  methods: [POST]
+
 pmsr.access_denied:
   path: '/acess-denied'
   defaults:

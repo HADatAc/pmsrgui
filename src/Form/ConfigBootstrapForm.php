@@ -72,10 +72,9 @@ class ConfigBootstrapForm extends FormBase {
       '#type' => 'submit',
       '#value' => $this->t('Bootstrap Cloud'),
       '#name' => 'bootstrap_cloud',
-      '#disabled' => TRUE,
       '#attributes' => [
         'class' => ['button', 'bootstrap-btn'],
-        'title' => $this->t('Cloud bootstrap will be available in a future update'),
+        'title' => $this->t('Run bootstrap using the configured REP API Base URL'),
       ],
     ];
 
@@ -119,7 +118,8 @@ class ConfigBootstrapForm extends FormBase {
       $form_state->setRedirect('pmsr.bootstrap_localhost_page');
     }
     elseif ($button_name === 'bootstrap_cloud') {
-      \Drupal::messenger()->addWarning($this->t('Cloud bootstrap is not yet implemented.'));
+      // Redirect to AJAX controller for cloud bootstrap
+      $form_state->setRedirect('pmsr.bootstrap_cloud_page');
     }
   }
 

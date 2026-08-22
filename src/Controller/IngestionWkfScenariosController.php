@@ -21,6 +21,7 @@ class IngestionWkfScenariosController extends ControllerBase {
   private const ACTIVE_JOB_STATE_KEY = 'pmsr.wkf_ingestion.active_job';
   private const PROCESS_LOCK_PREFIX = 'pmsr.wkf_ingestion.process.';
   private const WKF_CACHE_STATE_KEY = 'pmsr.wkf_ingestion.cache';
+  private const PMSR_PROJECT_URI = 'https://pmsr.net/ont/PJT1742783481383251';
 
   /**
    * Render the WKF scenarios ingestion page.
@@ -488,7 +489,9 @@ class IngestionWkfScenariosController extends ControllerBase {
     }
 
     try {
-      $destination = 'public://wkf/' . $filename;
+      // Keep temporary files in the same public://mts area used by existing
+      // upload fallbacks in the API connector.
+      $destination = 'public://mts/' . $filename;
       $directory = dirname($destination);
       \Drupal::service('file_system')->prepareDirectory($directory, \Drupal\Core\File\FileSystemInterface::CREATE_DIRECTORY);
       $contents = file_get_contents($sourcePath);
@@ -503,7 +506,17 @@ class IngestionWkfScenariosController extends ControllerBase {
       return ['success' => FALSE, 'message' => 'Drupal file creation failed: ' . $e->getMessage()];
     }
 
-    $useremail = (string) \Drupal::currentUser()->getEmail();
+    $useremail = trim((string) \Drupal::currentUser()->getEmail());
+      if ($useremail === '' || !filter_var($useremail, FILTER_VALIDATE_EMAIL)) {
+        $siteMail = trim((string) (\Drupal::config('system.site')->get('mail') ?? ''));
+        if ($siteMail !== '' && filter_var($siteMail, FILTER_VALIDATE_EMAIL)) {
+          $useremail = $siteMail;
+        }
+        else {
+          $useremail = 'admin@pmsr.com';
+        }
+      }
+      $useremail = $this->resolveManagerEmailForSubmission($api, $targetOrganizationUri, $useremail);
     $dataFileUri = $this->generateDataFileUriWithFallback($api);
     if ($dataFileUri === '') {
       return ['success' => FALSE, 'message' => 'Could not generate DataFile URI'];
@@ -888,6 +901,102 @@ class IngestionWkfScenariosController extends ControllerBase {
   }
 
   /**
+   * Resolve manager email for ingestion submit/query params.
+   *
+   * Preference order:
+   * 1) curator-like emails affiliated with selected organization,
+   * 2) any valid affiliated email,
+   * 3) provided fallback email,
+   * 4) site mail,
+   * 5) static admin fallback.
+   */
+  private function resolveManagerEmailForSubmission($api, string $organizationUri, string $fallbackEmail): string {
+    $fallback = trim($fallbackEmail);
+    if ($fallback !== '' && !filter_var($fallback, FILTER_VALIDATE_EMAIL)) {
+      $fallback = '';
+    }
+
+    if ($organizationUri !== '') {
+      try {
+        $affRaw = $api->getAffiliations($organizationUri, 300, 0);
+        $affObj = $api->parseObjectResponse($affRaw, 'organizationAffiliations');
+        $emails = $this->extractEmailsFromAffiliations($affObj);
+        if (!empty($emails)) {
+          $curatorEmails = array_values(array_filter($emails, static function (string $email): bool {
+            return stripos($email, 'curator') !== FALSE;
+          }));
+          if (!empty($curatorEmails)) {
+            return $curatorEmails[0];
+          }
+          return $emails[0];
+        }
+      }
+      catch (\Throwable $e) {
+        \Drupal::logger('pmsr')->warning('Could not resolve manager email from organization affiliations for @org: @msg', [
+          '@org' => $organizationUri,
+          '@msg' => $e->getMessage(),
+        ]);
+      }
+    }
+
+    if ($fallback !== '') {
+      return $fallback;
+    }
+
+    $siteMail = trim((string) (\Drupal::config('system.site')->get('mail') ?? ''));
+    if ($siteMail !== '' && filter_var($siteMail, FILTER_VALIDATE_EMAIL)) {
+      return $siteMail;
+    }
+
+    return 'admin@pmsr.com';
+  }
+
+  /**
+   * Extract distinct valid emails from possible affiliation response shapes.
+   */
+  private function extractEmailsFromAffiliations($affObj): array {
+    $rows = [];
+    if (is_object($affObj) && isset($affObj->affiliations) && is_array($affObj->affiliations)) {
+      $rows = $affObj->affiliations;
+    }
+    else if (is_object($affObj) && isset($affObj->items) && is_array($affObj->items)) {
+      $rows = $affObj->items;
+    }
+    else if (is_array($affObj)) {
+      $rows = $affObj;
+    }
+
+    $emails = [];
+    foreach ($rows as $row) {
+      $candidates = [];
+
+      if (is_object($row)) {
+        $candidates[] = isset($row->email) ? (string) $row->email : '';
+        $candidates[] = isset($row->managerEmail) ? (string) $row->managerEmail : '';
+        $candidates[] = isset($row->hasSIRManagerEmail) ? (string) $row->hasSIRManagerEmail : '';
+
+        if (isset($row->person) && is_object($row->person)) {
+          $candidates[] = isset($row->person->email) ? (string) $row->person->email : '';
+          $candidates[] = isset($row->person->hasEmail) ? (string) $row->person->hasEmail : '';
+          $candidates[] = isset($row->person->hasSIREmail) ? (string) $row->person->hasSIREmail : '';
+        }
+      }
+
+      foreach ($candidates as $candidate) {
+        $candidate = trim($candidate);
+        if ($candidate === '' || !filter_var($candidate, FILTER_VALIDATE_EMAIL)) {
+          continue;
+        }
+        $emails[strtolower($candidate)] = $candidate;
+      }
+    }
+
+    $result = array_values($emails);
+    sort($result);
+    return $result;
+  }
+
+  /**
    * Discover WKF files in module wkf folder.
    */
   private function discoverWkfFiles(): array {
@@ -897,9 +1006,24 @@ class IngestionWkfScenariosController extends ControllerBase {
       return [];
     }
 
-    $paths = glob($wkfDir . '/WKF-*.xlsx');
-    if (!is_array($paths)) {
+    $entries = scandir($wkfDir);
+    if (!is_array($entries)) {
       return [];
+    }
+
+    $paths = [];
+    foreach ($entries as $entry) {
+      if (!is_string($entry) || $entry === '.' || $entry === '..') {
+        continue;
+      }
+      if (!preg_match('/^wkf-.*\.(xlsx|xlsm|xls)$/i', $entry)) {
+        continue;
+      }
+      $fullPath = $wkfDir . '/' . $entry;
+      if (!is_file($fullPath)) {
+        continue;
+      }
+      $paths[] = $fullPath;
     }
 
     sort($paths, SORT_NATURAL | SORT_FLAG_CASE);
@@ -917,7 +1041,7 @@ class IngestionWkfScenariosController extends ControllerBase {
    * True when the current user must choose a deployment organization.
    */
   private function requiresOrganizationSelection(): bool {
-    return \Drupal::currentUser()->hasPermission('administer site configuration');
+    return TRUE;
   }
 
   /**
@@ -928,37 +1052,78 @@ class IngestionWkfScenariosController extends ControllerBase {
 
     try {
       $api = \Drupal::service('rep.api_connector');
-      $url = rtrim((string) $api->getApiUrl(), '/') . '/hascoapi/api/organization/keyword/_/500/0';
-      $response = $api->perform_http_request('GET', $url, [
-        'timeout' => 20,
-        'connect_timeout' => 3,
-        'http_errors' => FALSE,
-        'headers' => [
-          'Content-Type' => 'application/json',
-        ],
-      ]);
 
-      $decoded = json_decode((string) $response->getBody(), TRUE);
-      $rows = [];
-      if (is_array($decoded) && !empty($decoded['isSuccessful']) && isset($decoded['body']) && is_array($decoded['body'])) {
-        $rows = $decoded['body'];
+      // Preferred source: member organizations linked as project contributors.
+      $project = $api->parseObjectResponse($api->getUri(self::PMSR_PROJECT_URI), 'getUri');
+      $contributorUris = [];
+      if (is_object($project) && isset($project->contributorUris) && is_array($project->contributorUris)) {
+        $contributorUris = array_values($project->contributorUris);
       }
 
-      foreach ($rows as $row) {
-        if (!is_array($row)) {
-          continue;
-        }
-        $uri = trim((string) ($row['uri'] ?? ''));
+      foreach ($contributorUris as $contributorUri) {
+        $uri = trim((string) $contributorUri);
         if ($uri === '') {
           continue;
         }
-        $name = trim((string) ($row['name'] ?? ''));
-        $label = trim((string) ($row['label'] ?? ''));
-        $pretty = $name !== '' ? $name : ($label !== '' ? $label : $uri);
+
+        $orgObj = $api->parseObjectResponse($api->getUri($uri), 'getUri');
+        if (!is_object($orgObj)) {
+          continue;
+        }
+
+        $name = trim((string) ($orgObj->name ?? ''));
+        $label = trim((string) ($orgObj->label ?? ''));
+        $content = trim((string) ($orgObj->hasContent ?? ''));
+        $pretty = $name !== '' ? $name : ($label !== '' ? $label : ($content !== '' ? $content : $uri));
+
         $options[$uri] = [
           'uri' => $uri,
           'label' => $pretty,
         ];
+      }
+
+      // Fallback source: generic organization listing.
+      if (empty($options)) {
+        $url = rtrim((string) $api->getApiUrl(), '/') . '/hascoapi/api/organization/keyword/_/500/0';
+        $raw = $api->perform_http_request('GET', $url, [
+          'timeout' => 20,
+          'connect_timeout' => 3,
+          'http_errors' => FALSE,
+          'headers' => [
+            'Content-Type' => 'application/json',
+          ],
+        ]);
+
+        $decoded = json_decode((string) $raw, TRUE);
+        $rows = [];
+        if (is_array($decoded) && !empty($decoded['isSuccessful']) && isset($decoded['body'])) {
+          if (is_array($decoded['body'])) {
+            $rows = $decoded['body'];
+          }
+          elseif (is_string($decoded['body'])) {
+            $bodyDecoded = json_decode($decoded['body'], TRUE);
+            if (is_array($bodyDecoded)) {
+              $rows = $bodyDecoded;
+            }
+          }
+        }
+
+        foreach ($rows as $row) {
+          if (!is_array($row)) {
+            continue;
+          }
+          $uri = trim((string) ($row['uri'] ?? ''));
+          if ($uri === '') {
+            continue;
+          }
+          $name = trim((string) ($row['name'] ?? ''));
+          $label = trim((string) ($row['label'] ?? ''));
+          $pretty = $name !== '' ? $name : ($label !== '' ? $label : $uri);
+          $options[$uri] = [
+            'uri' => $uri,
+            'label' => $pretty,
+          ];
+        }
       }
     }
     catch (\Throwable $e) {

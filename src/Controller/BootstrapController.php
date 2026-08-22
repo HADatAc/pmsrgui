@@ -18,7 +18,6 @@ class BootstrapController extends ControllerBase {
    * Localhost configuration values.
    */
   const LOCALHOST_CONFIG = [
-    'api_url' => 'http://localhost:9001',
     'rep_home' => TRUE,
     'sagres_conf' => FALSE,
     'social_conf' => TRUE,
@@ -37,19 +36,41 @@ class BootstrapController extends ControllerBase {
    * Display the localhost bootstrap page with live progress.
    */
   public function bootstrapLocalhostPage() {
+    return $this->buildBootstrapPage(
+      'pmsr.bootstrap_execute_localhost',
+      'PMSR Localhost Bootstrap',
+      'Bootstrapping PMSR configuration and ontologies...'
+    );
+  }
+
+  /**
+   * Display the cloud bootstrap page with live progress.
+   */
+  public function bootstrapCloudPage() {
+    return $this->buildBootstrapPage(
+      'pmsr.bootstrap_execute_cloud',
+      'PMSR Cloud Bootstrap',
+      'Bootstrapping PMSR configuration and ontologies using configured REP API Base URL...'
+    );
+  }
+
+  /**
+   * Build a bootstrap progress page.
+   */
+  private function buildBootstrapPage(string $executeRoute, string $title, string $subtitle): array {
     $build = [];
 
     $build['#attached']['library'][] = 'pmsr/bootstrap-progress';
     
     // Pass the API URL to JavaScript
-    $api_url = Url::fromRoute('pmsr.bootstrap_execute_localhost')->setAbsolute()->toString();
+    $api_url = Url::fromRoute($executeRoute)->setAbsolute()->toString();
     $build['#attached']['drupalSettings']['pmsr']['bootstrapApiUrl'] = $api_url;
 
     $build['intro'] = [
       '#type' => 'markup',
       '#markup' => '<div class="bootstrap-header">
-        <h1>' . $this->t('PMSR Localhost Bootstrap') . '</h1>
-        <p>' . $this->t('Bootstrapping PMSR configuration and ontologies...') . '</p>
+        <h1>' . $this->t($title) . '</h1>
+        <p>' . $this->t($subtitle) . '</p>
       </div>',
     ];
 
@@ -70,6 +91,20 @@ class BootstrapController extends ControllerBase {
    * Execute the localhost bootstrap process with streaming updates.
    */
   public function executeLocalhostBootstrap() {
+    return $this->executeBootstrap();
+  }
+
+  /**
+   * Execute the cloud bootstrap process with streaming updates.
+   */
+  public function executeCloudBootstrap() {
+    return $this->executeBootstrap();
+  }
+
+  /**
+   * Execute a bootstrap process with streaming updates.
+   */
+  private function executeBootstrap() {
     $response = new StreamedResponse();
     
     $response->headers->set('Content-Type', 'text/plain; charset=utf-8');
@@ -100,7 +135,8 @@ class BootstrapController extends ControllerBase {
   private function performBootstrap() {
     $api = \Drupal::service('rep.api_connector');
     $config = \Drupal::service('config.factory')->getEditable('rep.settings');
-    $api_url = self::LOCALHOST_CONFIG['api_url'];
+    $original_api_url = trim((string) $config->get('api_url'));
+    $api_url = $original_api_url !== '' ? $original_api_url : 'http://localhost:9001';
 
     // Bootstrap is the KG reset phase for setup flows; clear tests dashboard state.
     PmsrSetupTracker::resetAll('bootstrap');
@@ -134,8 +170,7 @@ class BootstrapController extends ControllerBase {
       'details' => implode(' | ', $resetReport['messages']),
     ]);
     
-    // Temporarily set the API URL in config so API connector methods work
-    $original_api_url = $config->get('api_url');
+    // Ensure downstream API calls use the configured REP API Base URL.
     $config->set('api_url', $api_url)->save();
 
     // Step 1: Check API connectivity
@@ -198,7 +233,7 @@ class BootstrapController extends ControllerBase {
       ]);
       
       $countQuery = 'SELECT (COUNT(*) AS ?count) WHERE { ?s ?p ?o }';
-      $countResult = $api->sparqlQuery($countQuery);
+      $countResult = $api->sparqlQueryWithTimeout($countQuery, 20, 5);
       $actualTripleCount = 0;
       
       if ($countResult) {
@@ -506,7 +541,7 @@ class BootstrapController extends ControllerBase {
         $actualCount = 0;
         try {
           $sparql = 'SELECT (COUNT(*) as ?count) WHERE { ?s ?p ?o }';
-          $result = $api->sparqlQuery($sparql);
+          $result = $api->sparqlQueryWithTimeout($sparql, 20, 5);
           $resultObj = json_decode($result);
           
           if (isset($resultObj->results->bindings[0]->count->value)) {
@@ -672,6 +707,8 @@ class BootstrapController extends ControllerBase {
       if (!$loadObj || !$loadObj->isSuccessful) {
         $loadMessage = (string) ($loadObj->body ?? 'Unknown error');
         $isPolicyBlocked = stripos($loadMessage, 'Ontology mutation is disabled') !== false;
+        $isTimeoutDuringLoad = stripos($loadMessage, 'cURL error 28') !== false
+          || stripos($loadMessage, 'Operation timed out') !== false;
 
         if ($isPolicyBlocked) {
           foreach ($generalPurposeOntologies as $ont) {
@@ -699,24 +736,36 @@ class BootstrapController extends ControllerBase {
           return;
         }
 
-        // Mark all cards as error
-        foreach ($generalPurposeOntologies as $ont) {
+        // In cloud environments, hascoapi can keep loading ontologies even if
+        // this HTTP call times out. Continue with namespace verification first.
+        if ($isTimeoutDuringLoad) {
           $this->sendProgress([
-            'type' => 'ontology',
-            'ontology' => $ont['label'],
-            'status' => 'error',
-            'message' => 'Failed to load'
+            'type' => 'step',
+            'step' => 'ontologies-timeout-verify',
+            'status' => 'warning',
+            'message' => 'Ontology load request timed out. Verifying loaded namespaces before reporting failure...',
           ]);
         }
-        
-        $this->sendProgress([
-          'type' => 'step',
-          'step' => 'ontologies-error',
-          'status' => 'error',
-          'message' => 'Failed to load ontologies: ' . $loadMessage,
-        ]);
-        PmsrSetupTracker::markStageResult('pmsr_config_bootstrap', false, 'Failed to load ontologies: ' . $loadMessage);
-        return;
+        else {
+          // Mark all cards as error
+          foreach ($generalPurposeOntologies as $ont) {
+            $this->sendProgress([
+              'type' => 'ontology',
+              'ontology' => $ont['label'],
+              'status' => 'error',
+              'message' => 'Failed to load'
+            ]);
+          }
+          
+          $this->sendProgress([
+            'type' => 'step',
+            'step' => 'ontologies-error',
+            'status' => 'error',
+            'message' => 'Failed to load ontologies: ' . $loadMessage,
+          ]);
+          PmsrSetupTracker::markStageResult('pmsr_config_bootstrap', false, 'Failed to load ontologies: ' . $loadMessage);
+          return;
+        }
       }
       
       $this->sendProgress([

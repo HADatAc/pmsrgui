@@ -95,8 +95,8 @@ class IngestionKgrGeoController extends ControllerBase {
   public function processGeographyIngestion(Request $request) {
     PmsrSetupTracker::markStageStarted('ingest_kgr_geography', 'KGR geography ingestion started');
 
-    // Increase execution time limit for long-running ingestion (5 minutes)
-    set_time_limit(300);
+    // Increase execution time limit for long-running ingestion (20 minutes).
+    set_time_limit(1200);
     
     $progress = [];
     $errors = [];
@@ -121,6 +121,9 @@ class IngestionKgrGeoController extends ControllerBase {
     
     // Get clearExistingImages parameter from request
     $clearExistingImages = isset($requestData['clearExistingImages']) ? $requestData['clearExistingImages'] : false;
+    // Optional: run post-ingestion namespace policy regression (disabled by default
+    // to avoid blocking the GUI request for several minutes).
+    $runPostTests = !empty($requestData['runPostTests']);
     
     $progress[] = "Starting KRG Geography & Organizations Ingestion Process...";
     $progress[] = "";
@@ -333,14 +336,31 @@ class IngestionKgrGeoController extends ControllerBase {
                 if ($existing_datafile_uri) {
                   $progress[] = "    → Deleting DataFile and its RDF data: " . $existing_datafile_uri;
                   $delete_df_result = $api->datafileDel($existing_datafile_uri);
-                  $delete_df_response = json_decode($delete_df_result);
+                  $delete_df_response = is_string($delete_df_result) ? json_decode($delete_df_result) : NULL;
                   if ($delete_df_response && isset($delete_df_response->isSuccessful) && $delete_df_response->isSuccessful) {
                     $progress[] = "    ✓ Deleted DataFile and all ingested RDF triples";
                     \Drupal::logger('pmsr')->info("KGR: Deleted DataFile and RDF data: " . $existing_datafile_uri);
                   } else {
-                    $error_msg = isset($delete_df_response->message) ? $delete_df_response->message : 'Unknown error';
+                    $api_error = trim((string) $api->getErrorMessage());
+                    $raw_response = is_string($delete_df_result) ? trim($delete_df_result) : '';
+                    $error_msg = isset($delete_df_response->message) ? (string) $delete_df_response->message : '';
+                    if ($error_msg === '' && isset($delete_df_response->body) && !empty($delete_df_response->body)) {
+                      $error_msg = substr(json_encode($delete_df_response->body), 0, 300);
+                    }
+                    if ($error_msg === '' && $api_error !== '') {
+                      $error_msg = $api_error;
+                    }
+                    if ($error_msg === '') {
+                      $error_msg = 'Unknown error';
+                    }
                     $progress[] = "    ⚠ Could not delete DataFile: " . $error_msg;
-                    \Drupal::logger('pmsr')->warning("KGR: Could not delete DataFile: " . $error_msg);
+                    if ($api_error !== '') {
+                      $progress[] = "    → API error detail: " . $api_error;
+                    }
+                    if ($raw_response !== '') {
+                      $progress[] = "    → Raw delete response: " . substr($raw_response, 0, 300);
+                    }
+                    \Drupal::logger('pmsr')->warning("KGR: Could not delete DataFile " . $existing_datafile_uri . ": " . $error_msg . "; api_error=" . $api_error . "; raw_response=" . substr($raw_response, 0, 500));
                   }
                 }
                 
@@ -536,7 +556,7 @@ class IngestionKgrGeoController extends ControllerBase {
     $message = $success ? 'Geography ingestion completed successfully' : 'Geography ingestion completed with some errors';
     PmsrSetupTracker::markStageResult('ingest_kgr_geography', $success, $message);
 
-    if ($success) {
+    if ($success && $runPostTests) {
       $progress[] = '[final] Running namespace policy regression...';
       PmsrSetupTracker::recordTestResult('ingest_kgr_geography', 'namespace-policy', 'running', 'Executing run-tests.sh namespace-policy');
 
@@ -564,6 +584,9 @@ class IngestionKgrGeoController extends ControllerBase {
         $progress[] = '  ✗ Namespace policy regression could not be executed.';
         $errors[] = 'Namespace policy regression execution error: ' . $e->getMessage();
       }
+    }
+    elseif ($success) {
+      $progress[] = '[final] Skipping namespace policy regression during HTTP ingestion request (runPostTests=false).';
     }
 
     return new JsonResponse([
