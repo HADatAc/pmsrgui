@@ -1,0 +1,29 @@
+# WKF PHASE V RESPONSE (FINAL)
+# Source: WKF-INTUBACAO-OROTRAQUEAL-SCENARIO.txt
+
+Process URI: https://pmsr.net/ont/WKF-INTUBACAO-OROTRAQUEAL-E2E/PROC/0001
+Process Label: Adult Orotracheal Intubation in Emergency Department
+hasTopTask: https://pmsr.net/ont/WKF-INTUBACAO-OROTRAQUEAL-E2E/TSK/0001
+
+Simulation assignments:
+- Baseline mannequin state: tachycardia, hypoxemia, increased work of breathing.
+- Event E1 (desaturation): if prolonged laryngoscopy > 45s, SpO2 decreases by 2%/10s.
+- Event E2 (post-induction hypotension): BP drop expected after induction, requiring vasoactive support.
+- Event E3 (esophageal intubation): absent sustained ETCO2 waveform and unilateral/no chest rise cues.
+- Event E4 (successful intubation): sustained ETCO2 waveform, improved SpO2 trend, reduced respiratory distress markers.
+
+Role-task mapping:
+- Team leader -> decision tasks and confirmation gate.
+- Medication nurse -> induction/paralysis preparation and administration steps.
+- Respiratory therapist -> ventilation setup and post-intubation adjustments.
+
+Readiness checklist:
+- Task hierarchy consistent and hasTopTask aligned.
+- Temporal sequence defined for main pathway and rescue branch.
+- Instrument usage specified for key procedural tasks.
+- Clinical trigger and completion thresholds encoded from source scenario.
+- Simulation behavior hooks linked to failure and success conditions.
+
+PROVENANCE NOTE:
+This final WKF content was generated from the source scenario document
+WKF-INTUBACAO-OROTRAQUEAL-SCENARIO.txt through the PMSR 5-phase workflow prompts.

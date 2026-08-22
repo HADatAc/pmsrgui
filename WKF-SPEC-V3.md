@@ -150,12 +150,23 @@ hasURI, rdf:type, hasco:hascoType, rdfs:label, rdfs:comment, vstoi:hasStatus, vs
 
 Typing rules:
 - hasco:hascoType MUST be exactly vstoi:Task.
-- rdf:type MUST be vstoi:Task or subclass of vstoi:Task.
+- rdf:type MUST be exactly one of: vstoi:AbstractTask, vstoi:ManualTask, vstoi:AutomatedTask, vstoi:InteractionTask.
 - vstoi:hasRequiredInstrument is deprecated and MUST NOT be used in new templates.
 - vstoi:usesComponentInstance MAY be used to link tasks directly to component instance URIs.
 - If vstoi:usesComponentInstance is used, it MUST only be populated for tasks whose rdf:type is vstoi:AutomatedTask or vstoi:InteractionTask.
 - If vstoi:usesComponentInstance is used, each referenced value MUST be a URI-like component instance (start with http).
 - For tasks whose rdf:type is not vstoi:AutomatedTask and not vstoi:InteractionTask, vstoi:usesComponentInstance MUST be empty.
+
+Task hierarchy and cardinality rules:
+- A top-level task is a task with no value for vstoi:hasSupertask.
+- Every non-top task MUST have exactly one immediate parent via vstoi:hasSupertask.
+- A child task MUST NOT have more than one immediate parent.
+- A parent task MUST NOT list the same child more than once in vstoi:hasSubtask.
+- If task P lists task C in vstoi:hasSubtask, then C.vstoi:hasSupertask MUST equal P.
+- If task C has vstoi:hasSupertask equal to P, then P.vstoi:hasSubtask MUST include C.
+- If a task has no child tasks, it MUST NOT have rdf:type vstoi:AbstractTask.
+- If rdf:type is vstoi:AbstractTask, it MUST have at least one child task.
+- If rdf:type is vstoi:AbstractTask and temporal dependency is parallel, choice, or independent, it MUST have at least two child tasks.
 
 Temporal operators allowed:
 after, before, parallel, choice, independent, disables, interrupts
@@ -179,12 +190,21 @@ Deprecated:
 - RequiredInstrument: https://pmsr.net/ont/<TEMPLATE_ID>/RIN/<ID>
 
 ## Cross-Sheet Integrity Requirements
-- All required sheets must exist in mandatory order.
-- Process prov:wasDerivedFrom must exist in ProcessStems.
-- Process vstoi:hasTopTask must exist in Tasks.
-- Task supertask/subtask references must resolve inside Tasks.
-- Temporal dependency graph for after/before must be acyclic.
-- For each Process row created in current WKF, there must be at least one STD row where hasco:hasProcess equals that Process URI.
+- Ingestion-time validation MUST enforce that all required sheets exist in mandatory order.
+- Ingestion-time validation MUST enforce that each Process prov:wasDerivedFrom value resolves to an existing ProcessStem.
+- Ingestion-time validation MUST enforce that each Process vstoi:hasTopTask value resolves to an existing Task.
+- Ingestion-time validation MUST enforce that all Task vstoi:hasSupertask and vstoi:hasSubtask references resolve inside Tasks.
+- Ingestion-time validation MUST enforce that the temporal dependency graph induced by after and before is acyclic.
+- Ingestion-time validation MUST enforce that each Task rdf:type is exactly one of: vstoi:AbstractTask, vstoi:ManualTask, vstoi:AutomatedTask, vstoi:InteractionTask.
+- Ingestion-time validation MUST enforce that a top-level task is any task with empty vstoi:hasSupertask, and that there is exactly one top-level task in the task collection.
+- Ingestion-time validation MUST enforce that every non-top task has exactly one immediate parent via vstoi:hasSupertask.
+- Ingestion-time validation MUST enforce that no child task is attached to more than one immediate parent.
+- Ingestion-time validation MUST enforce bidirectional consistency between vstoi:hasSupertask and vstoi:hasSubtask for every parent-child pair.
+- Ingestion-time validation MUST enforce that all tasks are in the unique top-level task hierarchy, with no isolated or disconnected tasks.
+- Ingestion-time validation MUST enforce that every vstoi:AbstractTask has at least one child task.
+- Ingestion-time validation MUST enforce that if a task is vstoi:AbstractTask and its temporal dependency operator is parallel, choice, or independent, that task has at least two child tasks.
+- Ingestion-time validation MUST enforce that the task hierarchy formed by vstoi:hasSupertask and inverse vstoi:hasSubtask is acyclic.
+- Ingestion-time validation MUST enforce that for each Process row created in the current WKF, there is at least one STD row where hasco:hasProcess equals that Process URI.
 
 ## Validation Outcome Rules
 - PASS only when zero errors.

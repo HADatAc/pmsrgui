@@ -1,0 +1,147 @@
+Medical Simulation Scenario Document
+
+Scenario ID: SCN-IOT-ADULT-001
+Related Process Stem in PMSR Ontology: INTUBACAO_OROTRAQUEAL
+Target Use: Source document for 5-phase WKF generation and enrichment in PMSR GUI
+
+1. Scenario Overview
+Title: Adult Orotracheal Intubation in Emergency Department
+Clinical domain: Emergency medicine / airway management
+Primary objective: Secure airway in a hypoxemic adult patient with impending respiratory failure.
+Simulation modality: High-fidelity mannequin with monitor and airway trainer.
+Expected learners: Emergency physician, respiratory therapist, critical care nurse.
+
+2. Learning Objectives
+- Perform pre-intubation assessment and identify difficult-airway risk factors.
+- Execute pre-oxygenation and rapid sequence intubation (RSI) protocol.
+- Coordinate team roles and communication under time pressure.
+- Confirm tube placement using multimodal checks.
+- Manage post-intubation stabilization and ventilation setup.
+
+3. Clinical Context and Initial State
+Patient profile:
+- Age: 58 years
+- Sex: male
+- Weight: 86 kg
+- Height: 174 cm
+- Chief complaint: severe dyspnea and altered mental status
+- Working diagnosis: acute hypoxemic respiratory failure, probable pneumonia with sepsis
+
+Initial vital signs:
+- Heart rate: 122 bpm
+- Blood pressure: 92/58 mmHg
+- Respiratory rate: 34/min
+- SpO2: 82% on non-rebreather mask (15 L/min)
+- Temperature: 38.9 C
+- GCS: 11 (E3 V3 M5)
+
+Airway assessment findings:
+- Reduced mouth opening
+- Limited neck extension
+- Mallampati class III
+- Copious oral secretions
+
+4. Team Roles
+- Team leader (physician): decision making, airway strategy, final intubation attempt.
+- Airway assistant: laryngoscope setup, bougie support, backup devices.
+- Medication nurse: prepare and administer RSI drugs.
+- Monitoring nurse: continuous vitals and alarms.
+- Respiratory therapist: bag-valve-mask support, ventilator connection.
+
+5. Required Equipment and Resources
+Airway equipment:
+- Video laryngoscope
+- Direct laryngoscope with blades sizes 3 and 4
+- Endotracheal tubes (7.0, 7.5, 8.0)
+- Bougie introducer
+- Suction catheter and Yankauer
+- Oropharyngeal and nasopharyngeal airways
+- Supraglottic airway as rescue device
+
+Monitoring and support:
+- Cardiac monitor with ECG, NIBP, pulse oximetry
+- End-tidal CO2 monitor (capnography)
+- Bag-valve-mask with PEEP valve
+- Mechanical ventilator
+- IV infusion pump
+
+Medications (example protocol):
+- Induction: ketamine 1.5 mg/kg IV
+- Paralysis: rocuronium 1.2 mg/kg IV
+- Post-intubation sedation: fentanyl + midazolam (titrated)
+- Vasopressor support if persistent hypotension
+
+6. Scenario Workflow
+Phase A: Preparation and briefing
+A1. Team identifies need for definitive airway.
+A2. Assign roles and airway plan A/B/C.
+A3. Prepare difficult-airway cart and confirm drug doses.
+
+Phase B: Pre-oxygenation and optimization
+B1. Position patient with head-elevated laryngoscopy position.
+B2. Apply high-flow oxygen and BVM support as needed.
+B3. Suction secretions and optimize hemodynamics.
+
+Phase C: RSI execution
+C1. Timeout and medication safety check.
+C2. Induction then neuromuscular blockade.
+C3. Laryngoscopy and tube insertion.
+C4. If first pass fails, escalate according to backup plan.
+
+Phase D: Confirmation and stabilization
+D1. Confirm placement with waveform capnography.
+D2. Bilateral chest rise and auscultation.
+D3. Secure tube and set ventilator parameters.
+D4. Post-intubation sedation/analgesia and reassessment.
+
+Phase E: Complication handling
+E1. Manage desaturation (SpO2 < 88%).
+E2. Manage hypotension after induction.
+E3. Recognize esophageal intubation and reattempt safely.
+E4. Escalate to rescue airway if cannot intubate/cannot oxygenate.
+
+7. Success Criteria
+- Definitive airway secured within 2 attempts.
+- Tube placement confirmed by sustained ETCO2 waveform.
+- SpO2 recovers to >= 94% within 3 minutes after intubation.
+- Team follows declared backup plan without role confusion.
+- Post-intubation sedation and ventilator setup completed.
+
+8. Critical Errors to Detect
+- No pre-intubation plan for difficult airway.
+- No suction readiness despite secretions.
+- Intubation without ETCO2 confirmation.
+- Excessive repeated attempts without oxygenation recovery.
+- Failure to address hypotension post-induction.
+
+9. Data Elements for WKF Encoding
+Entities:
+- ProcessStem: INTUBACAO_OROTRAQUEAL
+- Process: Adult emergency orotracheal intubation scenario
+- Tasks: preparation, optimization, RSI, confirmation, stabilization, rescue
+- Actors/roles: physician, nurse, therapist
+- Instruments/components: laryngoscope, ET tube, capnograph, ventilator, monitor, suction
+
+Task relationships:
+- hasTopTask: airway management episode
+- hasSubtask: decomposition by phases A-E
+- temporal constraints: optimization before RSI, confirmation after insertion
+- role assignments and required instrument usage per task
+
+Properties:
+- eligibility conditions (when to intubate)
+- thresholds and trigger events (SpO2, blood pressure)
+- completion criteria and failure handlers
+- simulation assignments for mannequin states and monitor responses
+
+10. Output Expectation Across 5 PMSR WKF Phases
+- Phase I: produce core WKF scaffold and hierarchy for INTUBACAO_OROTRAQUEAL.
+- Phase II: generate detailed task model from this document.
+- Phase III: correct task-model validation defects.
+- Phase IV: extract explicit task/process properties and constraints.
+- Phase V: finalize simulation assignments and ingestion readiness.
+
+11. Provenance Requirement for Test
+For this test run, all generated WKF content must be derived only from:
+- this scenario document, and
+- ChatGPT outputs produced from prompts/packets in PMSR WKF phases I-V.

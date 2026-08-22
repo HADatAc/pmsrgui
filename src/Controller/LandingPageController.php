@@ -76,7 +76,7 @@ class LandingPageController extends ControllerBase {
         'panelClass' => 'pmsr-landing-panel--scenarios',
         'actions' => [
           ['icon' => 'fas fa-magnifying-glass fa-2xl', 'label' => 'Search Scenarios and Access Data', 'url' => 'std/search/studies'],
-          ['icon' => 'fas fa-cogs fa-2xl', 'label' => 'Generate Semantic Scenarios (WKF)', 'url' => 'rep/select/mt/wkf/table/1/9/none'],
+          ['icon' => 'fas fa-cogs fa-2xl', 'label' => 'Generate Semantic Scenarios (WKF)', 'url' => 'rep/select/wkf/card/1/9/none'],
         ],
       ],
       [
