@@ -9,7 +9,7 @@ Inputs required:
 - ALL_COMPONENT_INSTANCES_IN_ORGANIZATION
 
 If any input is missing, return exactly:
-ABORT: Missing required inputs (supporting document and WKF content are both required).
+ABORT: Missing required inputs (supporting document and Phase I WKF are both required).
 
 Objective:
 Review inputs 2 and 3, then return an updated full Tasks sheet TSV that finalizes simulation-ready task/component linkage using vstoi:usesComponentInstance.
