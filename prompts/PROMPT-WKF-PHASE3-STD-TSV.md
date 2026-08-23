@@ -12,15 +12,17 @@ Produce the STD sheet content aligned with the scenario/source document, preserv
 
 Rules:
 1. Update only STD-sheet-relevant information.
-2. Preserve stable identifiers and valid existing URIs whenever possible.
+2. Preserve stable identifiers and canonical existing URIs exactly when already present; do not invent alternate namespaces or replacement URIs.
 3. Do not invent unsupported facts.
-4. Keep column semantics consistent with the provided STD sheet header.
-5. Ensure references to process/task context remain coherent with current WKF.
+4. If CURRENT_STD_SHEET_TSV is provided, keep column semantics consistent with that STD header; preserve exact column order and include legacy/deprecated columns if present.
+5. If CURRENT_STD_SHEET_TSV is missing, still return best-effort STD TSV with a stable header including: hasURI, vstoi:hasLearningObjectives, vstoi:hasCriticalActions, vstoi:hasDebriefingFocus, Specific Aims, Significance.
+6. Ensure references to process/task context remain coherent with current WKF.
+7. Inspect source-document evidence for learning-focused properties and populate them when supported by the STD schema, especially: `vstoi:hasLearningObjectives`, `vstoi:hasCriticalActions`, `vstoi:hasDebriefingFocus`, `Specific Aims`, `Significance`.
+8. If any prior assumptions conflict with current SOURCE_DOCUMENT_CONTENT and current WKF STD content, ignore prior assumptions and use current inputs only.
 
 Output contract (strict):
-1. Do NOT display the STD TSV inline.
-2. Return exactly one markdown link labeled Copy Scenario.
-3. The link target must be a data URL containing the full URL-encoded STD TSV:
-- data:text/plain;charset=utf-8,<URL-ENCODED-TSV>
-4. The encoded payload must contain ONLY STD TSV (header row plus all STD rows).
-5. Do not return markdown fences, summaries, or any extra text.
+1. Return ONLY the STD TSV FILE content (the exact .tsv file body): header row plus all STD rows.
+2. Use real TAB characters (U+0009) between columns; never commas, pipes, or literal "\\t".
+3. Do not return markdown links, data URLs, markdown fences, summaries, JSON, or any extra text.
+4. If evidence is partial or uncertain, still return compliant STD TSV using the exact existing header and canonical row URIs, keeping unchanged values where no new evidence exists.
+5. Return ABORT only when required inputs are actually missing.
