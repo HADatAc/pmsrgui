@@ -1,4 +1,8 @@
 # WKF PHASE V RESPONSE (FINAL)
+Schema Classification: non-standard WKF companion document
+Manual review required: yes
+Reason: E2E phase output reference; does not follow 7-section scenario template.
+
 # Source: WKF-INTUBACAO-OROTRAQUEAL-SCENARIO.txt
 
 Process URI: https://pmsr.net/ont/WKF-INTUBACAO-OROTRAQUEAL-E2E/PROC/0001

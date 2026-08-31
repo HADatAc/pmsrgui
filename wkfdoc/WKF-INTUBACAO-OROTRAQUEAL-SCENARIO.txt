@@ -1,4 +1,8 @@
 Medical Simulation Scenario Document
+Schema Classification: non-standard scenario source document
+Manual review required: yes
+Reason: legacy narrative source; does not follow 7-section WKF scenario template.
+
 
 Scenario ID: SCN-IOT-ADULT-001
 Related Process Stem in PMSR Ontology: INTUBACAO_OROTRAQUEAL

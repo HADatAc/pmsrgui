@@ -1,0 +1,71 @@
+Scenario Description for WKF-CUIDADOS_DISPOSIT
+
+1) Scenario Overview
+- Scenario title: WKF-CUIDADOS_DISPOSIT
+- Workbook source: wkf/WKF-CUIDADOS_DISPOSIT.xlsx
+- Workbook sheets detected: InfoSheet, Namespaces, STD, ProcessStems, Processes, Tasks
+
+2) Process Stem Matching (Workbook + pmsr.ttl Hierarchy)
+- This section provides enough identifiers and hierarchy evidence to map the scenario to its process stem.
+- Workbook Process URI: https://pmsr.net/ont/WKF-CUIDADOS_DISPOSIT-20260811/PROC/001
+- Workbook Process Label: Cuidados Disposit
+- Workbook Process Derived-From Stem URI (prov:wasDerivedFrom): https://pmsr.net/ont/WKF-CUIDADOS_DISPOSIT-20260811/PST/001
+- Workbook ProcessStem URI: https://pmsr.net/ont/WKF-CUIDADOS_DISPOSIT-20260811/PST/001
+- Workbook ProcessStem Label: Cuidados Disposit
+- Workbook ProcessStem Comment: Cuidados Básicos a Dispositivos
+- Matched ProcessStem Class in pmsr.ttl: pmsr:MedicalSimulationProcessStem (https://pmsr.net/ont/MedicalSimulationProcessStem)
+- pmsr.ttl hierarchy path for matched class: pmsr:MedicalSimulationProcessStem -> pmsr:SimulationProcessStem -> vstoi:ProcessStem
+- Matching rationale: fallback:medical-simulation-root
+- Best existing non-root stem candidate: ncit:C18020 (Diagnostic Procedure)
+- Candidate confidence: low
+- Manual review required: yes
+- Candidate rationale: Device care is operational/therapeutic; mapped to the closest generic non-root clinical procedure branch.
+
+3) Suggested Scenario Wording to Improve Process-Stem Matching
+- This optional normalization helps lexical matchers map scenarios to existing ontology branches more reliably.
+- Current workbook scenario label: CUIDADOS DISPOSIT
+- Suggested stem-aligned scenario label: Clinical device care and maintenance simulation scenario
+- Suggested ontology branch anchor: Safety/management-oriented stem branch (clinical workflow, communication, prevention, control families).
+- Recommended matching keywords to include in narrative: safety, control, communication, prioritization, prevention, care management
+- Keep workbook Process URI and ProcessStem URI unchanged; use this wording only to improve semantic matching quality.
+
+4) Complete Textual Description of the Task Model
+- Task classification is inferred from URI/name patterns, hierarchy role, and resource coupling cues.
+1. [automated | inferred-by=hierarchy:top-task-with-subtasks] Cuidados Disposit | subtask: https://pmsr.net/ont/WKF-CUIDADOS_DISPOSIT-20260811/TSK/0110 ; https://pmsr.net/ont/WKF-CUIDADOS_DISPOSIT-20260811/TSK/0111 ; https://pmsr.net/ont/WKF-CUIDADOS_DISPOSIT-20260811/TSK/0112
+2. [automated | inferred-by=default-orchestration-fallback] Inspecionar ponto de insercao do dispositivo | supertask: https://pmsr.net/ont/WKF-CUIDADOS_DISPOSIT-20260811/TSK/0100; subtask: https://pmsr.net/ont/WKF-CUIDADOS_DISPOSIT-20260811/TSK/0113 ; https://pmsr.net/ont/WKF-CUIDADOS_DISPOSIT-20260811/TSK/0118
+3. [automated | inferred-by=default-orchestration-fallback] Assegurar permeabilidade funcional do dispositivo | supertask: https://pmsr.net/ont/WKF-CUIDADOS_DISPOSIT-20260811/TSK/0100; subtask: https://pmsr.net/ont/WKF-CUIDADOS_DISPOSIT-20260811/TSK/0114 ; https://pmsr.net/ont/WKF-CUIDADOS_DISPOSIT-20260811/TSK/0116 ; https://pmsr.net/ont/WKF-CUIDADOS_DISPOSIT-20260811/TSK/0119
+4. [interactive | inferred-by=name-pattern:aplicar] Aplicar protocolo de manutenção do dispositivo | supertask: https://pmsr.net/ont/WKF-CUIDADOS_DISPOSIT-20260811/TSK/0100; subtask: https://pmsr.net/ont/WKF-CUIDADOS_DISPOSIT-20260811/TSK/0115 ; https://pmsr.net/ont/WKF-CUIDADOS_DISPOSIT-20260811/TSK/0117 ; https://pmsr.net/ont/WKF-CUIDADOS_DISPOSIT-20260811/TSK/0120; component: https://pmsr.net/ont/CPI0008105776328
+5. [interactive | inferred-by=leaf-subtask-default] Documentar eventos de manipulacao do dispositivo | supertask: https://pmsr.net/ont/WKF-CUIDADOS_DISPOSIT-20260811/TSK/0110
+6. [automated | inferred-by=name-pattern:iniciar cenário] Iniciar cenário e validar contexto (CUIDADOS DISPOSIT) | supertask: https://pmsr.net/ont/WKF-CUIDADOS_DISPOSIT-20260811/TSK/0111
+7. [interactive | inferred-by=name-pattern:preparar ambiente] Preparar ambiente, equipa e segurança (CUIDADOS DISPOSIT) | supertask: https://pmsr.net/ont/WKF-CUIDADOS_DISPOSIT-20260811/TSK/0112; component: https://pmsr.net/ont/CPI0020468206017
+8. [interactive | inferred-by=name-pattern:executar intervenção] Executar intervenção central (CUIDADOS DISPOSIT) | supertask: https://pmsr.net/ont/WKF-CUIDADOS_DISPOSIT-20260811/TSK/0111
+9. [automated | inferred-by=name-pattern:verificar resposta clínica] Verificar resposta clínica imediata (CUIDADOS DISPOSIT) | supertask: https://pmsr.net/ont/WKF-CUIDADOS_DISPOSIT-20260811/TSK/0112
+10. [automated | inferred-by=name-pattern:ajustar plano] Ajustar plano por evidência observada (CUIDADOS DISPOSIT) | supertask: https://pmsr.net/ont/WKF-CUIDADOS_DISPOSIT-20260811/TSK/0110; component: https://pmsr.net/ont/CPI0054290057242
+11. [automated | inferred-by=name-pattern:registar dados] Registar dados e comunicar resultados (CUIDADOS DISPOSIT) | supertask: https://pmsr.net/ont/WKF-CUIDADOS_DISPOSIT-20260811/TSK/0111
+12. [automated | inferred-by=name-pattern:encerrar cenário] Encerrar cenário com revisão final (CUIDADOS DISPOSIT) | supertask: https://pmsr.net/ont/WKF-CUIDADOS_DISPOSIT-20260811/TSK/0112
+
+5) Content Ready for Extraction into STD Properties
+Learning Objectives:
+- Not explicitly provided in workbook; derive from protocol narrative and task evidence.
+Critical Actions:
+- Not explicitly provided in workbook; derive from protocol narrative and task evidence.
+Debriefing Focus:
+- Not explicitly provided in workbook; derive from protocol narrative and task evidence.
+Specific Aims:
+- Not explicitly provided in workbook; derive from protocol narrative and task evidence.
+Significance:
+- Not explicitly provided in workbook; derive from protocol narrative and task evidence.
+
+6) Instrument and Component Requirements for Interactive and Automated Tasks
+Interactive tasks support mapping:
+- Aplicar protocolo de manutenção do dispositivo: instrument=n/a; component=https://pmsr.net/ont/CPI0008105776328
+- Preparar ambiente, equipa e segurança (CUIDADOS DISPOSIT): instrument=n/a; component=https://pmsr.net/ont/CPI0020468206017
+Automated tasks support mapping:
+- Ajustar plano por evidência observada (CUIDADOS DISPOSIT): instrument=n/a; component=https://pmsr.net/ont/CPI0054290057242
+Required instruments/components catalog from workbook:
+1. RequiredInstruments sheet entries were not detected.
+
+7) Notes for WKF Enrichment and Validation
+- Ensure every interactive and automated task has explicit instrument and component references before final ingestion.
+- Preserve task URIs and hierarchy semantics when updating Tasks and STD content.
+- Use Process Stem Matching evidence above to maintain consistent scenario-to-stem linking across WKF packets and ontology ingestion.

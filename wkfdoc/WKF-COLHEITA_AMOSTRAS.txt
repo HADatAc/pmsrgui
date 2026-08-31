@@ -1,0 +1,70 @@
+Scenario Description for WKF-COLHEITA_AMOSTRAS
+
+1) Scenario Overview
+- Scenario title: WKF-COLHEITA_AMOSTRAS
+- Workbook source: wkf/WKF-COLHEITA_AMOSTRAS.xlsx
+- Workbook sheets detected: InfoSheet, Namespaces, STD, ProcessStems, Processes, Tasks
+
+2) Process Stem Matching (Workbook + pmsr.ttl Hierarchy)
+- This section provides enough identifiers and hierarchy evidence to map the scenario to its process stem.
+- Workbook Process URI: https://pmsr.net/ont/WKF-COLHEITA_AMOSTRAS-20260811/PROC/001
+- Workbook Process Label: Colheita Amostras
+- Workbook Process Derived-From Stem URI (prov:wasDerivedFrom): https://pmsr.net/ont/WKF-COLHEITA_AMOSTRAS-20260811/PST/001
+- Workbook ProcessStem URI: https://pmsr.net/ont/WKF-COLHEITA_AMOSTRAS-20260811/PST/001
+- Workbook ProcessStem Label: Colheita Amostras
+- Workbook ProcessStem Comment: Colheita de Amostras Biológicas
+- Matched ProcessStem Class in pmsr.ttl: pmsr:MedicalSimulationProcessStem (https://pmsr.net/ont/MedicalSimulationProcessStem)
+- pmsr.ttl hierarchy path for matched class: pmsr:MedicalSimulationProcessStem -> pmsr:SimulationProcessStem -> vstoi:ProcessStem
+- Matching rationale: candidate-pending-manual-review (ncit:C15189 (Biopsy))
+- Best existing non-root stem candidate: ncit:C15189 (Biopsy)
+- Candidate confidence: medium
+- Manual review required: yes
+- Candidate rationale: Specimen collection maps to tissue/fluid sampling semantics under Biopsy in available stems.
+
+3) Suggested Scenario Wording to Improve Process-Stem Matching
+- This optional normalization helps lexical matchers map scenarios to existing ontology branches more reliably.
+- Current workbook scenario label: COLHEITA AMOSTRAS
+- Suggested stem-aligned scenario label: Specimen collection and handling clinical procedure simulation scenario
+- Suggested ontology branch anchor: Procedure-oriented stem branch (for example Surgical Procedure by Site or System when appropriate).
+- Recommended matching keywords to include in narrative: procedure, intervention, administration, airway, dressing, infusion, specimen collection
+- Keep workbook Process URI and ProcessStem URI unchanged; use this wording only to improve semantic matching quality.
+
+4) Complete Textual Description of the Task Model
+- Task classification is inferred from URI/name patterns, hierarchy role, and resource coupling cues.
+1. [automated | inferred-by=hierarchy:top-task-with-subtasks] Colheita Amostras | subtask: https://pmsr.net/ont/WKF-COLHEITA_AMOSTRAS-20260811/TSK/0110 ; https://pmsr.net/ont/WKF-COLHEITA_AMOSTRAS-20260811/TSK/0111
+2. [interactive | inferred-by=leaf-subtask-default] Confirmar identificacao positiva de amostra | supertask: https://pmsr.net/ont/WKF-COLHEITA_AMOSTRAS-20260811/TSK/0100
+3. [automated | inferred-by=default-orchestration-fallback] Executar assepsia dirigida ao local | supertask: https://pmsr.net/ont/WKF-COLHEITA_AMOSTRAS-20260811/TSK/0100; subtask: https://pmsr.net/ont/WKF-COLHEITA_AMOSTRAS-20260811/TSK/0112 ; https://pmsr.net/ont/WKF-COLHEITA_AMOSTRAS-20260811/TSK/0113
+4. [interactive | inferred-by=resource-coupled-leaf-task] Coletar amostra no volume prescrito | supertask: https://pmsr.net/ont/WKF-COLHEITA_AMOSTRAS-20260811/TSK/0111; component: https://pmsr.net/ont/CPI0008105776328
+5. [automated | inferred-by=default-orchestration-fallback] Garantir rotulagem e rastreabilidade imediata | supertask: https://pmsr.net/ont/WKF-COLHEITA_AMOSTRAS-20260811/TSK/0111; subtask: https://pmsr.net/ont/WKF-COLHEITA_AMOSTRAS-20260811/TSK/0114 ; https://pmsr.net/ont/WKF-COLHEITA_AMOSTRAS-20260811/TSK/0115
+6. [automated | inferred-by=name-pattern:iniciar cenário] Iniciar cenário e validar contexto (COLHEITA AMOSTRAS) | supertask: https://pmsr.net/ont/WKF-COLHEITA_AMOSTRAS-20260811/TSK/0113
+7. [interactive | inferred-by=name-pattern:colheita] Preparar ambiente, equipa e segurança (COLHEITA AMOSTRAS) | supertask: https://pmsr.net/ont/WKF-COLHEITA_AMOSTRAS-20260811/TSK/0113; subtask: https://pmsr.net/ont/WKF-COLHEITA_AMOSTRAS-20260811/TSK/0116 ; https://pmsr.net/ont/WKF-COLHEITA_AMOSTRAS-20260811/TSK/0117; component: https://pmsr.net/ont/CPI0020468206017
+8. [interactive | inferred-by=name-pattern:executar intervenção] Executar intervenção central (COLHEITA AMOSTRAS) | supertask: https://pmsr.net/ont/WKF-COLHEITA_AMOSTRAS-20260811/TSK/0115
+9. [automated | inferred-by=name-pattern:verificar resposta clínica] Verificar resposta clínica imediata (COLHEITA AMOSTRAS) | supertask: https://pmsr.net/ont/WKF-COLHEITA_AMOSTRAS-20260811/TSK/0115; subtask: https://pmsr.net/ont/WKF-COLHEITA_AMOSTRAS-20260811/TSK/0118 ; https://pmsr.net/ont/WKF-COLHEITA_AMOSTRAS-20260811/TSK/0119
+10. [automated | inferred-by=name-pattern:ajustar plano] Ajustar plano por evidência observada (COLHEITA AMOSTRAS) | supertask: https://pmsr.net/ont/WKF-COLHEITA_AMOSTRAS-20260811/TSK/0117; component: https://pmsr.net/ont/CPI0054290057242
+11. [automated | inferred-by=name-pattern:registar dados] Registar dados e comunicar resultados (COLHEITA AMOSTRAS) | supertask: https://pmsr.net/ont/WKF-COLHEITA_AMOSTRAS-20260811/TSK/0117
+
+5) Content Ready for Extraction into STD Properties
+Learning Objectives:
+- Not explicitly provided in workbook; derive from protocol narrative and task evidence.
+Critical Actions:
+- Not explicitly provided in workbook; derive from protocol narrative and task evidence.
+Debriefing Focus:
+- Not explicitly provided in workbook; derive from protocol narrative and task evidence.
+Specific Aims:
+- Not explicitly provided in workbook; derive from protocol narrative and task evidence.
+Significance:
+- Not explicitly provided in workbook; derive from protocol narrative and task evidence.
+
+6) Instrument and Component Requirements for Interactive and Automated Tasks
+Interactive tasks support mapping:
+- Coletar amostra no volume prescrito: instrument=n/a; component=https://pmsr.net/ont/CPI0008105776328
+- Preparar ambiente, equipa e segurança (COLHEITA AMOSTRAS): instrument=n/a; component=https://pmsr.net/ont/CPI0020468206017
+Automated tasks support mapping:
+- Ajustar plano por evidência observada (COLHEITA AMOSTRAS): instrument=n/a; component=https://pmsr.net/ont/CPI0054290057242
+Required instruments/components catalog from workbook:
+1. RequiredInstruments sheet entries were not detected.
+
+7) Notes for WKF Enrichment and Validation
+- Ensure every interactive and automated task has explicit instrument and component references before final ingestion.
+- Preserve task URIs and hierarchy semantics when updating Tasks and STD content.
+- Use Process Stem Matching evidence above to maintain consistent scenario-to-stem linking across WKF packets and ontology ingestion.

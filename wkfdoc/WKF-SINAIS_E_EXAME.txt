@@ -1,0 +1,75 @@
+Scenario Description for WKF-SINAIS_E_EXAME
+
+1) Scenario Overview
+- Scenario title: WKF-SINAIS_E_EXAME
+- Workbook source: wkf/WKF-SINAIS_E_EXAME.xlsx
+- Workbook sheets detected: InfoSheet, Namespaces, STD, ProcessStems, Processes, Tasks
+
+2) Process Stem Matching (Workbook + pmsr.ttl Hierarchy)
+- This section provides enough identifiers and hierarchy evidence to map the scenario to its process stem.
+- Workbook Process URI: https://pmsr.net/ont/WKF-SINAIS_E_EXAME-20260811/PROC/001
+- Workbook Process Label: Sinais e Exame
+- Workbook Process Derived-From Stem URI (prov:wasDerivedFrom): https://pmsr.net/ont/WKF-SINAIS_E_EXAME-20260811/PST/001
+- Workbook ProcessStem URI: https://pmsr.net/ont/WKF-SINAIS_E_EXAME-20260811/PST/001
+- Workbook ProcessStem Label: Sinais e Exame
+- Workbook ProcessStem Comment: Sinais Vitais e Exame Focado
+- Matched ProcessStem Class in pmsr.ttl: pmsr:MedicalSimulationProcessStem (https://pmsr.net/ont/MedicalSimulationProcessStem)
+- pmsr.ttl hierarchy path for matched class: pmsr:MedicalSimulationProcessStem -> pmsr:SimulationProcessStem -> vstoi:ProcessStem
+- Matching rationale: selected-non-root-candidate (ncit:C25305 (Medical Examination))
+- Best existing non-root stem candidate: ncit:C25305 (Medical Examination)
+- Candidate confidence: high
+- Manual review required: no
+- Candidate rationale: Vital signs and physical exam directly match Medical Examination semantics.
+
+3) Suggested Scenario Wording to Improve Process-Stem Matching
+- This optional normalization helps lexical matchers map scenarios to existing ontology branches more reliably.
+- Current workbook scenario label: SINAIS E EXAME
+- Suggested stem-aligned scenario label: Vital signs assessment and physical examination simulation scenario
+- Suggested ontology branch anchor: Assessment-oriented stem branch (clinical evaluation and monitoring families).
+- Recommended matching keywords to include in narrative: assessment, triage, evaluation, signs, examination, deterioration detection
+- Keep workbook Process URI and ProcessStem URI unchanged; use this wording only to improve semantic matching quality.
+
+4) Complete Textual Description of the Task Model
+- Task classification is inferred from URI/name patterns, hierarchy role, and resource coupling cues.
+1. [automated | inferred-by=hierarchy:top-task-with-subtasks] Sinais E Exame | subtask: https://pmsr.net/ont/WKF-SINAIS_E_EXAME-20260811/TSK/0110 ; https://pmsr.net/ont/WKF-SINAIS_E_EXAME-20260811/TSK/0111
+2. [interactive | inferred-by=leaf-subtask-default] Executar avaliacao primaria ABCDE | supertask: https://pmsr.net/ont/WKF-SINAIS_E_EXAME-20260811/TSK/0100
+3. [automated | inferred-by=default-orchestration-fallback] Recolher sinais vitais em série | supertask: https://pmsr.net/ont/WKF-SINAIS_E_EXAME-20260811/TSK/0100; subtask: https://pmsr.net/ont/WKF-SINAIS_E_EXAME-20260811/TSK/0112 ; https://pmsr.net/ont/WKF-SINAIS_E_EXAME-20260811/TSK/0113
+4. [interactive | inferred-by=name-pattern:exame] Correlacionar achados de exame fisico | supertask: https://pmsr.net/ont/WKF-SINAIS_E_EXAME-20260811/TSK/0111; component: https://pmsr.net/ont/CPI0008105776328
+5. [automated | inferred-by=default-orchestration-fallback] Sinalizar alerta por alteração crítica | supertask: https://pmsr.net/ont/WKF-SINAIS_E_EXAME-20260811/TSK/0111; subtask: https://pmsr.net/ont/WKF-SINAIS_E_EXAME-20260811/TSK/0114 ; https://pmsr.net/ont/WKF-SINAIS_E_EXAME-20260811/TSK/0115
+6. [automated | inferred-by=name-pattern:iniciar cenário] Iniciar cenário e validar contexto (SINAIS E EXAME) | supertask: https://pmsr.net/ont/WKF-SINAIS_E_EXAME-20260811/TSK/0113
+7. [interactive | inferred-by=name-pattern:exame] Preparar ambiente, equipa e segurança (SINAIS E EXAME) | supertask: https://pmsr.net/ont/WKF-SINAIS_E_EXAME-20260811/TSK/0113; subtask: https://pmsr.net/ont/WKF-SINAIS_E_EXAME-20260811/TSK/0116 ; https://pmsr.net/ont/WKF-SINAIS_E_EXAME-20260811/TSK/0117; component: https://pmsr.net/ont/CPI0020468206017
+8. [interactive | inferred-by=name-pattern:executar intervenção] Executar intervenção central (SINAIS E EXAME) | supertask: https://pmsr.net/ont/WKF-SINAIS_E_EXAME-20260811/TSK/0115
+9. [automated | inferred-by=name-pattern:verificar resposta clínica] Verificar resposta clínica imediata (SINAIS E EXAME) | supertask: https://pmsr.net/ont/WKF-SINAIS_E_EXAME-20260811/TSK/0115; subtask: https://pmsr.net/ont/WKF-SINAIS_E_EXAME-20260811/TSK/0118 ; https://pmsr.net/ont/WKF-SINAIS_E_EXAME-20260811/TSK/0119
+10. [automated | inferred-by=name-pattern:ajustar plano] Ajustar plano por evidência observada (SINAIS E EXAME) | supertask: https://pmsr.net/ont/WKF-SINAIS_E_EXAME-20260811/TSK/0117; component: https://pmsr.net/ont/CPI0054290057242
+11. [automated | inferred-by=name-pattern:registar dados] Registar dados e comunicar resultados (SINAIS E EXAME) | supertask: https://pmsr.net/ont/WKF-SINAIS_E_EXAME-20260811/TSK/0117; subtask: https://pmsr.net/ont/WKF-SINAIS_E_EXAME-20260811/TSK/0120 ; https://pmsr.net/ont/WKF-SINAIS_E_EXAME-20260811/TSK/0121
+12. [automated | inferred-by=name-pattern:encerrar cenário] Encerrar cenário com revisão final (SINAIS E EXAME) | supertask: https://pmsr.net/ont/WKF-SINAIS_E_EXAME-20260811/TSK/0119
+13. [automated | inferred-by=name-pattern:iniciar cenário] Iniciar cenário e validar contexto (SINAIS E EXAME) [variant 2] | supertask: https://pmsr.net/ont/WKF-SINAIS_E_EXAME-20260811/TSK/0119; subtask: https://pmsr.net/ont/WKF-SINAIS_E_EXAME-20260811/TSK/0122 ; https://pmsr.net/ont/WKF-SINAIS_E_EXAME-20260811/TSK/0123; component: https://pmsr.net/ont/CPI0055380868310
+14. [interactive | inferred-by=name-pattern:exame] Preparar ambiente, equipa e segurança (SINAIS E EXAME) [variant 2] | supertask: https://pmsr.net/ont/WKF-SINAIS_E_EXAME-20260811/TSK/0121
+15. [interactive | inferred-by=name-pattern:executar intervenção] Executar intervenção central (SINAIS E EXAME) [variant 2] | supertask: https://pmsr.net/ont/WKF-SINAIS_E_EXAME-20260811/TSK/0121
+
+5) Content Ready for Extraction into STD Properties
+Learning Objectives:
+- Not explicitly provided in workbook; derive from protocol narrative and task evidence.
+Critical Actions:
+- Not explicitly provided in workbook; derive from protocol narrative and task evidence.
+Debriefing Focus:
+- Not explicitly provided in workbook; derive from protocol narrative and task evidence.
+Specific Aims:
+- Not explicitly provided in workbook; derive from protocol narrative and task evidence.
+Significance:
+- Not explicitly provided in workbook; derive from protocol narrative and task evidence.
+
+6) Instrument and Component Requirements for Interactive and Automated Tasks
+Interactive tasks support mapping:
+- Correlacionar achados de exame fisico: instrument=n/a; component=https://pmsr.net/ont/CPI0008105776328
+- Preparar ambiente, equipa e segurança (SINAIS E EXAME): instrument=n/a; component=https://pmsr.net/ont/CPI0020468206017
+Automated tasks support mapping:
+- Ajustar plano por evidência observada (SINAIS E EXAME): instrument=n/a; component=https://pmsr.net/ont/CPI0054290057242
+- Iniciar cenário e validar contexto (SINAIS E EXAME): instrument=n/a; component=https://pmsr.net/ont/CPI0055380868310
+Required instruments/components catalog from workbook:
+1. RequiredInstruments sheet entries were not detected.
+
+7) Notes for WKF Enrichment and Validation
+- Ensure every interactive and automated task has explicit instrument and component references before final ingestion.
+- Preserve task URIs and hierarchy semantics when updating Tasks and STD content.
+- Use Process Stem Matching evidence above to maintain consistent scenario-to-stem linking across WKF packets and ontology ingestion.

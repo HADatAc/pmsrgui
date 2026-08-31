@@ -1,0 +1,74 @@
+Scenario Description for WKF-PEDIATRIA_CLIN
+
+1) Scenario Overview
+- Scenario title: WKF-PEDIATRIA_CLIN
+- Workbook source: wkf/WKF-PEDIATRIA_CLIN.xlsx
+- Workbook sheets detected: InfoSheet, Namespaces, STD, ProcessStems, Processes, Tasks
+
+2) Process Stem Matching (Workbook + pmsr.ttl Hierarchy)
+- This section provides enough identifiers and hierarchy evidence to map the scenario to its process stem.
+- Workbook Process URI: https://pmsr.net/ont/WKF-PEDIATRIA_CLIN-20260811/PROC/001
+- Workbook Process Label: Pediatria Clin
+- Workbook Process Derived-From Stem URI (prov:wasDerivedFrom): https://pmsr.net/ont/WKF-PEDIATRIA_CLIN-20260811/PST/001
+- Workbook ProcessStem URI: https://pmsr.net/ont/WKF-PEDIATRIA_CLIN-20260811/PST/001
+- Workbook ProcessStem Label: Pediatria Clin
+- Workbook ProcessStem Comment: Contexto Pediátrico de Avaliação e Comunicação
+- Matched ProcessStem Class in pmsr.ttl: pmsr:MedicalSimulationProcessStem (https://pmsr.net/ont/MedicalSimulationProcessStem)
+- pmsr.ttl hierarchy path for matched class: pmsr:MedicalSimulationProcessStem -> pmsr:SimulationProcessStem -> vstoi:ProcessStem
+- Matching rationale: selected-non-root-candidate (ncit:C25305 (Medical Examination))
+- Best existing non-root stem candidate: ncit:C25305 (Medical Examination)
+- Candidate confidence: high
+- Manual review required: no
+- Candidate rationale: Pediatric clinical scenarios are primarily examination and condition appraisal workflows.
+
+3) Suggested Scenario Wording to Improve Process-Stem Matching
+- This optional normalization helps lexical matchers map scenarios to existing ontology branches more reliably.
+- Current workbook scenario label: PEDIATRIA CLIN
+- Suggested stem-aligned scenario label: Pediatric clinical assessment and communication simulation scenario
+- Suggested ontology branch anchor: Assessment-oriented stem branch (clinical evaluation and monitoring families).
+- Recommended matching keywords to include in narrative: assessment, triage, evaluation, signs, examination, deterioration detection
+- Keep workbook Process URI and ProcessStem URI unchanged; use this wording only to improve semantic matching quality.
+
+4) Complete Textual Description of the Task Model
+- Task classification is inferred from URI/name patterns, hierarchy role, and resource coupling cues.
+1. [automated | inferred-by=hierarchy:top-task-with-subtasks] Pediatria Clin | subtask: https://pmsr.net/ont/WKF-PEDIATRIA_CLIN-20260811/TSK/0110 ; https://pmsr.net/ont/WKF-PEDIATRIA_CLIN-20260811/TSK/0111 ; https://pmsr.net/ont/WKF-PEDIATRIA_CLIN-20260811/TSK/0112
+2. [interactive | inferred-by=name-pattern:calcular dose] Calcular dose por peso pediatrico | supertask: https://pmsr.net/ont/WKF-PEDIATRIA_CLIN-20260811/TSK/0100; subtask: https://pmsr.net/ont/WKF-PEDIATRIA_CLIN-20260811/TSK/0113 ; https://pmsr.net/ont/WKF-PEDIATRIA_CLIN-20260811/TSK/0118 ; https://pmsr.net/ont/WKF-PEDIATRIA_CLIN-20260811/TSK/0121
+3. [interactive | inferred-by=name-pattern:aplicar] Aplicar avaliação pediatrica primária | supertask: https://pmsr.net/ont/WKF-PEDIATRIA_CLIN-20260811/TSK/0100; subtask: https://pmsr.net/ont/WKF-PEDIATRIA_CLIN-20260811/TSK/0114 ; https://pmsr.net/ont/WKF-PEDIATRIA_CLIN-20260811/TSK/0116 ; https://pmsr.net/ont/WKF-PEDIATRIA_CLIN-20260811/TSK/0119 ; https://pmsr.net/ont/WKF-PEDIATRIA_CLIN-20260811/TSK/0122
+4. [interactive | inferred-by=name-pattern:comunicacional] Ajustar abordagem comunicacional à idade | supertask: https://pmsr.net/ont/WKF-PEDIATRIA_CLIN-20260811/TSK/0100; subtask: https://pmsr.net/ont/WKF-PEDIATRIA_CLIN-20260811/TSK/0115 ; https://pmsr.net/ont/WKF-PEDIATRIA_CLIN-20260811/TSK/0117 ; https://pmsr.net/ont/WKF-PEDIATRIA_CLIN-20260811/TSK/0120; component: https://pmsr.net/ont/CPI0008105776328
+5. [automated | inferred-by=name-pattern:reavaliar] Reavaliar sinais de gravidade pediátrica | supertask: https://pmsr.net/ont/WKF-PEDIATRIA_CLIN-20260811/TSK/0110
+6. [automated | inferred-by=name-pattern:iniciar cenário] Iniciar cenário e validar contexto (PEDIATRIA CLIN) | supertask: https://pmsr.net/ont/WKF-PEDIATRIA_CLIN-20260811/TSK/0111
+7. [interactive | inferred-by=name-pattern:preparar ambiente] Preparar ambiente, equipa e segurança (PEDIATRIA CLIN) | supertask: https://pmsr.net/ont/WKF-PEDIATRIA_CLIN-20260811/TSK/0112; component: https://pmsr.net/ont/CPI0020468206017
+8. [interactive | inferred-by=name-pattern:executar intervenção] Executar intervenção central (PEDIATRIA CLIN) | supertask: https://pmsr.net/ont/WKF-PEDIATRIA_CLIN-20260811/TSK/0111
+9. [automated | inferred-by=name-pattern:verificar resposta clínica] Verificar resposta clínica imediata (PEDIATRIA CLIN) | supertask: https://pmsr.net/ont/WKF-PEDIATRIA_CLIN-20260811/TSK/0112
+10. [automated | inferred-by=name-pattern:ajustar plano] Ajustar plano por evidência observada (PEDIATRIA CLIN) | supertask: https://pmsr.net/ont/WKF-PEDIATRIA_CLIN-20260811/TSK/0110; component: https://pmsr.net/ont/CPI0054290057242
+11. [automated | inferred-by=name-pattern:registar dados] Registar dados e comunicar resultados (PEDIATRIA CLIN) | supertask: https://pmsr.net/ont/WKF-PEDIATRIA_CLIN-20260811/TSK/0111
+12. [automated | inferred-by=name-pattern:encerrar cenário] Encerrar cenário com revisão final (PEDIATRIA CLIN) | supertask: https://pmsr.net/ont/WKF-PEDIATRIA_CLIN-20260811/TSK/0112
+13. [automated | inferred-by=name-pattern:iniciar cenário] Iniciar cenário e validar contexto (PEDIATRIA CLIN) [variant 2] | supertask: https://pmsr.net/ont/WKF-PEDIATRIA_CLIN-20260811/TSK/0110; component: https://pmsr.net/ont/CPI0055380868310
+14. [interactive | inferred-by=name-pattern:preparar ambiente] Preparar ambiente, equipa e segurança (PEDIATRIA CLIN) [variant 2] | supertask: https://pmsr.net/ont/WKF-PEDIATRIA_CLIN-20260811/TSK/0111
+
+5) Content Ready for Extraction into STD Properties
+Learning Objectives:
+- Not explicitly provided in workbook; derive from protocol narrative and task evidence.
+Critical Actions:
+- Not explicitly provided in workbook; derive from protocol narrative and task evidence.
+Debriefing Focus:
+- Not explicitly provided in workbook; derive from protocol narrative and task evidence.
+Specific Aims:
+- Not explicitly provided in workbook; derive from protocol narrative and task evidence.
+Significance:
+- Not explicitly provided in workbook; derive from protocol narrative and task evidence.
+
+6) Instrument and Component Requirements for Interactive and Automated Tasks
+Interactive tasks support mapping:
+- Ajustar abordagem comunicacional à idade: instrument=n/a; component=https://pmsr.net/ont/CPI0008105776328
+- Preparar ambiente, equipa e segurança (PEDIATRIA CLIN): instrument=n/a; component=https://pmsr.net/ont/CPI0020468206017
+Automated tasks support mapping:
+- Ajustar plano por evidência observada (PEDIATRIA CLIN): instrument=n/a; component=https://pmsr.net/ont/CPI0054290057242
+- Iniciar cenário e validar contexto (PEDIATRIA CLIN): instrument=n/a; component=https://pmsr.net/ont/CPI0055380868310
+Required instruments/components catalog from workbook:
+1. RequiredInstruments sheet entries were not detected.
+
+7) Notes for WKF Enrichment and Validation
+- Ensure every interactive and automated task has explicit instrument and component references before final ingestion.
+- Preserve task URIs and hierarchy semantics when updating Tasks and STD content.
+- Use Process Stem Matching evidence above to maintain consistent scenario-to-stem linking across WKF packets and ontology ingestion.
