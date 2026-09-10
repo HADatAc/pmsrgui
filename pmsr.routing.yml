@@ -105,8 +105,7 @@ pmsr.ingest_ontologies:
     _controller: '\Drupal\pmsr\Controller\IngestionPMSROntologies::ingestOntologies'
     _title: 'Ingest PMSR Ontologies'
   requirements:
-    _permission: 'access content'
-    _role: 'authenticated'
+    _permission: 'administer site configuration'
 
 pmsr.ingest_auxiliary_data:
   path: '/pmsr/ingest/auxiliary-data'
@@ -114,15 +113,14 @@ pmsr.ingest_auxiliary_data:
     _controller: '\Drupal\pmsr\Controller\IngestionAuxiliaryDataController::content'
     _title: 'Ingest Auxiliary Data'
   requirements:
-    _permission: 'access content'
-    _role: 'authenticated'
+    _permission: 'administer site configuration'
 
 pmsr.process_auxiliary_data_ingestion:
   path: '/pmsr/api/ingest/auxiliary-data/process'
   defaults:
     _controller: '\Drupal\pmsr\Controller\IngestionAuxiliaryDataController::processAuxiliaryDataIngestion'
   requirements:
-    _access: 'TRUE'
+    _permission: 'administer site configuration'
   options:
     no_cache: TRUE
   methods: [POST]
@@ -132,7 +130,7 @@ pmsr.process_ontology_ingestion:
   defaults:
     _controller: '\Drupal\pmsr\Controller\IngestionPMSROntologies::processOntologyIngestion'
   requirements:
-    _access: 'TRUE'
+    _permission: 'administer site configuration'
   options:
     no_cache: TRUE
   methods: [POST]
@@ -143,15 +141,14 @@ pmsr.ingest_instruments:
     _controller: '\Drupal\pmsr\Controller\IngestionINSController::ingestInstruments'
     _title: 'Ingest INS Instruments'
   requirements:
-    _permission: 'access content'
-    _role: 'authenticated'
+    _permission: 'administer site configuration'
 
 pmsr.process_ins_ingestion:
   path: '/pmsr/api/ingest/ins/process'
   defaults:
     _controller: '\Drupal\pmsr\Controller\IngestionINSController::processINSIngestion'
   requirements:
-    _access: 'TRUE'
+    _permission: 'administer site configuration'
   options:
     no_cache: TRUE
   methods: [POST]
@@ -161,7 +158,7 @@ pmsr.start_ins_ingestion:
   defaults:
     _controller: '\Drupal\pmsr\Controller\IngestionINSController::startINSIngestion'
   requirements:
-    _access: 'TRUE'
+    _permission: 'administer site configuration'
   options:
     no_cache: TRUE
   methods: [POST]
@@ -171,7 +168,7 @@ pmsr.status_ins_ingestion:
   defaults:
     _controller: '\Drupal\pmsr\Controller\IngestionINSController::getINSIngestionStatus'
   requirements:
-    _access: 'TRUE'
+    _permission: 'administer site configuration'
   options:
     no_cache: TRUE
   methods: [GET]
@@ -181,7 +178,7 @@ pmsr.process_ins_uningest:
   defaults:
     _controller: '\Drupal\pmsr\Controller\IngestionINSController::processINSUningest'
   requirements:
-    _access: 'TRUE'
+    _permission: 'administer site configuration'
   options:
     no_cache: TRUE
   methods: [POST]
@@ -242,15 +239,14 @@ pmsr.ingest_geography:
     _controller: '\Drupal\pmsr\Controller\IngestionKgrGeoController::ingestGeography'
     _title: 'Ingest KRG Geography and Organizations'
   requirements:
-    _permission: 'access content'
-    _role: 'authenticated'
+    _permission: 'administer site configuration'
 
 pmsr.process_geography_ingestion:
   path: '/pmsr/api/ingest/geography/process'
   defaults:
     _controller: '\Drupal\pmsr\Controller\IngestionKgrGeoController::processGeographyIngestion'
   requirements:
-    _access: 'TRUE'
+    _permission: 'administer site configuration'
   options:
     no_cache: TRUE
   methods: [POST]
@@ -261,8 +257,7 @@ pmsr.ingest_people:
     _controller: '\Drupal\pmsr\Controller\IngestionKgrPeopleController::ingestPeople'
     _title: 'Ingest KGR People'
   requirements:
-    _permission: 'access content'
-    _role: 'authenticated'
+    _permission: 'administer site configuration'
 
 pmsr.ingest_wkf_scenarios:
   path: '/pmsr/ingest/wkf-scenarios'
@@ -270,8 +265,7 @@ pmsr.ingest_wkf_scenarios:
     _controller: '\Drupal\pmsr\Controller\IngestionWkfScenariosController::content'
     _title: 'Ingest WKF Scenarios'
   requirements:
-    _permission: 'access content'
-    _role: 'authenticated'
+    _permission: 'administer site configuration'
 
 pmsr.wkf_namespaces:
   path: '/pmsr/setup/wkf-namespaces'
@@ -279,7 +273,7 @@ pmsr.wkf_namespaces:
     _controller: '\Drupal\pmsr\Controller\WKFNamespacesController::content'
     _title: 'WKF-requested Namespaces'
   requirements:
-    _permission: 'access content'
+    _permission: 'administer site configuration'
 
 pmsr.tests:
   path: '/pmsr/tests'
@@ -287,14 +281,14 @@ pmsr.tests:
     _controller: '\Drupal\pmsr\Controller\PmsrTestsController::content'
     _title: 'PMSR Tests'
   requirements:
-    _permission: 'access content'
+    _permission: 'administer site configuration'
 
 pmsr.process_people_ingestion:
   path: '/pmsr/api/ingest/people/process'
   defaults:
     _controller: '\Drupal\pmsr\Controller\IngestionKgrPeopleController::processPeopleIngestion'
   requirements:
-    _access: 'TRUE'
+    _permission: 'administer site configuration'
   options:
     no_cache: TRUE
   methods: [POST]
@@ -304,7 +298,7 @@ pmsr.start_wkf_scenarios_ingestion:
   defaults:
     _controller: '\Drupal\pmsr\Controller\IngestionWkfScenariosController::start'
   requirements:
-    _access: 'TRUE'
+    _permission: 'administer site configuration'
   options:
     no_cache: TRUE
   methods: [POST]
@@ -314,7 +308,7 @@ pmsr.status_wkf_scenarios_ingestion:
   defaults:
     _controller: '\Drupal\pmsr\Controller\IngestionWkfScenariosController::status'
   requirements:
-    _access: 'TRUE'
+    _permission: 'administer site configuration'
   options:
     no_cache: TRUE
   methods: [GET]
@@ -324,7 +318,7 @@ pmsr.process_wkf_scenarios_ingestion:
   defaults:
     _controller: '\Drupal\pmsr\Controller\IngestionWkfScenariosController::process'
   requirements:
-    _access: 'TRUE'
+    _permission: 'administer site configuration'
   options:
     no_cache: TRUE
   methods: [POST]
@@ -334,7 +328,7 @@ pmsr.sync_users_person:
   defaults:
     _controller: '\Drupal\pmsr\Controller\IngestionKgrPeopleController::syncUsersPerson'
   requirements:
-    _access: 'TRUE'
+    _permission: 'administer site configuration'
   options:
     no_cache: TRUE
   methods: [POST]

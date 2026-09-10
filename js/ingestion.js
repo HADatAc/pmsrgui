@@ -429,7 +429,7 @@
     });
   }
 
-  function runWKFScenariosIngestionFlow(btn, settingsObj, fromScratch, organizationUri) {
+  function runWKFScenariosIngestionFlow(btn, settingsObj, fromScratch) {
     const startEndpoint = settingsObj.startEndpoint;
     const statusEndpoint = settingsObj.statusEndpoint;
     const processEndpoint = settingsObj.processEndpoint;
@@ -450,8 +450,7 @@
       credentials: 'same-origin',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        fromScratch: !!fromScratch,
-        organizationUri: String(organizationUri || '').trim()
+        fromScratch: !!fromScratch
       })
     })
     .then(function (res) { return res.json(); })
@@ -477,7 +476,6 @@
 
       const jobId = startData.jobId;
       settingsObj.activeJobId = jobId;
-      settingsObj.selectedOrganizationUri = String((startData && startData.organizationUri) || organizationUri || '');
       if (Array.isArray(startData.cards)) {
         renderWKFCards(startData.cards);
         settingsObj.cachedCards = startData.cards;
@@ -517,22 +515,10 @@
 
             const isWKFScenariosIngestion = window.location.pathname.includes('/pmsr/ingest/wkf-scenarios');
             if (isWKFScenariosIngestion && wkfSettings) {
-              const organizationSelect = document.getElementById('wkf-deploy-organization');
-              const selectedOrganizationUri = organizationSelect ? String(organizationSelect.value || '').trim() : '';
-              const requireOrganizationSelection = !!wkfSettings.requireOrganizationSelection;
-
-              if (requireOrganizationSelection && !selectedOrganizationUri) {
-                const summary = document.getElementById('wkf-ingestion-summary');
-                if (summary) {
-                  summary.innerHTML = '<div class="alert alert-warning">Please select a deployment organization before starting WKF ingestion.</div>';
-                }
-                return;
-              }
-
               const fromScratch = window.confirm(
                 'Start from scratch?\n\nOK = uningest cached ingested WKFs first, then ingest all again.\nCancel = keep cache and ingest only non-ingested WKFs.'
               );
-              runWKFScenariosIngestionFlow(this, wkfSettings, fromScratch, selectedOrganizationUri);
+              runWKFScenariosIngestionFlow(this, wkfSettings, fromScratch);
               return;
             }
 

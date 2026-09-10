@@ -5,7 +5,9 @@ namespace Drupal\pmsr\Controller;
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\Render\Markup;
 use Drupal\file\Entity\File;
+use Drupal\rep\Utils;
 use Drupal\rep\Vocabulary\HASCO;
+use Drupal\rep\Vocabulary\VSTOI;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -21,7 +23,6 @@ class IngestionWkfScenariosController extends ControllerBase {
   private const ACTIVE_JOB_STATE_KEY = 'pmsr.wkf_ingestion.active_job';
   private const PROCESS_LOCK_PREFIX = 'pmsr.wkf_ingestion.process.';
   private const WKF_CACHE_STATE_KEY = 'pmsr.wkf_ingestion.cache';
-  private const PMSR_PROJECT_URI = 'https://pmsr.net/ont/PJT1742783481383251';
 
   /**
    * Render the WKF scenarios ingestion page.
@@ -31,9 +32,6 @@ class IngestionWkfScenariosController extends ControllerBase {
     $cache = $this->getWkfIngestionCache();
     $activeState = $this->getActiveJobState();
     $activeJobId = is_array($activeState) ? (string) ($activeState['jobId'] ?? '') : '';
-    $requireOrganizationSelection = $this->requiresOrganizationSelection();
-    $organizationOptions = $this->loadOrganizationOptions();
-    $activeOrganizationUri = is_array($activeState) ? (string) ($activeState['organizationUri'] ?? '') : '';
 
     $cards = [];
     if (is_array($activeState) && !empty($activeState['cards']) && is_array($activeState['cards'])) {
@@ -89,29 +87,7 @@ class IngestionWkfScenariosController extends ControllerBase {
 
     $output = '';
     $output .= '<div class="container-fluid mt-4">';
-    $output .= '<p>This page ingests all WKF scenario files found in <code>pmsr/wkf</code> using the same PMSR ingestion flow used for individual WKFs.</p>';
-    if ($requireOrganizationSelection) {
-      $output .= '<div class="card border-info mt-3 mb-3">';
-      $output .= '<div class="card-body">';
-      $output .= '<h5 class="card-title mb-2">Deployment Organization</h5>';
-      $output .= '<p class="text-muted mb-2">Select the organization that the ingested WKFs should belong to.</p>';
-      $output .= '<select id="wkf-deploy-organization" class="form-select" style="max-width: 760px;">';
-      $output .= '<option value="">Select an organization...</option>';
-      foreach ($organizationOptions as $opt) {
-        $uri = (string) ($opt['uri'] ?? '');
-        $label = (string) ($opt['label'] ?? $uri);
-        if ($uri === '') {
-          continue;
-        }
-        $selected = ($activeOrganizationUri !== '' && $activeOrganizationUri === $uri) ? ' selected="selected"' : '';
-        $output .= '<option value="' . htmlspecialchars($uri, ENT_QUOTES, 'UTF-8') . '"' . $selected . '>'
-          . htmlspecialchars($label, ENT_QUOTES, 'UTF-8')
-          . '</option>';
-      }
-      $output .= '</select>';
-      $output .= '</div>';
-      $output .= '</div>';
-    }
+    $output .= '<p>This page ingests all WKF scenario files found in <code>pmsr/wkf</code> using the same PMSR ingestion flow used for individual WKFs. Each WKF is assigned to the organization already defined in its own content.</p>';
     $output .= '<div class="mt-4">';
     $output .= '<button class="btn btn-primary btn-lg btn-start-ingestion">Start Ingestion</button>';
     $output .= '<button class="btn btn-info btn-lg ms-2 btn-refresh-ingestion">Refresh</button>';
@@ -179,9 +155,6 @@ class IngestionWkfScenariosController extends ControllerBase {
               'processingStarted' => $processingStarted,
               'cachedCards' => $cachedCards,
               'anyCachedIngested' => $anyCachedIngested,
-              'requireOrganizationSelection' => $requireOrganizationSelection,
-              'organizationOptions' => $organizationOptions,
-              'selectedOrganizationUri' => $activeOrganizationUri,
             ],
           ],
         ],
@@ -195,34 +168,6 @@ class IngestionWkfScenariosController extends ControllerBase {
   public function start(Request $request) {
     $payload = json_decode($request->getContent(), TRUE);
     $fromScratch = is_array($payload) && !empty($payload['fromScratch']);
-    $requestedOrganizationUri = is_array($payload) && isset($payload['organizationUri'])
-      ? trim((string) $payload['organizationUri'])
-      : '';
-
-    $organizationOptions = $this->loadOrganizationOptions();
-    $organizationLabelByUri = [];
-    foreach ($organizationOptions as $opt) {
-      $uri = (string) ($opt['uri'] ?? '');
-      if ($uri === '') {
-        continue;
-      }
-      $organizationLabelByUri[$uri] = (string) ($opt['label'] ?? $uri);
-    }
-
-    if ($this->requiresOrganizationSelection()) {
-      if ($requestedOrganizationUri === '') {
-        return new JsonResponse([
-          'success' => FALSE,
-          'message' => 'Please select the organization that this WKF ingestion should belong to.',
-        ], 400);
-      }
-      if (!isset($organizationLabelByUri[$requestedOrganizationUri])) {
-        return new JsonResponse([
-          'success' => FALSE,
-          'message' => 'Selected organization is invalid or no longer available.',
-        ], 400);
-      }
-    }
 
     $activeState = $this->getActiveJobState();
     if (is_array($activeState) && strtoupper((string) ($activeState['status'] ?? '')) === 'RUNNING') {
@@ -241,7 +186,6 @@ class IngestionWkfScenariosController extends ControllerBase {
         'message' => 'Resuming currently running WKF ingestion job.',
         'cards' => $activeState['cards'] ?? [],
         'resumed' => TRUE,
-        'organizationUri' => $activeState['organizationUri'] ?? '',
       ]);
     }
 
@@ -295,8 +239,6 @@ class IngestionWkfScenariosController extends ControllerBase {
       'finishedAt' => NULL,
       'processingStarted' => FALSE,
       'fromScratch' => $fromScratch,
-      'organizationUri' => $requestedOrganizationUri,
-      'organizationLabel' => $requestedOrganizationUri !== '' ? ($organizationLabelByUri[$requestedOrganizationUri] ?? $requestedOrganizationUri) : '',
     ];
 
     $this->saveJobState($jobId, $state);
@@ -308,8 +250,6 @@ class IngestionWkfScenariosController extends ControllerBase {
       'message' => $state['message'],
       'cards' => $cards,
       'fromScratch' => $fromScratch,
-      'organizationUri' => $requestedOrganizationUri,
-      'organizationLabel' => $requestedOrganizationUri !== '' ? ($organizationLabelByUri[$requestedOrganizationUri] ?? $requestedOrganizationUri) : '',
     ]);
   }
 
@@ -331,8 +271,6 @@ class IngestionWkfScenariosController extends ControllerBase {
       'status' => $state['status'] ?? 'UNKNOWN',
       'message' => $state['message'] ?? '',
       'jobId' => $jobId,
-      'organizationUri' => $state['organizationUri'] ?? '',
-      'organizationLabel' => $state['organizationLabel'] ?? '',
       'cards' => $state['cards'] ?? [],
       'progress' => $state['progress'] ?? [],
       'errors' => $state['errors'] ?? [],
@@ -398,7 +336,6 @@ class IngestionWkfScenariosController extends ControllerBase {
       $this->touchState($state, $jobId, 'WKF ingestion worker active.');
 
       $api = \Drupal::service('rep.api_connector');
-      $targetOrganizationUri = trim((string) ($state['organizationUri'] ?? ''));
 
       for ($round = 1; $round <= self::MAX_INGESTION_ROUNDS; $round++) {
         $state['progress'][] = 'Round ' . $round . ': submitting pending WKFs.';
@@ -408,12 +345,37 @@ class IngestionWkfScenariosController extends ControllerBase {
             continue;
           }
 
+          $existing = $this->inspectExistingBackendState($api, $card);
+          if (!$existing['shouldSubmit']) {
+            $state['cards'][$idx]['wkfUri'] = $existing['wkfUri'];
+            $state['cards'][$idx]['dataFileUri'] = $existing['dataFileUri'];
+            $state['cards'][$idx]['templateStatus'] = $existing['templateStatus'];
+            $state['cards'][$idx]['fileStatus'] = $existing['fileStatus'];
+            $state['cards'][$idx]['status'] = $existing['status'];
+            $state['cards'][$idx]['detail'] = $existing['detail'];
+
+            if ($existing['status'] === 'PROCESSED') {
+              $filename = (string) ($card['filename'] ?? '');
+              if ($filename !== '') {
+                $cache = $this->getWkfIngestionCache();
+                $cache[$filename] = [
+                  'ingested' => TRUE,
+                  'wkfUri' => $existing['wkfUri'],
+                  'dataFileUri' => $existing['dataFileUri'],
+                  'updatedAt' => \Drupal::time()->getCurrentTime(),
+                ];
+                $this->saveWkfIngestionCache($cache);
+              }
+            }
+            continue;
+          }
+
           $state['cards'][$idx]['status'] = 'WORKING';
           $state['cards'][$idx]['detail'] = 'Submitting ingestion (round ' . $round . ')...';
           $state['cards'][$idx]['attempts'] = (int) ($state['cards'][$idx]['attempts'] ?? 0) + 1;
           $this->touchState($state, $jobId, 'Submitting ' . ($card['filename'] ?? 'unknown'));
 
-          $submit = $this->submitSingleWkf($api, $card, $targetOrganizationUri);
+          $submit = $this->submitSingleWkf($api, $card);
           if (!$submit['success']) {
             $state['cards'][$idx]['status'] = 'FAILED';
             $state['cards'][$idx]['detail'] = $submit['message'];
@@ -481,7 +443,7 @@ class IngestionWkfScenariosController extends ControllerBase {
   /**
    * Submit one WKF by creating DataFile/WKF entities and triggering uploadTemplate.
    */
-  private function submitSingleWkf($api, array $card, string $targetOrganizationUri = ''): array {
+  private function submitSingleWkf($api, array $card): array {
     $filename = (string) ($card['filename'] ?? '');
     $sourcePath = (string) ($card['path'] ?? '');
     if ($filename === '' || $sourcePath === '' || !file_exists($sourcePath)) {
@@ -516,7 +478,7 @@ class IngestionWkfScenariosController extends ControllerBase {
           $useremail = 'admin@pmsr.com';
         }
       }
-      $useremail = $this->resolveManagerEmailForSubmission($api, $targetOrganizationUri, $useremail);
+      $useremail = $this->resolveManagerEmailForSubmission($useremail);
     $dataFileUri = $this->generateDataFileUriWithFallback($api);
     if ($dataFileUri === '') {
       return ['success' => FALSE, 'message' => 'Could not generate DataFile URI'];
@@ -563,18 +525,37 @@ class IngestionWkfScenariosController extends ControllerBase {
       return ['success' => FALSE, 'message' => 'Failed to create WKF entity'];
     }
 
-    $template = new \stdClass();
-    $template->uri = $wkfUri;
-    $template->hasDataFileUri = $dataFileUri;
-    $template->hasDataFile = new \stdClass();
-    $template->hasDataFile->id = $file->id();
-    $template->hasDataFile->filename = $filename;
-    $template->hasSIRManagerEmail = $useremail;
-    if ($targetOrganizationUri !== '') {
-      $template->hasOrganizationUri = $targetOrganizationUri;
+    // Mirror REPSelectMTForm::performIngest() (the "Ingest" button in Manage WKFs):
+    // re-fetch the full persisted WKF template instead of submitting a hand-built
+    // partial object, and submit with VSTOI::DRAFT status like the working button does.
+    $template = $api->parseObjectResponse($api->getUri($wkfUri), 'getUri');
+    if ($template === NULL) {
+      return ['success' => FALSE, 'message' => 'Failed to retrieve the newly created WKF entity for ingestion'];
     }
 
-    $ingestRaw = $api->uploadTemplate('wkf', $template, '_');
+    if (isset($template->uri) && is_string($template->uri) && $template->uri !== '') {
+      $template->uri = Utils::plainUri($template->uri) ?: $template->uri;
+    }
+    else {
+      $template->uri = $wkfUri;
+    }
+
+    if ((!isset($template->hasDataFileUri) || $template->hasDataFileUri == NULL || $template->hasDataFileUri === '')
+      && isset($template->hasDataFile) && is_object($template->hasDataFile)
+      && isset($template->hasDataFile->uri) && is_string($template->hasDataFile->uri) && $template->hasDataFile->uri !== '') {
+      $template->hasDataFileUri = Utils::plainUri($template->hasDataFile->uri) ?: $template->hasDataFile->uri;
+    }
+
+    if (!isset($template->hasDataFile) && isset($template->hasDataFileUri)) {
+      $dataFileUriToFetch = Utils::plainUri($template->hasDataFileUri) ?: $template->hasDataFileUri;
+      $dataFile = $api->parseObjectResponse($api->getUri($dataFileUriToFetch), 'getUri');
+      if ($dataFile !== NULL) {
+        $template->hasDataFile = $dataFile;
+        $template->hasDataFileUri = $dataFileUriToFetch;
+      }
+    }
+
+    $ingestRaw = $api->uploadTemplate('wkf', $template, VSTOI::DRAFT);
     $ingestObj = $api->parseObjectResponse($ingestRaw, 'uploadTemplateStatus');
     if ($ingestObj === NULL) {
       $apiDetail = method_exists($api, 'getErrorMessage') ? trim((string) $api->getErrorMessage()) : '';
@@ -830,6 +811,14 @@ class IngestionWkfScenariosController extends ControllerBase {
     if ($token === '') {
       return $default;
     }
+    // Check UNPROCESSED/PROCESSING before the generic PROCESS substring match below,
+    // otherwise 'UNPROCESSED' would be misdetected as 'PROCESSED' (both contain 'PROCESS').
+    if (strpos($token, 'UNPROCESSED') !== FALSE) {
+      return 'UNPROCESSED';
+    }
+    if (strpos($token, 'PROCESSING') !== FALSE) {
+      return 'WORKING';
+    }
     if (strpos($token, 'PROCESS') !== FALSE) {
       return 'PROCESSED';
     }
@@ -840,6 +829,101 @@ class IngestionWkfScenariosController extends ControllerBase {
       return 'ERROR';
     }
     return $token;
+  }
+
+  /**
+   * Inspect existing backend entities to avoid duplicate resubmissions.
+   */
+  private function inspectExistingBackendState($api, array $card): array {
+    $wkfUri = isset($card['wkfUri']) && is_string($card['wkfUri']) ? trim($card['wkfUri']) : '';
+    $dataFileUri = isset($card['dataFileUri']) && is_string($card['dataFileUri']) ? trim($card['dataFileUri']) : '';
+
+    if ($wkfUri === '' && $dataFileUri === '') {
+      return [
+        'shouldSubmit' => TRUE,
+        'status' => 'WORKING',
+        'detail' => '',
+        'wkfUri' => '',
+        'dataFileUri' => '',
+        'templateStatus' => 'UNKNOWN',
+        'fileStatus' => 'UNKNOWN',
+      ];
+    }
+
+    $templateStatus = 'UNKNOWN';
+    $fileStatus = 'UNKNOWN';
+    $foundAny = FALSE;
+
+    if ($wkfUri !== '') {
+      $wkfLookup = $this->fetchUriObject($api, $wkfUri);
+      if (!empty($wkfLookup['found']) && is_object($wkfLookup['object'])) {
+        $foundAny = TRUE;
+        if (isset($wkfLookup['object']->hasStatus)) {
+          $templateStatus = $this->normalizeStatusToken((string) $wkfLookup['object']->hasStatus, 'UNKNOWN');
+        }
+      }
+    }
+
+    if ($dataFileUri !== '') {
+      $dfLookup = $this->fetchUriObject($api, $dataFileUri);
+      if (!empty($dfLookup['found']) && is_object($dfLookup['object'])) {
+        $foundAny = TRUE;
+        if (isset($dfLookup['object']->fileStatus)) {
+          $fileStatus = $this->normalizeStatusToken((string) $dfLookup['object']->fileStatus, 'UNKNOWN');
+        }
+        else if (isset($dfLookup['object']->hasStatus)) {
+          $fileStatus = $this->normalizeStatusToken((string) $dfLookup['object']->hasStatus, 'UNKNOWN');
+        }
+      }
+    }
+
+    if (!$foundAny) {
+      return [
+        'shouldSubmit' => TRUE,
+        'status' => 'WORKING',
+        'detail' => '',
+        'wkfUri' => $wkfUri,
+        'dataFileUri' => $dataFileUri,
+        'templateStatus' => $templateStatus,
+        'fileStatus' => $fileStatus,
+      ];
+    }
+
+    if ($templateStatus === 'PROCESSED' || $fileStatus === 'PROCESSED') {
+      return [
+        'shouldSubmit' => FALSE,
+        'status' => 'PROCESSED',
+        'detail' => 'Existing backend submission already processed. Skipping resubmission.',
+        'wkfUri' => $wkfUri,
+        'dataFileUri' => $dataFileUri,
+        'templateStatus' => $templateStatus,
+        'fileStatus' => $fileStatus,
+      ];
+    }
+
+    if ($templateStatus === 'WORKING' || $fileStatus === 'WORKING') {
+      return [
+        'shouldSubmit' => FALSE,
+        'status' => 'WORKING',
+        'detail' => 'Existing backend submission detected. Monitoring current processing state.',
+        'wkfUri' => $wkfUri,
+        'dataFileUri' => $dataFileUri,
+        'templateStatus' => $templateStatus,
+        'fileStatus' => $fileStatus,
+      ];
+    }
+
+    // Any other status (UNPROCESSED, DRAFT, FAILED, ERROR, UNKNOWN, ...) means nothing
+    // is actively being ingested right now, so this WKF must be (re)submitted.
+    return [
+      'shouldSubmit' => TRUE,
+      'status' => 'WORKING',
+      'detail' => '',
+      'wkfUri' => $wkfUri,
+      'dataFileUri' => $dataFileUri,
+      'templateStatus' => $templateStatus,
+      'fileStatus' => $fileStatus,
+    ];
   }
 
   /**
@@ -903,40 +987,16 @@ class IngestionWkfScenariosController extends ControllerBase {
   /**
    * Resolve manager email for ingestion submit/query params.
    *
-   * Preference order:
-   * 1) curator-like emails affiliated with selected organization,
-   * 2) any valid affiliated email,
-   * 3) provided fallback email,
-   * 4) site mail,
-   * 5) static admin fallback.
+   * The organization is now resolved from each WKF's own content during
+   * ingestion, so this only falls back through:
+   * 1) provided fallback email,
+   * 2) site mail,
+   * 3) static admin fallback.
    */
-  private function resolveManagerEmailForSubmission($api, string $organizationUri, string $fallbackEmail): string {
+  private function resolveManagerEmailForSubmission(string $fallbackEmail): string {
     $fallback = trim($fallbackEmail);
     if ($fallback !== '' && !filter_var($fallback, FILTER_VALIDATE_EMAIL)) {
       $fallback = '';
-    }
-
-    if ($organizationUri !== '') {
-      try {
-        $affRaw = $api->getAffiliations($organizationUri, 300, 0);
-        $affObj = $api->parseObjectResponse($affRaw, 'organizationAffiliations');
-        $emails = $this->extractEmailsFromAffiliations($affObj);
-        if (!empty($emails)) {
-          $curatorEmails = array_values(array_filter($emails, static function (string $email): bool {
-            return stripos($email, 'curator') !== FALSE;
-          }));
-          if (!empty($curatorEmails)) {
-            return $curatorEmails[0];
-          }
-          return $emails[0];
-        }
-      }
-      catch (\Throwable $e) {
-        \Drupal::logger('pmsr')->warning('Could not resolve manager email from organization affiliations for @org: @msg', [
-          '@org' => $organizationUri,
-          '@msg' => $e->getMessage(),
-        ]);
-      }
     }
 
     if ($fallback !== '') {
@@ -949,51 +1009,6 @@ class IngestionWkfScenariosController extends ControllerBase {
     }
 
     return 'admin@pmsr.com';
-  }
-
-  /**
-   * Extract distinct valid emails from possible affiliation response shapes.
-   */
-  private function extractEmailsFromAffiliations($affObj): array {
-    $rows = [];
-    if (is_object($affObj) && isset($affObj->affiliations) && is_array($affObj->affiliations)) {
-      $rows = $affObj->affiliations;
-    }
-    else if (is_object($affObj) && isset($affObj->items) && is_array($affObj->items)) {
-      $rows = $affObj->items;
-    }
-    else if (is_array($affObj)) {
-      $rows = $affObj;
-    }
-
-    $emails = [];
-    foreach ($rows as $row) {
-      $candidates = [];
-
-      if (is_object($row)) {
-        $candidates[] = isset($row->email) ? (string) $row->email : '';
-        $candidates[] = isset($row->managerEmail) ? (string) $row->managerEmail : '';
-        $candidates[] = isset($row->hasSIRManagerEmail) ? (string) $row->hasSIRManagerEmail : '';
-
-        if (isset($row->person) && is_object($row->person)) {
-          $candidates[] = isset($row->person->email) ? (string) $row->person->email : '';
-          $candidates[] = isset($row->person->hasEmail) ? (string) $row->person->hasEmail : '';
-          $candidates[] = isset($row->person->hasSIREmail) ? (string) $row->person->hasSIREmail : '';
-        }
-      }
-
-      foreach ($candidates as $candidate) {
-        $candidate = trim($candidate);
-        if ($candidate === '' || !filter_var($candidate, FILTER_VALIDATE_EMAIL)) {
-          continue;
-        }
-        $emails[strtolower($candidate)] = $candidate;
-      }
-    }
-
-    $result = array_values($emails);
-    sort($result);
-    return $result;
   }
 
   /**
@@ -1035,108 +1050,6 @@ class IngestionWkfScenariosController extends ControllerBase {
       ];
     }
     return $files;
-  }
-
-  /**
-   * True when the current user must choose a deployment organization.
-   */
-  private function requiresOrganizationSelection(): bool {
-    return TRUE;
-  }
-
-  /**
-   * Load organizations available for WKF deployment selection.
-   */
-  private function loadOrganizationOptions(): array {
-    $options = [];
-
-    try {
-      $api = \Drupal::service('rep.api_connector');
-
-      // Preferred source: member organizations linked as project contributors.
-      $project = $api->parseObjectResponse($api->getUri(self::PMSR_PROJECT_URI), 'getUri');
-      $contributorUris = [];
-      if (is_object($project) && isset($project->contributorUris) && is_array($project->contributorUris)) {
-        $contributorUris = array_values($project->contributorUris);
-      }
-
-      foreach ($contributorUris as $contributorUri) {
-        $uri = trim((string) $contributorUri);
-        if ($uri === '') {
-          continue;
-        }
-
-        $orgObj = $api->parseObjectResponse($api->getUri($uri), 'getUri');
-        if (!is_object($orgObj)) {
-          continue;
-        }
-
-        $name = trim((string) ($orgObj->name ?? ''));
-        $label = trim((string) ($orgObj->label ?? ''));
-        $content = trim((string) ($orgObj->hasContent ?? ''));
-        $pretty = $name !== '' ? $name : ($label !== '' ? $label : ($content !== '' ? $content : $uri));
-
-        $options[$uri] = [
-          'uri' => $uri,
-          'label' => $pretty,
-        ];
-      }
-
-      // Fallback source: generic organization listing.
-      if (empty($options)) {
-        $url = rtrim((string) $api->getApiUrl(), '/') . '/hascoapi/api/organization/keyword/_/500/0';
-        $raw = $api->perform_http_request('GET', $url, [
-          'timeout' => 20,
-          'connect_timeout' => 3,
-          'http_errors' => FALSE,
-          'headers' => [
-            'Content-Type' => 'application/json',
-          ],
-        ]);
-
-        $decoded = json_decode((string) $raw, TRUE);
-        $rows = [];
-        if (is_array($decoded) && !empty($decoded['isSuccessful']) && isset($decoded['body'])) {
-          if (is_array($decoded['body'])) {
-            $rows = $decoded['body'];
-          }
-          elseif (is_string($decoded['body'])) {
-            $bodyDecoded = json_decode($decoded['body'], TRUE);
-            if (is_array($bodyDecoded)) {
-              $rows = $bodyDecoded;
-            }
-          }
-        }
-
-        foreach ($rows as $row) {
-          if (!is_array($row)) {
-            continue;
-          }
-          $uri = trim((string) ($row['uri'] ?? ''));
-          if ($uri === '') {
-            continue;
-          }
-          $name = trim((string) ($row['name'] ?? ''));
-          $label = trim((string) ($row['label'] ?? ''));
-          $pretty = $name !== '' ? $name : ($label !== '' ? $label : $uri);
-          $options[$uri] = [
-            'uri' => $uri,
-            'label' => $pretty,
-          ];
-        }
-      }
-    }
-    catch (\Throwable $e) {
-      \Drupal::logger('pmsr')->warning('Failed to load organization options for WKF ingestion selector: @msg', [
-        '@msg' => $e->getMessage(),
-      ]);
-    }
-
-    usort($options, static function(array $a, array $b): int {
-      return strcasecmp((string) ($a['label'] ?? ''), (string) ($b['label'] ?? ''));
-    });
-
-    return array_values($options);
   }
 
   /**

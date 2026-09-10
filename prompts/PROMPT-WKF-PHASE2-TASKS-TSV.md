@@ -27,12 +27,14 @@ Mandatory task rules:
 - vstoi:InteractionTask
 3. Parent tasks must be vstoi:AbstractTask.
 4. Leaf tasks must be ManualTask, AutomatedTask, or InteractionTask.
-5. Exactly one top-level task (empty vstoi:hasSupertask).
-6. Every non-top task has exactly one parent.
-7. hasSupertask/hasSubtask links are bidirectionally consistent.
-8. No disconnected tasks and no hierarchy cycles.
-9. Allowed temporal operators only: after, before, parallel, choice, independent, disables, interrupts.
-10. after/before graph must be acyclic.
+5. The generated task model MUST include at least one vstoi:InteractionTask leaf task when the source document describes a learner action or outcome that a simulator component can directly observe.
+6. Do not classify ordinary preparation, hygiene, documentation, or communication work as vstoi:InteractionTask unless the source document establishes simulator-observable interaction.
+7. Exactly one top-level task (empty vstoi:hasSupertask).
+8. Every non-top task has exactly one parent.
+9. hasSupertask/hasSubtask links are bidirectionally consistent.
+10. No disconnected tasks and no hierarchy cycles.
+11. Allowed temporal operators only: after, before, parallel, choice, independent, disables, interrupts.
+12. after/before graph must be acyclic.
 
 usesComponentInstance policy for this phase:
 1. Use column vstoi:usesComponentInstance (never vstoi:hasRequiredInstrument).

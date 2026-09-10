@@ -2661,6 +2661,64 @@ class StatisticsController extends ControllerBase {
       }
     }
 
+    // Plain Study elements (non-ProcessBasedStudy) are not returned by the
+    // processbasedstudy endpoint above; scan them separately by institution.
+    $offset = 0;
+    while (TRUE) {
+      try {
+        $endpoint = '/hascoapi/api/study/keyword/_/' . $pageSize . '/' . $offset;
+        $response = $api->perform_http_request('GET', $api->getApiUrl() . $endpoint, $api->getHeader());
+        $items = $api->parseObjectResponse($response, 'listByKeyword');
+        if (!is_array($items) || empty($items)) {
+          break;
+        }
+
+        foreach ($items as $item) {
+          if (!is_object($item) || empty($item->uri)) {
+            continue;
+          }
+
+          $candidateOrgs = [];
+          if (!empty($item->hasInstitutionUri)) {
+            $candidateOrgs[] = (string) $item->hasInstitutionUri;
+          }
+          if (!empty($item->institutionUri)) {
+            $candidateOrgs[] = (string) $item->institutionUri;
+          }
+          if (!empty($item->institution) && is_object($item->institution) && !empty($item->institution->uri)) {
+            $candidateOrgs[] = (string) $item->institution->uri;
+          }
+
+          $matchesOrg = FALSE;
+          foreach ($candidateOrgs as $candidateOrgUri) {
+            $k = $this->normalizeUriForMatch($candidateOrgUri);
+            if ($k !== '' && isset($orgKeys[$k])) {
+              $matchesOrg = TRUE;
+              break;
+            }
+          }
+
+          if (!$matchesOrg) {
+            continue;
+          }
+
+          $scenarioUris[(string) $item->uri] = TRUE;
+          foreach ($this->extractProcessUrisFromScenarioObject($item) as $processUri) {
+            $processUris[(string) $processUri] = TRUE;
+          }
+        }
+
+        if (count($items) < $pageSize) {
+          break;
+        }
+        $offset += $pageSize;
+      }
+      catch (\Exception $e) {
+        \Drupal::logger('pmsr')->warning('Failed to collect plain-Study stats by organization: ' . $e->getMessage());
+        break;
+      }
+    }
+
     return [
       'scenario_uris' => array_keys($scenarioUris),
       'process_uris' => array_keys($processUris),
@@ -2807,11 +2865,13 @@ class StatisticsController extends ControllerBase {
 
     $scenarioStats = ['scenario_uris' => [], 'process_uris' => []];
     try {
-      $managerEmails = $this->getOrganizationManagerEmails($api, $contributorUri);
-      $scenarioStats = $this->collectScenarioAndProcessStatsByManagerEmails($api, $managerEmails);
-      if (empty($scenarioStats['scenario_uris']) && empty($scenarioStats['process_uris'])) {
-        $scenarioStats = $this->collectScenarioAndProcessStatsByOrganization($api, $contributorUri);
-      }
+      // A scenario's owning organization is the PI's affiliation (the Institution
+      // defined in the WKF), never hasSIRManagerEmail (a separate, unrelated
+      // technical/managerial email). Do not fall back to manager-email matching:
+      // that previously re-attributed scenarios to whichever organization the
+      // ingesting/manager account happened to be affiliated with, duplicating
+      // counts across organizations.
+      $scenarioStats = $this->collectScenarioAndProcessStatsByOrganization($api, $contributorUri);
     }
     catch (\Exception $e) {
       $metricErrors[] = 'scenario/process lookup: ' . $e->getMessage();

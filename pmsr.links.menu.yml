@@ -17,7 +17,7 @@ pmsr.pmsr_setup:
   menu_name: main
   weight: 50
   requirements:
-    _permission: 'access content'
+    _permission: 'administer site configuration'
 
 #
 # PMSR INGESTION MENU ITEMS (under PMSR Setup, which is under Repository)
@@ -41,7 +41,7 @@ pmsr.ingest_ontologies:
   menu_name: main
   weight: 1
   requirements:
-    _permission: 'access content'
+    _permission: 'administer site configuration'
 
 pmsr.ingest_auxiliary_data:
   title: 'Ingest Auxiliary Data'
@@ -51,7 +51,7 @@ pmsr.ingest_auxiliary_data:
   menu_name: main
   weight: 2
   requirements:
-    _permission: 'access content'
+    _permission: 'administer site configuration'
 
 pmsr.ingest_instruments:
   title: 'Ingest INS Instruments'
@@ -61,7 +61,7 @@ pmsr.ingest_instruments:
   menu_name: main
   weight: 3
   requirements:
-    _permission: 'access content'
+    _permission: 'administer site configuration'
 
 pmsr.ingest_geography:
   title: 'Ingest KRG Geography and Organizations'
@@ -71,7 +71,7 @@ pmsr.ingest_geography:
   menu_name: main
   weight: 4
   requirements:
-    _permission: 'access content'
+    _permission: 'administer site configuration'
 
 pmsr.ingest_people:
   title: 'Ingest KGR People'
@@ -81,7 +81,7 @@ pmsr.ingest_people:
   menu_name: main
   weight: 5
   requirements:
-    _permission: 'access content'
+    _permission: 'administer site configuration'
 
 pmsr.ingest_wkf_scenarios:
   title: 'Ingest WKF Scenarios'
@@ -91,7 +91,7 @@ pmsr.ingest_wkf_scenarios:
   menu_name: main
   weight: 6
   requirements:
-    _permission: 'access content'
+    _permission: 'administer site configuration'
 
 pmsr.wkf_namespaces:
   title: 'WKF-requested Namespaces'
@@ -101,7 +101,7 @@ pmsr.wkf_namespaces:
   menu_name: main
   weight: 7
   requirements:
-    _permission: 'access content'
+    _permission: 'administer site configuration'
 
 pmsr.tests:
   title: 'PMSR Tests'
@@ -111,4 +111,4 @@ pmsr.tests:
   menu_name: main
   weight: 8
   requirements:
-    _permission: 'access content'
+    _permission: 'administer site configuration'
